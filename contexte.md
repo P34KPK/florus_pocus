@@ -9,7 +9,7 @@
 **Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** WHC (hébergement canadien) avec Node.js + PM2
-**Dernière session :** 2026-05-21
+**Dernière session :** 2026-05-22
 
 ---
 
@@ -64,8 +64,12 @@
 ## 3. CE QUI RESTE À FAIRE 🔲
 
 ### Priorité haute
-- [ ] **Déploiement WHC** — serveur Node.js + PM2 + Nginx + SSL
-  - En attente : infos accès serveur WHC du client (SSH ou cPanel ?)
+- [ ] **Déploiement Vercel** ← NOUVEAU PLAN (WHC abandonné)
+  - Repo GitHub : https://github.com/P34KPK/florus_pocus.git ✅ (pushé 2026-05-22)
+  - Étape suivante : vercel.com → "Add New Project" → importer `P34KPK/florus_pocus`
+  - Ajouter les variables d'env dans le dashboard Vercel (voir section 9)
+  - Connecter domaine `floruspocus.ca` (Cloudflare DNS → mode "DNS only" / nuage gris)
+  - Après déploiement : ajouter `https://floruspocus.ca` dans Supabase Auth URL Configuration
 - [ ] **Square paiement** — en attente des credentials du client
   - Square Web Payments SDK sur `/checkout`
   - Webhook pour confirmer paiements
@@ -323,43 +327,68 @@ export function createAdminClient() {
 
 ---
 
-## 9. Déploiement WHC
+## 9. Déploiement — Vercel + Cloudflare DNS
 
-### Commandes
-```bash
-npm run build
-npm run start
-# ou PM2 :
-pm2 start npm --name "floruspocus" -- start
-```
+> WHC abandonné. Nouvelle stratégie : Vercel (gratuit) + domaine Cloudflare.
 
-### Variables d'env sur le serveur
-À configurer via cPanel ou SSH (jamais dans le repo) :
+### Repo GitHub
+- URL : https://github.com/P34KPK/florus_pocus.git
+- Branch : `main`
+- Pushé le 2026-05-22 (87 fichiers, tout le site)
+
+### Étapes Vercel (à compléter)
+1. vercel.com → "Add New Project" → importer `P34KPK/florus_pocus`
+2. Framework : Next.js (auto-détecté, ne pas changer)
+3. Ajouter les variables d'environnement (voir ci-dessous)
+4. Cliquer "Deploy" → URL temporaire `floruspocus.vercel.app`
+5. Settings → Domains → ajouter `floruspocus.ca`
+
+### Variables d'env dans le dashboard Vercel
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_SQUARE_APP_ID=
+NEXT_PUBLIC_SQUARE_APP_ID=          ← laisser vide pour l'instant
 NEXT_PUBLIC_SITE_URL=https://floruspocus.ca
 SUPABASE_SERVICE_ROLE_KEY=
-SQUARE_SECRET_API_KEY=
+SQUARE_SECRET_API_KEY=              ← laisser vide pour l'instant
 NODE_ENV=production
 ```
 
+### DNS Cloudflare (après déploiement Vercel)
+| Type | Nom | Valeur | Proxy |
+|------|-----|--------|-------|
+| A | `@` | `76.76.21.21` | Nuage GRIS (DNS only) |
+| CNAME | `www` | `cname.vercel-dns.com` | Nuage GRIS (DNS only) |
+
+**Important :** proxy Cloudflare = OFF (nuage gris) — Vercel gère lui-même SSL/CDN.
+
+### Supabase après déploiement
+Aller dans Supabase → Authentication → URL Configuration :
+- Site URL : `https://floruspocus.ca`
+- Redirect URLs : `https://floruspocus.ca/**`
+
+### Coûts
+| Service | Plan | Coût |
+|---------|------|------|
+| Vercel | Hobby | Gratuit |
+| Supabase | Free | Gratuit |
+| Cloudflare | Free | Gratuit |
+
 ### Statut déploiement
-- [ ] Accès serveur WHC obtenu (SSH ou cPanel ?)
-- [ ] Node.js version confirmée sur le serveur
-- [ ] PM2 installé
-- [ ] Nginx configuré (reverse proxy port 3000 → domaine)
-- [ ] SSL activé
-- [ ] Variables d'env configurées
-- [ ] `npm run build` exécuté sur le serveur
-- [ ] PM2 démarré + sauvegardé (`pm2 save`)
+- [x] Repo GitHub créé et pushé
+- [ ] Projet importé sur Vercel
+- [ ] Variables d'env ajoutées sur Vercel
+- [ ] Premier build réussi
+- [ ] Domaine `floruspocus.ca` connecté sur Vercel
+- [ ] DNS Cloudflare configuré (nuage gris)
+- [ ] SSL actif (auto via Vercel)
+- [ ] Supabase Auth URL mise à jour
 
 ### Checklist avant mise en production
 - [ ] `npm audit` = 0 critiques
 - [ ] RLS activé sur toutes les tables Supabase
-- [ ] `.env.local` hors du repo (vérifier `.gitignore`)
-- [ ] HTTPS activé
+- [ ] `.env.local` hors du repo (vérifier `.gitignore`) ✅
+- [ ] HTTPS activé (auto Vercel)
 - [ ] Test login/logout admin
 - [ ] Test formulaire contact
 - [ ] Test ajout au panier + checkout
