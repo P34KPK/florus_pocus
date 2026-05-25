@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Sprout, Truck, Leaf, Users } from "lucide-react";
+import { Sprout, Truck, Leaf, Users, ArrowRight } from "lucide-react";
 import GrowingStem from "@/components/GrowingStem";
 import type { Page } from "@/types";
 
@@ -114,6 +115,16 @@ export default function WhyLocal({ page }: WhyLocalProps) {
                 </FadeInView>
               ))}
             </div>
+
+            <FadeInView delay={0.75}>
+              <Link
+                href="/la-ferme"
+                className="inline-flex items-center gap-2 mt-8 font-heading font-semibold text-sm transition-all hover:gap-3"
+                style={{ color: "#2D5016" }}
+              >
+                Découvrir notre ferme <ArrowRight size={16} />
+              </Link>
+            </FadeInView>
           </div>
 
           {/* Image */}

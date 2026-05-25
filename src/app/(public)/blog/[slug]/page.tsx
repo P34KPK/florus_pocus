@@ -4,8 +4,6 @@ import { ArrowLeft, CalendarDays, User, Tag } from "lucide-react";
 import Image from "next/image";
 import sanitizeHtml from "sanitize-html";
 import { createClient } from "@/lib/supabase-server";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import type { Metadata } from "next";
 
 const ALLOWED_HTML: sanitizeHtml.IOptions = {
@@ -71,9 +69,7 @@ export default async function BlogPostPage({ params }: Props) {
     .limit(3);
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen pt-24" style={{ backgroundColor: "#FAFAF8" }}>
+    <main className="min-h-screen pt-24" style={{ backgroundColor: "#FAFAF8" }}>
 
         {/* Fil d'Ariane */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
@@ -226,8 +222,6 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           </section>
         )}
-      </main>
-      <Footer />
-    </>
+    </main>
   );
 }

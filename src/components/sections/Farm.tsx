@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import GrowingStem from "@/components/GrowingStem";
@@ -101,14 +102,17 @@ export default function Farm({ page }: FarmProps) {
                 </motion.p>
               ))}
             </div>
-            <motion.a href="#contact"
-              className="inline-flex items-center gap-2 mt-8 font-heading font-semibold px-7 py-3.5 rounded-full text-sm text-white transition-all"
-              style={{ backgroundColor: "#2D5016" }}
+            <motion.div
+              className="inline-block mt-8"
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.4 }}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-              Nous visiter →
-            </motion.a>
+              <Link href="/contact"
+                className="inline-flex items-center gap-2 font-heading font-semibold px-7 py-3.5 rounded-full text-sm text-white transition-all"
+                style={{ backgroundColor: "#2D5016" }}>
+                Nous visiter →
+              </Link>
+            </motion.div>
           </div>
 
         </div>

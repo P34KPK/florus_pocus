@@ -44,3 +44,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# images sources (copies de travail, non nécessaires au déploiement)
+/IMG/
+/IMGFULLSIZE/

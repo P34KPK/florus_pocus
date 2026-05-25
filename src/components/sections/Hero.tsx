@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import type { Page } from "@/types";
 
@@ -267,20 +268,26 @@ export default function Hero({ page }: HeroProps) {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <motion.a href="#abonnements"
-            className="font-heading font-semibold px-7 py-3.5 rounded-full text-sm uppercase tracking-wider"
-            style={{ backgroundColor: "#D4A574", color: "#1A1A1A" }}
+          <motion.div
             whileHover={{ scale: 1.05, boxShadow: "0 8px 30px rgba(212,165,116,0.35)" }}
-            whileTap={{ scale: 0.97 }}>
-            Voir les abonnements
-          </motion.a>
-          <motion.a href="#autocueillette"
-            className="font-heading font-semibold px-7 py-3.5 rounded-full text-sm uppercase tracking-wider border-2"
-            style={{ borderColor: "#F4D4B0", color: "#F4D4B0" }}
+            whileTap={{ scale: 0.97 }}
+            style={{ borderRadius: "9999px", display: "inline-block" }}>
+            <Link href="/abonnements"
+              className="block font-heading font-semibold px-7 py-3.5 rounded-full text-sm uppercase tracking-wider"
+              style={{ backgroundColor: "#D4A574", color: "#1A1A1A" }}>
+              Voir les abonnements
+            </Link>
+          </motion.div>
+          <motion.div
             whileHover={{ scale: 1.05, backgroundColor: "rgba(244,212,176,0.08)" }}
-            whileTap={{ scale: 0.97 }}>
-            Autocueillette
-          </motion.a>
+            whileTap={{ scale: 0.97 }}
+            style={{ borderRadius: "9999px", display: "inline-block" }}>
+            <Link href="/autocueillette"
+              className="block font-heading font-semibold px-7 py-3.5 rounded-full text-sm uppercase tracking-wider border-2"
+              style={{ borderColor: "#F4D4B0", color: "#F4D4B0" }}>
+              Autocueillette
+            </Link>
+          </motion.div>
         </div>
       </div>
     </section>

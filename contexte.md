@@ -8,15 +8,21 @@
 **Type :** Site e-commerce + panel admin
 **Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
 **Serveur local :** `npm run dev` → http://localhost:3000
-**Déploiement :** WHC (hébergement canadien) avec Node.js + PM2
-**Dernière session :** 2026-05-22
+**Déploiement :** Vercel (WHC abandonné)
+**Dernière session :** 2026-05-24
 
 ---
 
 ## 2. État d'avancement — CE QUI EST FAIT ✅
 
 ### Site public
-- [x] Toutes les sections homepage (Hero, WhyLocal, Subscriptions, Autocueillette, Fleuristes, TransformedProducts, BlogPreview, Farm, Contact)
+- [x] Homepage allégée : Hero + WhyLocal + BlogPreview (3 sections, 2 queries Supabase)
+- [x] Page `/abonnements` — section Subscriptions complète
+- [x] Page `/boutique` — Fleuristes + BranchDivider + TransformedProducts
+- [x] Page `/autocueillette` — calendrier + réservation billets
+- [x] Page `/la-ferme` — histoire + stats + CTA → /contact
+- [x] Page `/contact` — formulaire + infos
+- [x] Navbar multi-pages : vraies routes, visible immédiatement hors homepage, `hero-curtain` uniquement sur `/`
 - [x] Navbar responsive (desktop + mobile hamburger)
 - [x] Footer avec liens sociaux (Instagram, Facebook, Email)
 - [x] CartDrawer avec gestion quantités
@@ -53,6 +59,13 @@
 - [x] Jauge SVG bouquets (arc 270°) dans section Abonnements
 - [x] Navbar cachée tant que le rideau Hero est fermé (custom event `hero-curtain`)
 - [x] Navbar : animation tiroir (slide-down spring) après ouverture du rideau (délai 800ms)
+- [x] Navbar multi-pages : `usePathname()` — visible immédiatement hors `/`, `hero-curtain` ignoré hors `/`
+- [x] Couleurs Navbar : `dark = scrolled || !isHomepage` — fond blanc + liens sombres dès le chargement sur pages sans Hero
+- [x] Menu mobile : fermeture automatique au changement de route (`useEffect([pathname])`)
+- [x] Route group `(public)` — layout partagé (BotanicalLayers + Navbar + Footer + CartDrawer), toutes les pages publiques dedans sauf `/checkout` (isolé volontairement)
+- [x] Liens Hero → `/abonnements` et `/autocueillette` (ancres supprimées)
+- [x] WhyLocal : CTA "Découvrir notre ferme →" → `/la-ferme` ajouté
+- [x] Farm : `href="#contact"` → `Link href="/contact"` corrigé
 
 ### Base de données
 - [x] Migration `001_initial_schema.sql` exécutée (tables + RLS + seed)
@@ -80,7 +93,7 @@
 - [ ] **Rate limiting** — Upstash sur `/api/auth/signout`, `/api/upload`, `/checkout`
 
 ### Priorité basse
-- [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
+- [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page (metadata déjà en place sur chaque page)
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
 
 ---
@@ -183,15 +196,28 @@ FlorusPocus/
 └── src/
     ├── app/
     │   ├── globals.css              ← @theme Tailwind v4, animations
+    │   │                               section-padding = py-20 (mobile) / py-28 (desktop)
     │   ├── layout.tsx               ← root layout (fonts + CartProvider)
-    │   ├── page.tsx                 ← homepage async Server Component
+    │   ├── (public)/                ← route group — layout partagé (BotanicalLayers+Navbar+Footer+CartDrawer)
+    │   │   ├── layout.tsx           ← shell public partagé
+    │   │   ├── page.tsx             ← / homepage : Hero + WhyLocal + BlogPreview
+    │   │   ├── abonnements/
+    │   │   │   └── page.tsx         ← /abonnements — fetch subscriptions + dropoff_points
+    │   │   ├── autocueillette/
+    │   │   │   └── page.tsx         ← /autocueillette — fetch events (futures dates)
+    │   │   ├── boutique/
+    │   │   │   └── page.tsx         ← /boutique — fetch products (fleurs + transformés)
+    │   │   ├── la-ferme/
+    │   │   │   └── page.tsx         ← /la-ferme — fetch page slug=farm
+    │   │   ├── contact/
+    │   │   │   └── page.tsx         ← /contact — fetch page slug=contact
+    │   │   └── blog/
+    │   │       ├── page.tsx         ← /blog — listing magazine
+    │   │       └── [slug]/
+    │   │           ├── page.tsx     ← /blog/[slug] — article + sanitize-html
+    │   │           └── not-found.tsx
     │   ├── checkout/
-    │   │   └── page.tsx             ← formulaire client + Server Action
-    │   ├── blog/
-    │   │   ├── page.tsx             ← listing magazine
-    │   │   └── [slug]/
-    │   │       ├── page.tsx         ← article + sanitize-html
-    │   │       └── not-found.tsx
+    │   │   └── page.tsx             ← /checkout — Client Component, pas de Navbar (flow isolé)
     │   ├── api/
     │   │   ├── auth/signout/route.ts ← POST → signOut + redirect
     │   │   ├── upload/route.ts       ← upload Supabase Storage (admin only)
@@ -214,7 +240,8 @@ FlorusPocus/
     │           ├── stats/
     │           └── parametres/
     ├── components/
-    │   ├── Navbar.tsx
+    │   ├── Navbar.tsx               ← usePathname, multi-pages, dark = scrolled || !isHomepage
+    │   │                               navVisible = !isHomepage par défaut, hero-curtain ignoré hors /
     │   ├── Footer.tsx
     │   ├── CartDrawer.tsx
     │   ├── BotanicalLayers.tsx
@@ -223,14 +250,14 @@ FlorusPocus/
     │   ├── ParallaxPetals.tsx       ← max 5 mobile + reduced-motion
     │   ├── LeafTrail.tsx
     │   └── sections/
-    │       ├── Hero.tsx
-    │       ├── WhyLocal.tsx
+    │       ├── Hero.tsx             ← boutons → Link /abonnements + /autocueillette
+    │       ├── WhyLocal.tsx         ← CTA → Link /la-ferme
     │       ├── Subscriptions.tsx    ← BouquetGauge SVG (arc 270°)
     │       ├── Autocueillette.tsx
     │       ├── Fleuristes.tsx       ← FlowerPlaceholder SVG
     │       ├── TransformedProducts.tsx
     │       ├── BlogPreview.tsx
-    │       ├── Farm.tsx
+    │       ├── Farm.tsx             ← CTA → Link /contact
     │       └── Contact.tsx          ← useActionState + Server Action
     ├── context/
     │   └── CartContext.tsx          ← React Context + localStorage
@@ -304,9 +331,11 @@ export function createAdminClient() {
 ### Navbar
 - Desktop : toujours visible (pas de `opacity-0` au scroll — bug corrigé)
 - Mobile : burger toujours visible, font-size `clamp(1.25rem, 5vw, 1.75rem)`
-- Fond blanc/blur uniquement après `scrollY > 40`
-- **Cachée tant que le rideau Hero est fermé** : Hero dispatch `CustomEvent("hero-curtain", { detail: boolean })` à chaque changement de `curtainOpen`
-- Navbar écoute cet événement : délai 800ms après `true` → slide-down spring (`stiffness:120, damping:20`), retrait immédiat sur `false`
+- Fond blanc/blur uniquement après `scrollY > 40` (ou toujours sur les pages sans Hero)
+- **Sur `/` (homepage)** : cachée jusqu'à l'événement `hero-curtain` → délai 800ms → slide-down spring (`stiffness:120, damping:20`)
+- **Sur toutes les autres pages** : `navVisible = true` immédiatement, `hero-curtain` ignoré
+- Couleurs : `dark = scrolled || !isHomepage` — texte sombre + fond blanc dès le chargement hors homepage
+- Menu mobile se ferme automatiquement à chaque navigation (`useEffect([pathname])`)
 
 ### Checkout
 - Client Component (lit le CartContext)

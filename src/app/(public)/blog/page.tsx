@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import type { BlogPost } from "@/types";
 
 export const metadata = {
@@ -99,9 +97,7 @@ export default async function BlogPage() {
   const [featured, ...rest] = articles;
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen pt-24" style={{ backgroundColor: "#FAFAF8" }}>
+    <main className="min-h-screen pt-24" style={{ backgroundColor: "#FAFAF8" }}>
         {/* Header */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Link href="/#blogue"
@@ -145,8 +141,6 @@ export default async function BlogPage() {
             )}
           </div>
         )}
-      </main>
-      <Footer />
-    </>
+    </main>
   );
 }

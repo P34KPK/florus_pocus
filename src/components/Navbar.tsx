@@ -2,24 +2,39 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ShoppingBag, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 
 const navLinks = [
-  { label: "Abonnements", href: "#abonnements" },
-  { label: "Blogue",      href: "#blogue" },
-  { label: "La Ferme",    href: "#la-ferme" },
-  { label: "Événements",  href: "#autocueillette" },
-  { label: "Contact",     href: "#contact" },
+  { label: "Abonnements",    href: "/abonnements" },
+  { label: "Boutique",       href: "/boutique" },
+  { label: "Autocueillette", href: "/autocueillette" },
+  { label: "La Ferme",       href: "/la-ferme" },
+  { label: "Blogue",         href: "/blog" },
+  { label: "Contact",        href: "/contact" },
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
+  const isHomepage = pathname === "/";
+
   const { itemCount, openCart } = useCart();
-  const [scrolled,    setScrolled]   = useState(false);
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [navVisible,  setNavVisible]  = useState(false);
+  const [scrolled,   setScrolled]  = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [navVisible, setNavVisible] = useState(!isHomepage);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* Ferme le menu mobile à chaque changement de page */
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  /* Sur les pages sans Hero, la navbar est immédiatement visible */
+  useEffect(() => {
+    if (!isHomepage) setNavVisible(true);
+  }, [isHomepage]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -27,12 +42,13 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  /* Logique rideau Hero — uniquement sur la homepage */
   useEffect(() => {
+    if (!isHomepage) return;
     const onCurtain = (e: Event) => {
       const open = (e as CustomEvent<boolean>).detail;
       if (timerRef.current) clearTimeout(timerRef.current);
       if (open) {
-        /* attend la fin du spring avant d'afficher le menu */
         timerRef.current = setTimeout(() => setNavVisible(true), 800);
       } else {
         setNavVisible(false);
@@ -43,12 +59,15 @@ export default function Navbar() {
       window.removeEventListener("hero-curtain", onCurtain);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, []);
+  }, [isHomepage]);
+
+  /* Sur les pages sans Hero, on traite comme si scrolled=true pour les couleurs */
+  const dark = scrolled || !isHomepage;
 
   return (
     <motion.header
       className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
-        scrolled
+        dark
           ? "bg-white/75 backdrop-blur-xl border-b border-[#E0D5C8]/50"
           : "bg-transparent"
       }`}
@@ -61,7 +80,7 @@ export default function Navbar() {
         <Link
           href="/"
           className="font-display font-bold text-2xl leading-none"
-          style={{ color: scrolled ? "#2D5016" : "#F4D4B0" }}
+          style={{ color: dark ? "#2D5016" : "#F4D4B0" }}
         >
           Florus Pocus
         </Link>
@@ -69,24 +88,24 @@ export default function Navbar() {
         <ul className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <a
+              <Link
                 href={link.href}
                 className="relative text-sm font-medium transition-colors group"
-                style={{ color: scrolled ? "#1A1A1A" : "#F4D4B0" }}
+                style={{ color: dark ? "#1A1A1A" : "#F4D4B0" }}
               >
                 {link.label}
                 <span
                   className="absolute -bottom-0.5 left-0 w-0 h-px group-hover:w-full transition-all duration-300"
                   style={{ backgroundColor: "#D4A574" }}
                 />
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
 
         <div className="flex items-center gap-3">
           <button onClick={openCart} className="relative p-2 rounded-full transition-all hover:scale-110" aria-label="Panier">
-            <ShoppingBag size={22} style={{ color: scrolled ? "#1A1A1A" : "#fff" }} />
+            <ShoppingBag size={22} style={{ color: dark ? "#1A1A1A" : "#fff" }} />
             {itemCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center text-white"
                 style={{ backgroundColor: "#D4A574" }}>
@@ -97,8 +116,8 @@ export default function Navbar() {
 
           <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
             {mobileOpen
-              ? <X    size={22} style={{ color: scrolled ? "#1A1A1A" : "#fff" }} />
-              : <Menu size={22} style={{ color: scrolled ? "#1A1A1A" : "#fff" }} />
+              ? <X    size={22} style={{ color: dark ? "#1A1A1A" : "#fff" }} />
+              : <Menu size={22} style={{ color: dark ? "#1A1A1A" : "#fff" }} />
             }
           </button>
         </div>
@@ -128,14 +147,13 @@ export default function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.25, delay: i * 0.06 }}
                 >
-                  <a
+                  <Link
                     href={link.href}
-                    onClick={() => setMobileOpen(false)}
                     className="block py-3 font-display font-bold leading-tight transition-colors"
                     style={{ fontSize: "clamp(1.25rem, 5vw, 1.75rem)", color: "rgba(255,255,255,0.72)" }}
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </motion.li>
               ))}
             </ul>
