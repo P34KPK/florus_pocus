@@ -1,6 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight, Tag } from "lucide-react";
-import { createClient } from "@/lib/supabase-server";
+import { getPublishedBlogPosts } from "@/lib/supabase-server";
 import type { BlogPost } from "@/types";
 
 export const metadata = {
@@ -21,14 +22,15 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
     <Link href={`/blog/${post.slug}`} className="group block h-full">
       <article className={`bg-white rounded-3xl border border-[#E0D5C8] overflow-hidden h-full flex flex-col hover:shadow-xl transition-shadow duration-300 ${featured ? "lg:flex-row" : ""}`}>
         {/* Image / placeholder */}
-        <div className={`overflow-hidden flex-shrink-0 ${featured ? "lg:w-2/5 aspect-[4/3] lg:aspect-auto" : "aspect-[16/10]"}`}
+        <div className={`relative overflow-hidden flex-shrink-0 ${featured ? "lg:w-2/5 aspect-[4/3] lg:aspect-auto" : "aspect-[16/10]"}`}
           style={{ backgroundColor: "#1a3009" }}>
           {post.featured_image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={post.featured_image_url}
               alt={post.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fill
+              sizes={featured ? "(max-width: 1024px) 100vw, 40vw" : "(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"}
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <svg viewBox="0 0 600 375" className="w-full h-full" style={{ opacity: 0.12 }}>
@@ -86,14 +88,8 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
 }
 
 export default async function BlogPage() {
-  const supabase = await createClient();
-  const { data: posts } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .eq("published", true)
-    .order("published_date", { ascending: false });
-
-  const articles: BlogPost[] = posts ?? [];
+  const posts = await getPublishedBlogPosts();
+  const articles: BlogPost[] = posts as BlogPost[];
   const [featured, ...rest] = articles;
 
   return (

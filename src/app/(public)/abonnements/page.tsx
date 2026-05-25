@@ -1,4 +1,4 @@
-import { createClient }  from "@/lib/supabase-server";
+import { getActiveSubscriptions } from "@/lib/supabase-server";
 import Subscriptions    from "@/components/sections/Subscriptions";
 import type { Subscription } from "@/types";
 
@@ -8,13 +8,7 @@ export const metadata = {
 };
 
 export default async function AbonnementsPage() {
-  const supabase = await createClient();
-
-  const { data: subscriptions } = await supabase
-    .from("subscriptions")
-    .select("*, dropoff_points:subscription_dropoff_points(*)")
-    .eq("active", true)
-    .order("price_monthly", { ascending: true });
+  const subscriptions = await getActiveSubscriptions();
 
   return (
     <main className="pt-16">

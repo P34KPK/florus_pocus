@@ -1,4 +1,4 @@
-import { createClient }  from "@/lib/supabase-server";
+import { getPublishedPage } from "@/lib/supabase-server";
 import Farm             from "@/components/sections/Farm";
 
 export const metadata = {
@@ -7,18 +7,11 @@ export const metadata = {
 };
 
 export default async function LaFermePage() {
-  const supabase = await createClient();
-
-  const { data: page } = await supabase
-    .from("pages")
-    .select("*")
-    .eq("slug", "farm")
-    .eq("published", true)
-    .single();
+  const page = await getPublishedPage("farm");
 
   return (
     <main className="pt-16">
-      <Farm page={page ?? null} />
+      <Farm page={page} />
     </main>
   );
 }

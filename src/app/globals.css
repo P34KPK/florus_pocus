@@ -92,6 +92,27 @@ h1, h2, h3, h4, h5, h6 {
   .section-padding { padding-top: 7rem; padding-bottom: 7rem; }
 }
 
+/* ── BotanicalLayers — CSS-only parallax (GPU composite layer) ─ */
+@keyframes botanical-float-1 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(22px); }
+}
+@keyframes botanical-float-2 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(15px); }
+}
+.botanical-leaf-1 {
+  animation: botanical-float-1 20s ease-in-out infinite;
+  will-change: transform;
+}
+.botanical-leaf-2 {
+  animation: botanical-float-2 26s ease-in-out infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .botanical-leaf-1, .botanical-leaf-2 { animation: none; }
+}
+
 /* ── Rich text content ─────────────────────────────────────── */
 .prose-farm p      { margin-bottom: 1rem; line-height: 1.75; }
 .prose-farm h2     { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: #2D5016; }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import { X, Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
@@ -62,9 +63,9 @@ export default function CartDrawer() {
             items.map((item) => (
               <div key={item.cartId} className="flex gap-4 bg-white rounded-xl p-4 shadow-sm border border-border">
                 {/* Image */}
-                <div className="w-16 h-16 rounded-lg flex-shrink-0 overflow-hidden relative" style={{ backgroundColor: "#F4D4B0" }}>
+                <div className="relative w-16 h-16 rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: "#F4D4B0" }}>
                   {item.imageUrl
-                    ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    ? <Image src={item.imageUrl} alt={item.name} fill sizes="64px" className="object-cover" />
                     : <div className="w-full h-full flex items-center justify-center">
                         <svg viewBox="0 0 60 60" width="32" height="32" aria-hidden>
                           {[0,72,144,216,288].map((deg) => (

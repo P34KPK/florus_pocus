@@ -64,7 +64,7 @@ export default function Autocueillette({ events }: AutocueilletteProps) {
   }
 
   return (
-    <section id="autocueillette" className="section-padding relative" style={{ backgroundColor: "rgba(250,250,248,0.80)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+    <section id="autocueillette" className="section-padding relative" style={{ backgroundColor: "#FAFAF8", zIndex: 2 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] mb-3" style={{ color: "#D4A574" }}>

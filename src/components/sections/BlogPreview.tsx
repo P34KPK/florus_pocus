@@ -135,7 +135,7 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
   const [featured, ...rest] = articles;
 
   return (
-    <section id="blogue" className="section-padding relative" style={{ backgroundColor: "rgba(240,245,236,0.82)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+    <section id="blogue" className="section-padding relative" style={{ backgroundColor: "#F0F5EC", zIndex: 2 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">

@@ -63,7 +63,7 @@ export default function WhyLocal({ page }: WhyLocalProps) {
 
   return (
     <section ref={ref} id="pourquoi-local" className="section-padding relative overflow-hidden"
-      style={{ backgroundColor: "rgba(250,250,248,0.80)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+      style={{ backgroundColor: "#FAFAF8", zIndex: 2 }}>
 
       {/* Tige botanique — ancrée au bas de la section, côté texte */}
       <div className="absolute bottom-0 left-4 pointer-events-none" style={{ zIndex: 0 }}>

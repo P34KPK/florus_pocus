@@ -77,7 +77,7 @@ export default function TransformedProducts({ products }: TransformedProductsPro
   const items = (products && products.length > 0) ? products : PLACEHOLDER_TRANSFORMES;
 
   return (
-    <section id="produits-transformes" className="section-padding relative" style={{ backgroundColor: "rgba(253,245,236,0.82)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+    <section id="produits-transformes" className="section-padding relative" style={{ backgroundColor: "#FDF5EC", zIndex: 2 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] mb-3" style={{ color: "#2D5016" }}>

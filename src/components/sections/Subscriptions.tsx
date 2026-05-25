@@ -230,7 +230,7 @@ export default function Subscriptions({ subscriptions }: SubscriptionsProps) {
 
   return (
     <section ref={ref} id="abonnements" className="section-padding relative overflow-hidden"
-      style={{ backgroundColor: "rgba(10,21,4,0.88)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+      style={{ backgroundColor: "#0a1504", zIndex: 2 }}>
 
       <motion.div
         className="absolute inset-0 pointer-events-none"

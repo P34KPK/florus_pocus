@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, User, Tag } from "lucide-react";
 import Image from "next/image";
 import sanitizeHtml from "sanitize-html";
-import { createClient } from "@/lib/supabase-server";
+import { getBlogPost, getPublishedBlogPosts } from "@/lib/supabase-server";
 import type { Metadata } from "next";
 
 const ALLOWED_HTML: sanitizeHtml.IOptions = {
@@ -15,15 +16,12 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+/* Mémoïsé par requête — partagé entre generateMetadata et le composant */
+const getPost = cache(async (slug: string) => getBlogPost(slug));
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data: post } = await supabase
-    .from("blog_posts")
-    .select("title, excerpt, featured_image_url")
-    .eq("slug", slug)
-    .eq("published", true)
-    .single();
+  const post = await getPost(slug);
 
   if (!post) return { title: "Article introuvable" };
 
@@ -40,14 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
-
-  const { data: post } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .eq("slug", slug)
-    .eq("published", true)
-    .single();
+  const [post, allPosts] = await Promise.all([
+    getPost(slug),
+    getPublishedBlogPosts(),
+  ]);
 
   if (!post) notFound();
 
@@ -59,14 +53,9 @@ export default async function BlogPostPage({ params }: Props) {
       })
     : null;
 
-  // Articles connexes (autres articles publiés, hors celui-ci)
-  const { data: related } = await supabase
-    .from("blog_posts")
-    .select("id, title, slug, excerpt, published_date, tags, featured_image_url")
-    .eq("published", true)
-    .neq("slug", slug)
-    .order("published_date", { ascending: false })
-    .limit(3);
+  const related = (allPosts as typeof post[])
+    .filter((p) => p.slug !== slug)
+    .slice(0, 3);
 
   return (
     <main className="min-h-screen pt-24" style={{ backgroundColor: "#FAFAF8" }}>
@@ -82,13 +71,15 @@ export default async function BlogPostPage({ params }: Props) {
 
         {/* Image hero de l'article */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-          <div className="rounded-3xl overflow-hidden aspect-[21/9]" style={{ backgroundColor: "#1a3009" }}>
+          <div className="relative rounded-3xl overflow-hidden aspect-[21/9]" style={{ backgroundColor: "#1a3009" }}>
             {post.featured_image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={post.featured_image_url}
                 alt={post.title}
-                className="w-full h-full object-cover"
+                fill
+                priority
+                sizes="(max-width: 1280px) 100vw, 1280px"
+                className="object-cover"
               />
             ) : (
               <svg viewBox="0 0 1200 514" className="w-full h-full" style={{ opacity: 0.1 }}>

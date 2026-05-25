@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  experimental: {
+    optimizePackageImports: ["framer-motion", "lucide-react"],
+  },
+
   async headers() {
     return [
       {
@@ -18,13 +22,19 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.squareupsandbox.com https://js.squareup.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self'",
               "img-src 'self' data: blob: https://*.supabase.co",
               "connect-src 'self' https://*.supabase.co https://connect.squareupsandbox.com https://connect.squareup.com",
               "frame-src https://js.squareupsandbox.com https://js.squareup.com",
             ].join("; "),
           },
+        ],
+      },
+      {
+        source: "/images/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
     ];
@@ -34,6 +44,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
     ],
+    formats: ["image/avif", "image/webp"],
   },
 };
 

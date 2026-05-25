@@ -50,7 +50,7 @@ export default function BranchDivider() {
     <div
       ref={ref}
       aria-hidden="true"
-      style={{ position: "relative", height: 180, overflow: "hidden", zIndex: 2, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", backgroundColor: "rgba(250,250,248,0.80)" }}
+      style={{ position: "relative", height: 180, overflow: "hidden", zIndex: 2, backgroundColor: "#FAFAF8" }}
     >
       <motion.div
         style={{

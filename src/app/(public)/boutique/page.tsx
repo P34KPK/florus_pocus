@@ -1,4 +1,4 @@
-import { createClient }      from "@/lib/supabase-server";
+import { getActiveProducts }    from "@/lib/supabase-server";
 import BranchDivider        from "@/components/BranchDivider";
 import Fleuristes           from "@/components/sections/Fleuristes";
 import TransformedProducts  from "@/components/sections/TransformedProducts";
@@ -10,16 +10,10 @@ export const metadata = {
 };
 
 export default async function BoutiquePage() {
-  const supabase = await createClient();
+  const products = (await getActiveProducts()) as Product[];
 
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .eq("active", true)
-    .order("name");
-
-  const fleurs      = (products ?? []).filter((p: Product) => p.category === "fleur");
-  const transformes = (products ?? []).filter((p: Product) => p.category === "transforme");
+  const fleurs      = products.filter((p) => p.category === "fleur");
+  const transformes = products.filter((p) => p.category === "transforme");
 
   return (
     <main className="pt-16">

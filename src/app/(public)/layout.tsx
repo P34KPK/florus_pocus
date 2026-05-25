@@ -1,7 +1,7 @@
-import Navbar          from "@/components/Navbar";
-import Footer          from "@/components/Footer";
-import CartDrawer      from "@/components/CartDrawer";
-import BotanicalLayers from "@/components/BotanicalLayers";
+import Navbar            from "@/components/Navbar";
+import Footer            from "@/components/Footer";
+import BotanicalLayers   from "@/components/BotanicalLayers";
+import ClientCartDrawer  from "@/components/ClientCartDrawer";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +10,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <Navbar />
       {children}
       <Footer />
-      <CartDrawer />
+      <ClientCartDrawer />
     </>
   );
 }

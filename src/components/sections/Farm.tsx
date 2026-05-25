@@ -30,7 +30,7 @@ export default function Farm({ page }: FarmProps) {
 
   return (
     <section ref={ref} id="la-ferme" className="section-padding relative overflow-hidden"
-      style={{ backgroundColor: "rgba(250,250,248,0.80)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+      style={{ backgroundColor: "#FAFAF8", zIndex: 2 }}>
 
       {/* Tige botanique — côté droit, bas de section */}
       <div className="absolute bottom-0 right-4 pointer-events-none" style={{ zIndex: 0 }}>

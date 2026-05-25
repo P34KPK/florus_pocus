@@ -25,7 +25,7 @@ export default function Contact({ page }: ContactProps) {
 
   return (
     <section id="contact" className="section-padding relative overflow-hidden"
-      style={{ backgroundColor: "rgba(26,48,9,0.88)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+      style={{ backgroundColor: "#1a3009", zIndex: 2 }}>
 
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: "radial-gradient(ellipse 70% 50% at 80% 100%, rgba(212,165,116,0.12) 0%, transparent 60%)" }} />

@@ -131,7 +131,7 @@ export default function Fleuristes({ products }: FleuristesProps) {
   const filtered = season === "all" ? fleurs : fleurs.filter((p) => p.season === season);
 
   return (
-    <section id="boutique-fleurs" className="section-padding relative" style={{ backgroundColor: "rgba(250,250,248,0.80)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 2 }}>
+    <section id="boutique-fleurs" className="section-padding relative" style={{ backgroundColor: "#FAFAF8", zIndex: 2 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
           <div>

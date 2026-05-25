@@ -1,4 +1,4 @@
-import { createClient }  from "@/lib/supabase-server";
+import { getPublishedPage } from "@/lib/supabase-server";
 import Contact          from "@/components/sections/Contact";
 
 export const metadata = {
@@ -7,18 +7,11 @@ export const metadata = {
 };
 
 export default async function ContactPage() {
-  const supabase = await createClient();
-
-  const { data: page } = await supabase
-    .from("pages")
-    .select("*")
-    .eq("slug", "contact")
-    .eq("published", true)
-    .single();
+  const page = await getPublishedPage("contact");
 
   return (
     <main className="pt-16">
-      <Contact page={page ?? null} />
+      <Contact page={page} />
     </main>
   );
 }
