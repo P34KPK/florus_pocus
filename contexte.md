@@ -9,7 +9,7 @@
 **Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (WHC abandonné)
-**Dernière session :** 2026-05-24
+**Dernière session :** 2026-05-25
 
 ---
 
@@ -77,15 +77,20 @@
 ## 3. CE QUI RESTE À FAIRE 🔲
 
 ### Priorité haute
-- [ ] **Déploiement Vercel** ← NOUVEAU PLAN (WHC abandonné)
-  - Repo GitHub : https://github.com/P34KPK/florus_pocus.git ✅ (pushé 2026-05-22)
-  - Étape suivante : vercel.com → "Add New Project" → importer `P34KPK/florus_pocus`
-  - Ajouter les variables d'env dans le dashboard Vercel (voir section 9)
-  - Connecter domaine `floruspocus.ca` (Cloudflare DNS → mode "DNS only" / nuage gris)
-  - Après déploiement : ajouter `https://floruspocus.ca` dans Supabase Auth URL Configuration
-- [ ] **Square paiement** — en attente des credentials du client
+- [x] **Déploiement Vercel** ✅ (2026-05-25)
+  - Repo GitHub pushé : https://github.com/P34KPK/florus_pocus.git
+  - Projet importé sur Vercel (compte client FlorusPocus Pro)
+  - Variables d'env configurées dans le dashboard Vercel
+  - Build réussi ✅
+  - ⏳ Connecter domaine `floruspocus.ca` (Vercel Settings → Domains)
+  - ⏳ DNS Cloudflare : A `@` → `76.76.21.21` + CNAME `www` → `cname.vercel-dns.com` (nuage GRIS)
+  - ⏳ Supabase Auth URL → `https://floruspocus.ca` après domaine actif
+- [ ] **Square paiement** ← PRIORITÉ SUIVANTE
+  - En attente des credentials du client (Sandbox + Production)
   - Square Web Payments SDK sur `/checkout`
-  - Webhook pour confirmer paiements
+  - API Route `/api/square/payment` pour traiter les paiements
+  - Webhook `/api/square/webhook` pour confirmer les paiements
+  - Mettre à jour `NEXT_PUBLIC_SQUARE_APP_ID` + `SQUARE_SECRET_API_KEY` dans Vercel env vars
 
 ### Priorité moyenne
 - [ ] **Emails de confirmation** — après achat / inscription abonnement
@@ -358,32 +363,24 @@ export function createAdminClient() {
 
 ## 9. Déploiement — Vercel + Cloudflare DNS
 
-> WHC abandonné. Nouvelle stratégie : Vercel (gratuit) + domaine Cloudflare.
+> WHC abandonné. Déployé sur Vercel (compte Pro client FlorusPocus) — 2026-05-25.
 
 ### Repo GitHub
 - URL : https://github.com/P34KPK/florus_pocus.git
 - Branch : `main`
-- Pushé le 2026-05-22 (87 fichiers, tout le site)
+- Dernier push : 2026-05-25 (restructuration route group `(public)` + migrations Supabase)
 
-### Étapes Vercel (à compléter)
-1. vercel.com → "Add New Project" → importer `P34KPK/florus_pocus`
-2. Framework : Next.js (auto-détecté, ne pas changer)
-3. Ajouter les variables d'environnement (voir ci-dessous)
-4. Cliquer "Deploy" → URL temporaire `floruspocus.vercel.app`
-5. Settings → Domains → ajouter `floruspocus.ca`
+### Statut déploiement
+- [x] Repo GitHub créé et pushé
+- [x] Projet importé sur Vercel (compte FlorusPocus Pro)
+- [x] Variables d'env ajoutées sur Vercel
+- [x] Premier build réussi ✅
+- [ ] Domaine `floruspocus.ca` connecté sur Vercel (Settings → Domains)
+- [ ] DNS Cloudflare configuré (nuage gris)
+- [ ] SSL actif (auto via Vercel)
+- [ ] Supabase Auth URL mise à jour → `https://floruspocus.ca`
 
-### Variables d'env dans le dashboard Vercel
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_SQUARE_APP_ID=          ← laisser vide pour l'instant
-NEXT_PUBLIC_SITE_URL=https://floruspocus.ca
-SUPABASE_SERVICE_ROLE_KEY=
-SQUARE_SECRET_API_KEY=              ← laisser vide pour l'instant
-NODE_ENV=production
-```
-
-### DNS Cloudflare (après déploiement Vercel)
+### DNS Cloudflare — à faire
 | Type | Nom | Valeur | Proxy |
 |------|-----|--------|-------|
 | A | `@` | `76.76.21.21` | Nuage GRIS (DNS only) |
@@ -391,27 +388,28 @@ NODE_ENV=production
 
 **Important :** proxy Cloudflare = OFF (nuage gris) — Vercel gère lui-même SSL/CDN.
 
-### Supabase après déploiement
-Aller dans Supabase → Authentication → URL Configuration :
+### Supabase après domaine actif
+Supabase → Authentication → URL Configuration :
 - Site URL : `https://floruspocus.ca`
 - Redirect URLs : `https://floruspocus.ca/**`
+
+### Variables d'env Vercel (déjà configurées)
+```
+NEXT_PUBLIC_SUPABASE_URL=https://msxyptzedflnfbtbvrwi.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[configurée]
+SUPABASE_SERVICE_ROLE_KEY=[configurée]
+NEXT_PUBLIC_SITE_URL=https://floruspocus.ca
+NEXT_PUBLIC_SQUARE_APP_ID=          ← vide, à ajouter quand Square prêt
+SQUARE_SECRET_API_KEY=              ← vide, à ajouter quand Square prêt
+NODE_ENV=production
+```
 
 ### Coûts
 | Service | Plan | Coût |
 |---------|------|------|
-| Vercel | Hobby | Gratuit |
+| Vercel | Pro | Compte client |
 | Supabase | Free | Gratuit |
 | Cloudflare | Free | Gratuit |
-
-### Statut déploiement
-- [x] Repo GitHub créé et pushé
-- [ ] Projet importé sur Vercel
-- [ ] Variables d'env ajoutées sur Vercel
-- [ ] Premier build réussi
-- [ ] Domaine `floruspocus.ca` connecté sur Vercel
-- [ ] DNS Cloudflare configuré (nuage gris)
-- [ ] SSL actif (auto via Vercel)
-- [ ] Supabase Auth URL mise à jour
 
 ### Checklist avant mise en production
 - [ ] `npm audit` = 0 critiques
