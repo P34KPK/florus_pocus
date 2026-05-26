@@ -3,9 +3,18 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { unstable_cache } from "next/cache";
 
+function extractJwt(raw: string): string {
+  const clean = raw.replace(/\s+/g, "");
+  const parts = clean.split(".");
+  // Clé doublée → 5 segments : Header1.Payload1.PartialSig+Header2.Payload2.FullSig2
+  // Reconstruction : prendre parts[0].parts[1].parts[4]
+  if (parts.length === 5) return `${parts[0]}.${parts[1]}.${parts[4]}`;
+  return clean;
+}
+
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!.trim();
-const ANON_KEY      = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.replace(/\s+/g, "");
-const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY!.replace(/\s+/g, "");
+const ANON_KEY      = extractJwt(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+const SERVICE_KEY   = extractJwt(process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export async function createClient() {
   const cookieStore = await cookies();
