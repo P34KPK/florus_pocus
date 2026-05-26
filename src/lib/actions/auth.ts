@@ -32,8 +32,8 @@ export async function loginAdmin(_prev: LoginState, formData: FormData): Promise
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/users?id=eq.${user.id}&select=is_admin`,
     {
       headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!.replace(/\s+/g, ""),
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!.replace(/\s+/g, "")}`,
       },
       cache: "no-store",
     }
