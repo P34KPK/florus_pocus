@@ -8,7 +8,7 @@
 **Type :** Site e-commerce + panel admin
 **Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
 **Serveur local :** `npm run dev` → http://localhost:3000
-**Déploiement :** Vercel (WHC abandonné)
+**Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Dernière session :** 2026-05-25
 
 ---
@@ -45,6 +45,28 @@
 - [x] `/admin/parametres` — configuration générale
 - [x] Upload d'images (Supabase Storage, bucket `floruspocus`)
 
+### Performance (optimisations 2026-05-25)
+- [x] `next.config.ts` : `optimizePackageImports` (framer-motion, lucide-react), format AVIF, cache 1 an `/images/`
+- [x] Fonts : Cormorant weights 300+400+700 (normal seulement), DM Sans 400/500/600/700, Inter 400/500/600
+- [x] `BotanicalLayers.tsx` → Server Component pur (retiré Framer Motion + useScroll + useTransform, animations CSS pures `@keyframes botanical-float-1/2`)
+- [x] `ClientCartDrawer.tsx` (nouveau) → wrapper `"use client"` + `dynamic(ssr: false)` pour CartDrawer — requis par Turbopack
+- [x] `Hero.tsx` : particules réduites de 60 → 20 (10 gauche + 10 droite)
+- [x] `supabase-server.ts` : `createPublicClient()` sans cookies + 7 helpers `unstable_cache` (revalidate 3600, tags par table)
+- [x] Toutes les pages publiques : passées en `○ Static` avec revalidation 1h via les helpers cachés
+- [x] 10 sections : suppression `backdropFilter: blur(24px)` → fonds semi-transparents solides (GPU)
+- [x] Blog + CartDrawer : `<img>` → `<Image>` Next.js avec `fill` + `sizes`
+- [x] `globals.css` : `will-change: transform` sur les layers botaniques, `prefers-reduced-motion` respecté
+
+### Design & UI (2026-05-25)
+- [x] **Typographie Cormorant Garamond** sur tout le site : bold (700) pour titres, thin (300) pour textes de corps
+  - `--font-heading`, `--font-body`, `--font-display` tous → Cormorant Garamond
+  - `--font-ui` → DM Sans (gardé pour éléments UI si besoin)
+  - `body { font-weight: 300 }` / `h1-h6 { font-weight: 700 }`
+- [x] **Logo SVG** dans la navbar : `/public/florus_pocus_logo.svg` (copié depuis `IMG/`)
+  - Filtre CSS : `brightness(0) invert(1)` sur le Hero (fond sombre), aucun filtre ailleurs
+  - Dimensions : 160×36px dans le Navbar
+- [x] **WhyLocal** : espace insécable (` `) avant `?` dans le titre — le `?` ne passe plus à la ligne
+
 ### Sécurité & bugs corrigés
 - [x] `dangerouslySetInnerHTML` → sanitize-html (blog)
 - [x] Formulaire contact → Server Action + Supabase (table `contact_messages`)
@@ -77,14 +99,10 @@
 ## 3. CE QUI RESTE À FAIRE 🔲
 
 ### Priorité haute
-- [x] **Déploiement Vercel** ✅ (2026-05-25)
-  - Repo GitHub pushé : https://github.com/P34KPK/florus_pocus.git
-  - Projet importé sur Vercel (compte client FlorusPocus Pro)
-  - Variables d'env configurées dans le dashboard Vercel
-  - Build réussi ✅
-  - ⏳ Connecter domaine `floruspocus.ca` (Vercel Settings → Domains)
-  - ⏳ DNS Cloudflare : A `@` → `76.76.21.21` + CNAME `www` → `cname.vercel-dns.com` (nuage GRIS)
-  - ⏳ Supabase Auth URL → `https://floruspocus.ca` après domaine actif
+- [ ] **Connecter domaine `floruspocus.ca`**
+  - Vercel → florus-pocus → Settings → Domains → ajouter `floruspocus.ca`
+  - DNS Cloudflare : A `@` → `76.76.21.21` + CNAME `www` → `cname.vercel-dns.com` (nuage GRIS)
+  - Supabase Auth URL → `https://floruspocus.ca` après domaine actif
 - [ ] **Square paiement** ← PRIORITÉ SUIVANTE
   - En attente des credentials du client (Sandbox + Production)
   - Square Web Payments SDK sur `/checkout`
@@ -115,14 +133,14 @@
 ### Variables d'environnement
 ```
 # PUBLIC (visibles côté client)
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_SQUARE_APP_ID=
+NEXT_PUBLIC_SUPABASE_URL=https://msxyptzedflnfbtbvrwi.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[voir .env.local]
+NEXT_PUBLIC_SQUARE_APP_ID=placeholder   ← à remplacer quand Square prêt
 NEXT_PUBLIC_SITE_URL=https://floruspocus.ca
 
 # SERVEUR UNIQUEMENT
-SUPABASE_SERVICE_ROLE_KEY=
-SQUARE_SECRET_API_KEY=
+SUPABASE_SERVICE_ROLE_KEY=[voir .env.local]
+SQUARE_SECRET_API_KEY=placeholder       ← à remplacer quand Square prêt
 ```
 
 ### Supabase RLS
@@ -164,20 +182,29 @@ Dark Farm:   #1a3009  (Vert forêt — contact)
 Dark Sub:    #0a1504  (Vert nuit — section abonnements)
 ```
 
-### Typographie — 3 polices
+### Typographie — Cormorant Garamond partout
 | Variable CSS | Police | Usage |
 |---|---|---|
-| `--font-heading` / `font-heading` | **DM Sans** | Titres de section, boutons, labels |
-| `--font-body` / `font-body` | **Inter** | Corps de texte, paragraphes |
-| `--font-display` / `font-display` | **Cormorant Garamond** | Grands titres hero, prix, titres éditoriaux |
+| `--font-heading` | **Cormorant Garamond 700** | Titres h1–h6 |
+| `--font-body` | **Cormorant Garamond 300** | Corps de texte, paragraphes |
+| `--font-display` | **Cormorant Garamond** | Grands titres hero, prix, éditorial |
+| `--font-ui` | **DM Sans** | Disponible si besoin pour UI |
 
-- Cormorant chargé via `next/font/google`, weights 400/500/600/700, normal (PAS italic)
+- `body { font-weight: 300 }` — textes fins
+- `h1, h2, h3, h4, h5, h6 { font-weight: 700 }` — titres gras
+- Weights chargés via `next/font/google` : `["300", "400", "700"]`, normal seulement
 - Tailles : H1 hero `clamp(2.8rem, 8vw, 6.5rem)` | H2 sections `clamp(2.4rem, 5vw, 4rem)` | Body `1rem`
+
+### Logo
+- Fichier : `/public/florus_pocus_logo.svg` (copié depuis `IMG/florus_pocus_logo.svg`)
+- Couleur SVG : `#2F4F3E` (vert foncé fixe)
+- Navbar : `filter: none` sur fond clair, `brightness(0) invert(1)` sur Hero (fond sombre)
+- Dimensions dans Navbar : 160×36px
 
 ### Z-index hierarchy
 ```
 BotanicalLayers (fixed) : z-index 1
-Toutes les sections     : z-index 2  (backdrop-filter blur 24px)
+Toutes les sections     : z-index 2
 BranchDivider           : z-index 2
 Navbar / CartDrawer     : z-index 50
 ```
@@ -191,7 +218,7 @@ FlorusPocus/
 ├── .env.local                   ← secrets locaux (JAMAIS commiter)
 ├── .env.example                 ← template sans valeurs
 ├── .gitignore
-├── next.config.ts               ← headers sécurité, remotePatterns Supabase
+├── next.config.ts               ← headers sécurité, remotePatterns Supabase, optimizePackageImports
 ├── contexte.md                  ← CE FICHIER — point de reprise
 ├── supabase/
 │   └── migrations/
@@ -200,90 +227,81 @@ FlorusPocus/
 │       └── 003_contact_messages.sql ← table contact_messages
 └── src/
     ├── app/
-    │   ├── globals.css              ← @theme Tailwind v4, animations
-    │   │                               section-padding = py-20 (mobile) / py-28 (desktop)
-    │   ├── layout.tsx               ← root layout (fonts + CartProvider)
-    │   ├── (public)/                ← route group — layout partagé (BotanicalLayers+Navbar+Footer+CartDrawer)
-    │   │   ├── layout.tsx           ← shell public partagé
+    │   ├── globals.css              ← @theme Tailwind v4, animations, botanical-float CSS
+    │   ├── layout.tsx               ← root layout (fonts Cormorant 300/400/700 + CartProvider)
+    │   ├── (public)/                ← route group — layout partagé
+    │   │   ├── layout.tsx           ← BotanicalLayers + Navbar + Footer + ClientCartDrawer
     │   │   ├── page.tsx             ← / homepage : Hero + WhyLocal + BlogPreview
-    │   │   ├── abonnements/
-    │   │   │   └── page.tsx         ← /abonnements — fetch subscriptions + dropoff_points
-    │   │   ├── autocueillette/
-    │   │   │   └── page.tsx         ← /autocueillette — fetch events (futures dates)
-    │   │   ├── boutique/
-    │   │   │   └── page.tsx         ← /boutique — fetch products (fleurs + transformés)
-    │   │   ├── la-ferme/
-    │   │   │   └── page.tsx         ← /la-ferme — fetch page slug=farm
-    │   │   ├── contact/
-    │   │   │   └── page.tsx         ← /contact — fetch page slug=contact
+    │   │   ├── abonnements/page.tsx ← getActiveSubscriptions()
+    │   │   ├── autocueillette/page.tsx ← getUpcomingEvents()
+    │   │   ├── boutique/page.tsx    ← getActiveProducts()
+    │   │   ├── la-ferme/page.tsx    ← getPublishedPage("farm")
+    │   │   ├── contact/page.tsx     ← getPublishedPage("contact")
     │   │   └── blog/
-    │   │       ├── page.tsx         ← /blog — listing magazine
+    │   │       ├── page.tsx         ← getPublishedBlogPosts()
     │   │       └── [slug]/
-    │   │           ├── page.tsx     ← /blog/[slug] — article + sanitize-html
+    │   │           ├── page.tsx     ← getBlogPost(slug) + cache() React
     │   │           └── not-found.tsx
-    │   ├── checkout/
-    │   │   └── page.tsx             ← /checkout — Client Component, pas de Navbar (flow isolé)
+    │   ├── checkout/page.tsx        ← Client Component, flow isolé
     │   ├── api/
-    │   │   ├── auth/signout/route.ts ← POST → signOut + redirect
-    │   │   ├── upload/route.ts       ← upload Supabase Storage (admin only)
+    │   │   ├── auth/signout/route.ts
+    │   │   ├── upload/route.ts
     │   │   ├── pages/route.ts
     │   │   ├── products/route.ts
     │   │   ├── subscriptions/route.ts
     │   │   ├── events/route.ts
     │   │   └── blog/route.ts
-    │   └── admin/
-    │       ├── login/page.tsx
-    │       └── (protected)/
-    │           ├── layout.tsx        ← auth check + sidebar
-    │           ├── page.tsx          ← dashboard (vraies données)
-    │           ├── produits/
-    │           ├── abonnements/
-    │           ├── autocueillette/
-    │           ├── pages/
-    │           ├── blog/
-    │           ├── commandes/
-    │           ├── stats/
-    │           └── parametres/
+    │   └── admin/...
     ├── components/
-    │   ├── Navbar.tsx               ← usePathname, multi-pages, dark = scrolled || !isHomepage
-    │   │                               navVisible = !isHomepage par défaut, hero-curtain ignoré hors /
-    │   ├── Footer.tsx
+    │   ├── Navbar.tsx               ← Logo SVG 160×36, filtre CSS dark/light
+    │   ├── ClientCartDrawer.tsx     ← "use client" + dynamic(ssr:false) — requis Turbopack
     │   ├── CartDrawer.tsx
-    │   ├── BotanicalLayers.tsx
+    │   ├── BotanicalLayers.tsx      ← Server Component pur, animations CSS (plus de Framer Motion)
+    │   ├── Footer.tsx
     │   ├── BranchDivider.tsx
     │   ├── GrowingStem.tsx
     │   ├── ParallaxPetals.tsx       ← max 5 mobile + reduced-motion
     │   ├── LeafTrail.tsx
     │   └── sections/
-    │       ├── Hero.tsx             ← boutons → Link /abonnements + /autocueillette
-    │       ├── WhyLocal.tsx         ← CTA → Link /la-ferme
-    │       ├── Subscriptions.tsx    ← BouquetGauge SVG (arc 270°)
+    │       ├── Hero.tsx             ← 20 particules (réduit de 60)
+    │       ├── WhyLocal.tsx         ←   avant ? dans le titre
+    │       ├── Subscriptions.tsx
     │       ├── Autocueillette.tsx
-    │       ├── Fleuristes.tsx       ← FlowerPlaceholder SVG
+    │       ├── Fleuristes.tsx
     │       ├── TransformedProducts.tsx
     │       ├── BlogPreview.tsx
-    │       ├── Farm.tsx             ← CTA → Link /contact
-    │       └── Contact.tsx          ← useActionState + Server Action
-    ├── context/
-    │   └── CartContext.tsx          ← React Context + localStorage
+    │       ├── Farm.tsx
+    │       └── Contact.tsx
+    ├── context/CartContext.tsx
     ├── lib/
-    │   ├── supabase-server.ts       ← createClient + createAdminClient
-    │   └── actions/
-    │       ├── auth.ts              ← loginAdmin Server Action
-    │       ├── contact.ts           ← sendContactMessage Server Action
-    │       ├── checkout.ts          ← createOrder Server Action
-    │       ├── pages.ts
-    │       ├── products.ts
-    │       ├── blog.ts
-    │       ├── subscriptions.ts
-    │       └── events.ts
-    └── types/
-        └── index.ts
+    │   ├── supabase-server.ts       ← createClient + createPublicClient + createAdminClient
+    │   │                               + 7 helpers unstable_cache (revalidate:3600, tags)
+    │   └── actions/...
+    └── types/index.ts
 ```
 
 ---
 
-## 7. Base de données (Supabase PostgreSQL)
+## 7. supabase-server.ts — Helpers cachés
+
+```ts
+// createClient()       → @supabase/ssr → cookies → session utilisateur
+// createPublicClient() → @supabase/supabase-js → pas de cookies → compatible cache Next.js
+// createAdminClient()  → service role → bypass RLS
+
+// Helpers unstable_cache (revalidate: 3600, tags pour invalidation):
+getPublishedPages()           → tags: ["pages"]
+getPublishedBlogPosts(limit?) → tags: ["blog_posts"]
+getBlogPost(slug)             → tags: ["blog_posts"]
+getPublishedPage(slug)        → tags: ["pages"]
+getActiveSubscriptions()      → tags: ["subscriptions"]
+getActiveProducts()           → tags: ["products"]
+getUpcomingEvents()           → tags: ["events"]
+```
+
+---
+
+## 8. Base de données (Supabase PostgreSQL)
 
 ### Tables et RLS
 
@@ -307,18 +325,21 @@ FlorusPocus/
 
 ---
 
-## 8. Notes techniques critiques
+## 9. Notes techniques critiques
+
+### Turbopack — `dynamic(ssr: false)` doit être dans un Client Component
+`dynamic(() => import(...), { ssr: false })` n'est pas autorisé dans un Server Component avec Turbopack.
+Solution : wrapper `"use client"` → c'est le rôle de `ClientCartDrawer.tsx`.
+
+### BotanicalLayers — Server Component pur
+Retiré tout Framer Motion. Animations via `@keyframes botanical-float-1/2` dans `globals.css`.
+Classes CSS : `botanical-leaf-1`, `botanical-leaf-2` avec `will-change: transform`.
 
 ### supabase-server.ts — IMPORTANT
 ```ts
-// createClient() → @supabase/ssr → lit les cookies → session utilisateur
-// createAdminClient() → @supabase/supabase-js → service role → bypass RLS
-// NE PAS utiliser createServerClient() avec service_role_key → cause infinite recursion RLS
-export function createAdminClient() {
-  return createSupabaseClient(URL, SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  });
-}
+// NE PAS utiliser createServerClient() avec service_role_key → infinite recursion RLS
+// createPublicClient() n'a PAS de cookies → compatible avec unstable_cache
+// createClient() a des cookies → NE PAS utiliser dans unstable_cache
 ```
 
 ### proxy.ts (middleware Next.js)
@@ -331,21 +352,14 @@ export function createAdminClient() {
 - Auto-ouverture après 2800ms
 - Fermeture si `scrollY < 40`, ré-ouverture si `scrollY > 80`
 - Images : `/public/images/hero/FLEUR-L.webp` et `FLEUR-R.webp`
-- Logo : `/public/images/fp_logo.png` (z-30, toujours au-dessus)
+- Logo : `/public/images/fp_logo.png` (z-30)
 
 ### Navbar
-- Desktop : toujours visible (pas de `opacity-0` au scroll — bug corrigé)
-- Mobile : burger toujours visible, font-size `clamp(1.25rem, 5vw, 1.75rem)`
-- Fond blanc/blur uniquement après `scrollY > 40` (ou toujours sur les pages sans Hero)
-- **Sur `/` (homepage)** : cachée jusqu'à l'événement `hero-curtain` → délai 800ms → slide-down spring (`stiffness:120, damping:20`)
-- **Sur toutes les autres pages** : `navVisible = true` immédiatement, `hero-curtain` ignoré
-- Couleurs : `dark = scrolled || !isHomepage` — texte sombre + fond blanc dès le chargement hors homepage
-- Menu mobile se ferme automatiquement à chaque navigation (`useEffect([pathname])`)
-
-### Checkout
-- Client Component (lit le CartContext)
-- Server Action `createOrder` → insert `orders` + `order_items` via service role
-- Message "Square en cours d'intégration" affiché
+- Logo SVG : `filter: none` (fond clair) ou `brightness(0) invert(1)` (Hero sombre)
+- `dark = scrolled || !isHomepage`
+- Sur `/` : navVisible déclenché par `hero-curtain` event → délai 800ms → slide-down spring
+- Sur autres pages : `navVisible = true` immédiatement
+- Menu mobile ferme automatiquement au changement de route
 
 ### Hydration
 - JAMAIS `Math.random()` en SSR → hydration mismatch
@@ -354,30 +368,38 @@ export function createAdminClient() {
 ### Tailwind v4
 - Config dans `globals.css` avec `@theme {}`
 - Pas de `tailwind.config.js`
-- Classes custom : `font-heading`, `font-body`, `font-display`, `section-padding`
+- `--font-ui` disponible pour DM Sans si besoin
 
 ### Safari mobile
 - Utiliser `100svh` (small viewport height) plutôt que `100vh`
 
 ---
 
-## 9. Déploiement — Vercel + Cloudflare DNS
+## 10. Déploiement — Vercel
 
-> WHC abandonné. Déployé sur Vercel (compte Pro client FlorusPocus) — 2026-05-25.
+### Compte Vercel
+- **Compte :** FlorusPocus Hobby (`info@floruspocus.com`)
+- **Username :** `info-74995045`
+- **Plan :** Hobby (gratuit)
+- **Projet :** `florus-pocus` → `florus-pocus.vercel.app`
+- **Team ID :** `team_K1ZplOff9VGYK3Ce3SkAvLdw`
 
 ### Repo GitHub
-- URL : https://github.com/P34KPK/florus_pocus.git
+- URL : https://github.com/P34KPK/florus_pocus.git (privé)
 - Branch : `main`
-- Dernier push : 2026-05-25 (restructuration route group `(public)` + migrations Supabase)
+- Git user email : `peakafeller@me.com` (vérifié sur GitHub — obligatoire pour Vercel)
+
+### Paramètres Vercel importants
+- **Deployment Protection → Vercel Authentication** : **DÉSACTIVÉ** (sinon les auto-deploys GitHub sont bloqués)
+- **Require Verified Commits** : désactivé
+- **GitHub App** : connecté au repo `P34KPK/florus_pocus`
 
 ### Statut déploiement
-- [x] Repo GitHub créé et pushé
-- [x] Projet importé sur Vercel (compte FlorusPocus Pro)
-- [x] Variables d'env ajoutées sur Vercel
-- [x] Premier build réussi ✅
-- [ ] Domaine `floruspocus.ca` connecté sur Vercel (Settings → Domains)
+- [x] Build réussi — toutes les pages publiques `○ Static` avec revalidation 1h
+- [x] Variables d'env configurées sur Vercel
+- [x] Auto-deploy depuis GitHub fonctionnel
+- [ ] Domaine `floruspocus.ca` connecté (Settings → Domains)
 - [ ] DNS Cloudflare configuré (nuage gris)
-- [ ] SSL actif (auto via Vercel)
 - [ ] Supabase Auth URL mise à jour → `https://floruspocus.ca`
 
 ### DNS Cloudflare — à faire
@@ -386,45 +408,26 @@ export function createAdminClient() {
 | A | `@` | `76.76.21.21` | Nuage GRIS (DNS only) |
 | CNAME | `www` | `cname.vercel-dns.com` | Nuage GRIS (DNS only) |
 
-**Important :** proxy Cloudflare = OFF (nuage gris) — Vercel gère lui-même SSL/CDN.
+**Important :** proxy Cloudflare = OFF (nuage gris) — Vercel gère SSL/CDN.
 
-### Supabase après domaine actif
-Supabase → Authentication → URL Configuration :
-- Site URL : `https://floruspocus.ca`
-- Redirect URLs : `https://floruspocus.ca/**`
-
-### Variables d'env Vercel (déjà configurées)
+### Variables d'env Vercel (configurées)
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://msxyptzedflnfbtbvrwi.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=[configurée]
-SUPABASE_SERVICE_ROLE_KEY=[configurée]
+SUPABASE_SERVICE_ROLE_KEY=[configurée — Sensitive]
 NEXT_PUBLIC_SITE_URL=https://floruspocus.ca
-NEXT_PUBLIC_SQUARE_APP_ID=          ← vide, à ajouter quand Square prêt
-SQUARE_SECRET_API_KEY=              ← vide, à ajouter quand Square prêt
-NODE_ENV=production
+NEXT_PUBLIC_SQUARE_APP_ID=placeholder
+SQUARE_SECRET_API_KEY=placeholder       ← Sensitive
 ```
 
-### Coûts
-| Service | Plan | Coût |
-|---------|------|------|
-| Vercel | Pro | Compte client |
-| Supabase | Free | Gratuit |
-| Cloudflare | Free | Gratuit |
-
-### Checklist avant mise en production
-- [ ] `npm audit` = 0 critiques
-- [ ] RLS activé sur toutes les tables Supabase
-- [ ] `.env.local` hors du repo (vérifier `.gitignore`) ✅
-- [ ] HTTPS activé (auto Vercel)
-- [ ] Test login/logout admin
-- [ ] Test formulaire contact
-- [ ] Test ajout au panier + checkout
-- [ ] Backup Supabase activé
-- [ ] Test Square sandbox (quand credentials disponibles)
+### Problèmes résolus (historique)
+- Email git corrompu (`deeplink@p34k.compeakafeller@me.com`) → corrigé : `git config user.email "peakafeller@me.com"`
+- Vercel Authentication activé → bloquait les auto-deploys → désactivé
+- Email `peakafeller@me.com` non vérifié sur GitHub → ajouté et vérifié → résolu
 
 ---
 
-## 10. Identifiants admin (dev)
+## 11. Identifiants admin (dev)
 
 - **Email :** info@floruspocus.com
 - **Mot de passe :** FlorusPocus2026!
@@ -432,7 +435,7 @@ NODE_ENV=production
 
 ---
 
-## 11. Dépendances principales
+## 12. Dépendances principales
 
 ```json
 {
@@ -448,6 +451,6 @@ NODE_ENV=production
 ```
 
 **Polices Google (next/font) :**
-- `DM_Sans` → `font-heading`
-- `Inter` → `font-body`
-- `Cormorant_Garamond` → `font-display` (weights 400-700, normal seulement)
+- `Cormorant_Garamond` → heading + body + display (weights 300/400/700, normal)
+- `DM_Sans` → font-ui (weights 400/500/600/700)
+- `Inter` → chargé mais non utilisé comme font principale (conservé au cas où)
