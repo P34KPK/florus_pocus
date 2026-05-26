@@ -54,7 +54,8 @@ function FadeInView({ children, delay = 0, className = "" }: { children: React.R
 
 export default function WhyLocal({ page }: WhyLocalProps) {
   const ref     = useRef<HTMLElement>(null);
-  const title   = page?.title       ?? "Pourquoi choisir local ?";
+  const rawTitle = page?.title ?? "Pourquoi choisir local ?";
+  const title    = rawTitle.replace(/ \?/g, " ?");
   const content = page?.description ?? "Parce que les fleurs qui voyagent moins sont plus fraîches, plus belles et respectent notre belle planète. Chez Florus Pocus, chaque bouquet raconte l'histoire de notre terre québécoise, cultivée avec passion à quelques kilomètres de chez vous.";
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
