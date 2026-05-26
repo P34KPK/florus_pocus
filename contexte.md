@@ -9,7 +9,7 @@
 **Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
-**Dernière session :** 2026-05-25
+**Dernière session :** 2026-05-26
 
 ---
 
@@ -44,6 +44,16 @@
 - [x] `/admin/stats` — statistiques + exports
 - [x] `/admin/parametres` — configuration générale
 - [x] Upload d'images (Supabase Storage, bucket `floruspocus`)
+
+### Contenu & UI (2026-05-26)
+- [x] **"Ferme florale artisanale" → "Floriculture écoresponsable"** partout (Hero, Footer, blog/page.tsx ×2, la-ferme/page.tsx)
+- [x] **Footer — logos certifications** : `aliments-du-qc-logo-white.webp` + `APFCQ-logo-white.webp` (copiés dans `/public`, affichés sous les icônes sociales)
+- [x] **Footer — réseaux sociaux mis à jour** :
+  - Instagram → `https://www.instagram.com/florus_pocus` (@florus_pocus)
+  - Facebook supprimé → remplacé par **LinkedIn** `https://www.linkedin.com/company/floruspocus/`
+  - Icônes SVG inline (lucide-react v1.16 n'a pas Instagram/Linkedin)
+- [x] **Description SEO** (`layout.tsx`) → commence par "Cultiver la Vie!"
+- [x] **Bug build Vercel** corrigé : `Instagram` et `Linkedin` absents de lucide-react v1.16 → SVG inline
 
 ### Performance (optimisations 2026-05-25)
 - [x] `next.config.ts` : `optimizePackageImports` (framer-motion, lucide-react), format AVIF, cache 1 an `/images/`
@@ -104,11 +114,17 @@
   - DNS Cloudflare : A `@` → `76.76.21.21` + CNAME `www` → `cname.vercel-dns.com` (nuage GRIS)
   - Supabase Auth URL → `https://floruspocus.ca` après domaine actif
 - [ ] **Square paiement** ← PRIORITÉ SUIVANTE
-  - En attente des credentials du client (Sandbox + Production)
-  - Square Web Payments SDK sur `/checkout`
-  - API Route `/api/square/payment` pour traiter les paiements
-  - Webhook `/api/square/webhook` pour confirmer les paiements
-  - Mettre à jour `NEXT_PUBLIC_SQUARE_APP_ID` + `SQUARE_SECRET_API_KEY` dans Vercel env vars
+  - **En attente des credentials du client** (Dashboard Square → developer.squareup.com)
+  - 4 valeurs requises (Sandbox d'abord, puis Production) :
+    - `NEXT_PUBLIC_SQUARE_APP_ID` — Application ID
+    - `SQUARE_SECRET_API_KEY` — Access Token
+    - `SQUARE_LOCATION_ID` — Location ID (emplacement physique)
+    - `SQUARE_WEBHOOK_SIGNATURE_KEY` — clé générée à la création du webhook
+  - **À construire une fois credentials reçus :**
+    - Square Web Payments SDK sur `/checkout` (champ carte sécurisé)
+    - Route `/api/square/payment` — traitement paiement + sauvegarde commande DB
+    - Route `/api/square/webhook` — confirmation async Square → site
+    - Validation des montants côté serveur uniquement
 
 ### Priorité moyenne
 - [ ] **Emails de confirmation** — après achat / inscription abonnement
@@ -424,6 +440,11 @@ SQUARE_SECRET_API_KEY=placeholder       ← Sensitive
 - Email git corrompu (`deeplink@p34k.compeakafeller@me.com`) → corrigé : `git config user.email "peakafeller@me.com"`
 - Vercel Authentication activé → bloquait les auto-deploys → désactivé
 - Email `peakafeller@me.com` non vérifié sur GitHub → ajouté et vérifié → résolu
+- `Instagram` + `Linkedin` absents de lucide-react v1.16 → build fail → corrigé avec SVG inline
+
+### Note importante — lucide-react v1.16
+Les icônes `Instagram` et `Linkedin` n'existent pas dans cette version.
+Toujours utiliser des **SVG inline** pour les logos de réseaux sociaux.
 
 ---
 
