@@ -22,7 +22,7 @@ export async function loginAdmin(_prev: LoginState, formData: FormData): Promise
     email: parsed.data.email,
     password: parsed.data.password,
   });
-  if (authError) return { error: "Identifiants invalides. Veuillez réessayer." };
+  if (authError) return { error: `[DEBUG] ${authError.message} (code: ${authError.status})` };
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Erreur de connexion." };
