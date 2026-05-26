@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingBag, Menu, X } from "lucide-react";
@@ -77,12 +78,15 @@ export default function Navbar() {
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
-        <Link
-          href="/"
-          className="font-display font-bold text-2xl leading-none"
-          style={{ color: dark ? "#2D5016" : "#F4D4B0" }}
-        >
-          Florus Pocus
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/florus_pocus_logo.svg"
+            alt="Florus Pocus"
+            width={160}
+            height={36}
+            priority
+            style={{ filter: dark ? "none" : "brightness(0) invert(1)" }}
+          />
         </Link>
 
         <ul className="hidden md:flex items-center gap-8">
