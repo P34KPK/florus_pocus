@@ -3,12 +3,16 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { unstable_cache } from "next/cache";
 
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!.trim();
+const ANON_KEY      = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.replace(/\s+/g, "");
+const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY!.replace(/\s+/g, "");
+
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_URL,
+    ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -31,8 +35,8 @@ export async function createClient() {
 /* Client sans cookies pour les données publiques — compatible avec le cache Next.js */
 export function createPublicClient() {
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_URL,
+    ANON_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 }
@@ -137,8 +141,8 @@ export const getUpcomingEvents = unstable_cache(
 
 export function createAdminClient() {
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    SUPABASE_URL,
+    SERVICE_KEY,
     {
       auth: {
         autoRefreshToken: false,
