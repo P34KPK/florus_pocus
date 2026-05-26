@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Share2, Share, Mail } from "lucide-react";
+import Image from "next/image";
+import { Linkedin, Instagram, Mail } from "lucide-react";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -15,18 +16,36 @@ export default function Footer() {
             </h3>
             <p className="text-sm leading-relaxed opacity-70">
               Cultiver la vie, une fleur à la fois.<br />
-              Ferme florale artisanale au Québec.
+              Floriculture écoresponsable au Québec.
             </p>
             <div className="flex gap-4 mt-5">
-              <a href="https://www.instagram.com/floruspocus" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="opacity-60 hover:opacity-100 transition-opacity">
-                <Share2 size={20} />
+              <a href="https://www.instagram.com/florus_pocus" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="opacity-60 hover:opacity-100 transition-opacity">
+                <Instagram size={20} />
               </a>
-              <a href="https://www.facebook.com/floruspocus" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="opacity-60 hover:opacity-100 transition-opacity">
-                <Share size={20} />
+              <a href="https://www.linkedin.com/company/floruspocus/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="opacity-60 hover:opacity-100 transition-opacity">
+                <Linkedin size={20} />
               </a>
               <a href="mailto:info@floruspocus.ca" aria-label="Email" className="opacity-60 hover:opacity-100 transition-opacity">
                 <Mail size={20} />
               </a>
+            </div>
+
+            {/* Logos certifications */}
+            <div className="flex items-center gap-5 mt-7 opacity-70">
+              <Image
+                src="/aliments-du-qc-logo-white.webp"
+                alt="Aliments du Québec"
+                width={80}
+                height={40}
+                style={{ objectFit: "contain" }}
+              />
+              <Image
+                src="/APFCQ-logo-white.webp"
+                alt="APFCQ"
+                width={72}
+                height={40}
+                style={{ objectFit: "contain" }}
+              />
             </div>
           </div>
 

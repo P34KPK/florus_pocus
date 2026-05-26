@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | Florus Pocus",
   },
   description:
-    "Fleurs fraîches cultivées à la ferme. Abonnements, autocueillette et produits transformés. Livraison locale au Québec.",
+    "Cultiver la Vie! Fleurs fraîches cultivées à la ferme. Abonnements, autocueillette et produits transformés. Livraison locale au Québec.",
   keywords: ["fleurs", "ferme", "abonnement", "autocueillette", "bouquets", "Québec"],
   openGraph: {
     type: "website",

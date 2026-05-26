@@ -214,7 +214,7 @@ export default function Hero({ page }: HeroProps) {
 
         <p className="text-xs font-semibold uppercase tracking-[0.3em] mb-4"
           style={{ color: "#F4D4B0", opacity: 0.55 }}>
-          Ferme florale artisanale
+          Floriculture écoresponsable
         </p>
 
         <h1 className="font-display font-bold leading-tight mb-5 text-white"

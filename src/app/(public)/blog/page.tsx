@@ -6,7 +6,7 @@ import type { BlogPost } from "@/types";
 
 export const metadata = {
   title: "Blogue — Histoires de la ferme",
-  description: "Conseils, actualités et histoires de notre ferme florale artisanale au Québec.",
+  description: "Conseils, actualités et histoires de notre floriculture écoresponsable au Québec.",
 };
 
 function PostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
@@ -109,7 +109,7 @@ export default async function BlogPage() {
             Histoires<br />de la ferme
           </h1>
           <p className="text-base max-w-xl" style={{ color: "#666" }}>
-            Conseils, coulisses et actualités de notre ferme florale artisanale au Québec.
+            Conseils, coulisses et actualités de notre floriculture écoresponsable au Québec.
           </p>
         </div>
 
