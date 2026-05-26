@@ -441,10 +441,24 @@ SQUARE_SECRET_API_KEY=placeholder       ← Sensitive
 - Vercel Authentication activé → bloquait les auto-deploys → désactivé
 - Email `peakafeller@me.com` non vérifié sur GitHub → ajouté et vérifié → résolu
 - `Instagram` + `Linkedin` absents de lucide-react v1.16 → build fail → corrigé avec SVG inline
+- **Login admin cassé (2026-05-26)** — `NEXT_PUBLIC_SUPABASE_ANON_KEY` corrompue sur Vercel (clé doublée avec retours chariot, possiblement causé par le downgrade Pro→Hobby). Corrigé via `extractJwt()` dans le code.
 
 ### Note importante — lucide-react v1.16
 Les icônes `Instagram` et `Linkedin` n'existent pas dans cette version.
 Toujours utiliser des **SVG inline** pour les logos de réseaux sociaux.
+
+### Note importante — Clés Supabase corrompues sur Vercel
+Les variables `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sur le compte Vercel `info@floruspocus.com` contiennent des retours chariot (clé doublée → 5 segments JWT au lieu de 3).
+
+**Fix en place :** `extractJwt()` dans `supabase-server.ts`, `supabase.ts`, `proxy.ts` et `auth.ts` reconstruit la bonne clé : `parts[0].parts[1].parts[4]`.
+
+**À corriger proprement un jour :** aller sur Vercel → Settings → Environment Variables → supprimer et recoller les clés proprement (une seule ligne, pas de retour chariot). Les clés correctes sont dans `.env.local`.
+
+### Note importante — Compte Vercel CLI
+- CLI `npx vercel` connecté au compte **p34kpk** (Sébastien Hamel — compte personnel)
+- Le vrai projet déployé est sur le compte **info@floruspocus.com** (FlorusPocus Hobby)
+- Les `vercel env add` via CLI vont au mauvais compte — ne pas utiliser pour gérer les env vars de prod
+- Pour gérer les env vars : aller directement sur vercel.com → compte `info@floruspocus.com`
 
 ---
 
