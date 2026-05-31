@@ -12,10 +12,10 @@ interface Props {
 }
 
 const SEASONS = [
-  { value: "spring", label: "Printemps" },
-  { value: "summer", label: "Été" },
-  { value: "fall",   label: "Automne" },
-  { value: "winter", label: "Hiver" },
+  { value: "fleurs-fraiches",    label: "Fleurs Fraîches" },
+  { value: "comestibles",        label: "Produits Floraux Comestibles" },
+  { value: "serre-inter-ligna",  label: "Serre Inter-Ligna" },
+  { value: "garde-robe",         label: "La Garde-Robe du Jardinier" },
 ];
 
 export default function ProductForm({ action, product, onSuccess }: Props) {

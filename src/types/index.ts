@@ -13,7 +13,7 @@ export interface Page {
 }
 
 export type ProductCategory = "fleur" | "transforme";
-export type ProductSeason   = "spring" | "summer" | "fall" | "winter";
+export type ProductSeason   = "fleurs-fraiches" | "comestibles" | "serre-inter-ligna" | "garde-robe";
 
 export interface Product {
   id: string;

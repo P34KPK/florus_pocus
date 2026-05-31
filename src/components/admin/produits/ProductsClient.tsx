@@ -23,6 +23,13 @@ export default function ProductsClient({ products }: Props) {
     startTransition(async () => { await toggleProductActive(id, active); });
   }
 
+  const seasonLabel: Record<string, string> = {
+    "fleurs-fraiches":   "Fleurs Fraîches",
+    "comestibles":       "Produits Floraux Comestibles",
+    "serre-inter-ligna": "Serre Inter-Ligna",
+    "garde-robe":        "La Garde-Robe du Jardinier",
+  };
+
   const catLabel = (c: string) => c === "fleur" ? "Fleur" : "Transformé";
   const catColors = (c: string) => c === "fleur"
     ? { backgroundColor: "#E8F0E0", color: "#2D5016" }
@@ -79,7 +86,7 @@ export default function ProductsClient({ products }: Props) {
                         )}
                         <div>
                           <span className="font-medium">{p.name}</span>
-                          {p.season && <span className="ml-2 text-xs opacity-40">{p.season}</span>}
+                          {p.season && <span className="ml-2 text-xs opacity-40">{seasonLabel[p.season] ?? p.season}</span>}
                         </div>
                       </div>
                     </td>
