@@ -11,20 +11,23 @@ interface FleuristesProps {
 }
 
 const PLACEHOLDER_FLEURS: Product[] = [
-  { id: "f1", name: "Rose Rouge", description: "Roses fraîchement coupées, parfum délicat.", category: "fleur", price: 8.5, stock: 50, image_url: null, season: "summer", active: true, created_at: "", updated_at: "" },
-  { id: "f2", name: "Tulipe Rose", description: "Tulipes printanières, tiges longues et droites.", category: "fleur", price: 6, stock: 30, image_url: null, season: "spring", active: true, created_at: "", updated_at: "" },
-  { id: "f3", name: "Tournesol", description: "Grands tournesols lumineux qui égaient n'importe quel espace.", category: "fleur", price: 5.5, stock: 40, image_url: null, season: "summer", active: true, created_at: "", updated_at: "" },
-  { id: "f4", name: "Pivoine", description: "Pivoines luxuriantes au parfum envoûtant.", category: "fleur", price: 9, stock: 20, image_url: null, season: "spring", active: true, created_at: "", updated_at: "" },
-  { id: "f5", name: "Zinnia Multicolore", description: "Zinnias vibrants dans toutes les couleurs de l'arc-en-ciel.", category: "fleur", price: 4.5, stock: 60, image_url: null, season: "summer", active: true, created_at: "", updated_at: "" },
-  { id: "f6", name: "Dahlia Bordeaux", description: "Dahlias profonds aux pétales veloutés.", category: "fleur", price: 7.5, stock: 15, image_url: null, season: "fall", active: true, created_at: "", updated_at: "" },
-  { id: "f7", name: "Aster Mauve", description: "Asters d'automne au bleu-mauve magnifique.", category: "fleur", price: 5, stock: 25, image_url: null, season: "fall", active: true, created_at: "", updated_at: "" },
-  { id: "f8", name: "Lisianthus Blanc", description: "Lisianthus élégants, ressemblent aux roses.", category: "fleur", price: 8, stock: 18, image_url: null, season: "summer", active: true, created_at: "", updated_at: "" },
-  { id: "f9", name: "Cosmos Rose", description: "Cosmos légers et aériens, parfaits pour les bouquets sauvages.", category: "fleur", price: 4, stock: 45, image_url: null, season: "summer", active: true, created_at: "", updated_at: "" },
-  { id: "f10", name: "Statice Violet", description: "Statice séchable, idéal pour compositions durables.", category: "fleur", price: 5, stock: 35, image_url: null, season: "fall", active: true, created_at: "", updated_at: "" },
+  { id: "f1", name: "Rose Rouge", description: "Roses fraîchement coupées, parfum délicat.", category: "fleur", price: 8.5, stock: 50, image_url: null, season: "fleurs-fraiches", active: true, created_at: "", updated_at: "" },
+  { id: "f2", name: "Tulipe Rose", description: "Tulipes printanières, tiges longues et droites.", category: "fleur", price: 6, stock: 30, image_url: null, season: "fleurs-fraiches", active: true, created_at: "", updated_at: "" },
+  { id: "f3", name: "Tournesol", description: "Grands tournesols lumineux qui égaient n'importe quel espace.", category: "fleur", price: 5.5, stock: 40, image_url: null, season: "fleurs-fraiches", active: true, created_at: "", updated_at: "" },
+  { id: "f4", name: "Confiture de Roses", description: "Confiture artisanale aux pétales de roses.", category: "transforme", price: 9, stock: 20, image_url: null, season: "comestibles", active: true, created_at: "", updated_at: "" },
+  { id: "f5", name: "Zinnia Multicolore", description: "Zinnias vibrants dans toutes les couleurs de l'arc-en-ciel.", category: "fleur", price: 4.5, stock: 60, image_url: null, season: "fleurs-fraiches", active: true, created_at: "", updated_at: "" },
+  { id: "f6", name: "Dahlia Bordeaux", description: "Dahlias profonds aux pétales veloutés.", category: "fleur", price: 7.5, stock: 15, image_url: null, season: "fleurs-fraiches", active: true, created_at: "", updated_at: "" },
+  { id: "f7", name: "Plant de Tomate Serre", description: "Plants de tomates cultivés en serre Inter-Ligna.", category: "fleur", price: 5, stock: 25, image_url: null, season: "serre-inter-ligna", active: true, created_at: "", updated_at: "" },
+  { id: "f8", name: "Lisianthus Blanc", description: "Lisianthus élégants, ressemblent aux roses.", category: "fleur", price: 8, stock: 18, image_url: null, season: "fleurs-fraiches", active: true, created_at: "", updated_at: "" },
+  { id: "f9", name: "Tablier de Jardinage", description: "Tablier en coton épais, poche avant, style artisan.", category: "transforme", price: 42, stock: 10, image_url: null, season: "garde-robe", active: true, created_at: "", updated_at: "" },
+  { id: "f10", name: "Sirop de Lavande", description: "Sirop de lavande artisanal, idéal en cocktail ou en dessert.", category: "transforme", price: 12, stock: 35, image_url: null, season: "comestibles", active: true, created_at: "", updated_at: "" },
 ];
 
 const SEASON_LABELS: Record<ProductSeason, string> = {
-  spring: "Printemps", summer: "Été", fall: "Automne", winter: "Hiver",
+  "fleurs-fraiches":  "Fleurs Fraîches",
+  "comestibles":      "Produits Comestibles",
+  "serre-inter-ligna": "Serre Inter-Ligna",
+  "garde-robe":       "La Garde-Robe",
 };
 
 function FlowerPlaceholder({ size = 56 }: { size?: number }) {
@@ -127,7 +130,7 @@ export default function Fleuristes({ products }: FleuristesProps) {
   const [view,   setView]   = useState<"grid" | "list">("grid");
   const [season, setSeason] = useState<ProductSeason | "all">("all");
 
-  const seasons: (ProductSeason | "all")[] = ["all", "spring", "summer", "fall", "winter"];
+  const seasons: (ProductSeason | "all")[] = ["all", "fleurs-fraiches", "comestibles", "serre-inter-ligna", "garde-robe"];
   const filtered = season === "all" ? fleurs : fleurs.filter((p) => p.season === season);
 
   return (

@@ -9,7 +9,7 @@
 **Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
-**Dernière session :** 2026-05-26
+**Dernière session :** 2026-05-31
 
 ---
 
@@ -44,6 +44,11 @@
 - [x] `/admin/stats` — statistiques + exports
 - [x] `/admin/parametres` — configuration générale
 - [x] Upload d'images (Supabase Storage, bucket `floruspocus`)
+- [x] Middleware Supabase actif (`src/middleware.ts` créé — `proxy.ts` n'était pas reconnu)
+
+### Corrections & UI (2026-05-31)
+- [x] **Bug upload images admin** corrigé : `proxy.ts` n'était pas reconnu comme middleware Next.js (doit s'appeler `middleware.ts`) → sessions Supabase non rafraîchies → `getUser()` retournait null → 401. Fix : `src/middleware.ts` créé, re-exporte `proxy` comme `middleware`.
+- [x] **Gammes produits** : colonne `season` convertie ENUM → TEXT (migration `004_product_season_text.sql`). 4 nouvelles catégories : `fleurs-fraiches`, `comestibles`, `serre-inter-ligna`, `garde-robe`. Labels : "Fleurs Fraîches", "Produits Floraux Comestibles", "Serre Inter-Ligna", "La Garde-Robe du Jardinier".
 
 ### Contenu & UI (2026-05-26)
 - [x] **"Ferme florale artisanale" → "Floriculture écoresponsable"** partout (Hero, Footer, blog/page.tsx ×2, la-ferme/page.tsx)
@@ -103,6 +108,7 @@
 - [x] Migration `001_initial_schema.sql` exécutée (tables + RLS + seed)
 - [x] Migration `002_storage.sql` exécutée (bucket Supabase Storage)
 - [x] Migration `003_contact_messages.sql` exécutée (table contact_messages)
+- [x] Migration `004_product_season_text.sql` exécutée (colonne season ENUM → TEXT)
 
 ---
 
@@ -113,18 +119,18 @@
   - Vercel → florus-pocus → Settings → Domains → ajouter `floruspocus.ca`
   - DNS Cloudflare : A `@` → `76.76.21.21` + CNAME `www` → `cname.vercel-dns.com` (nuage GRIS)
   - Supabase Auth URL → `https://floruspocus.ca` après domaine actif
-- [ ] **Square paiement** ← PRIORITÉ SUIVANTE
-  - **En attente des credentials du client** (Dashboard Square → developer.squareup.com)
-  - 4 valeurs requises (Sandbox d'abord, puis Production) :
-    - `NEXT_PUBLIC_SQUARE_APP_ID` — Application ID
-    - `SQUARE_SECRET_API_KEY` — Access Token
-    - `SQUARE_LOCATION_ID` — Location ID (emplacement physique)
-    - `SQUARE_WEBHOOK_SIGNATURE_KEY` — clé générée à la création du webhook
-  - **À construire une fois credentials reçus :**
-    - Square Web Payments SDK sur `/checkout` (champ carte sécurisé)
-    - Route `/api/square/payment` — traitement paiement + sauvegarde commande DB
-    - Route `/api/square/webhook` — confirmation async Square → site
-    - Validation des montants côté serveur uniquement
+- [x] **Square paiement** — intégration sandbox complète et testée (2026-05-31)
+  - Credentials sandbox dans `.env.local` (`NEXT_PUBLIC_SQUARE_APP_ID`, `SQUARE_SECRET_API_KEY`, `NEXT_PUBLIC_SQUARE_LOCATION_ID`, `SQUARE_LOCATION_ID`)
+  - `src/lib/square.ts` — SquareClient (sandbox auto-détecté via préfixe `sandbox-`)
+  - `src/app/checkout/page.tsx` — Square Web Payments SDK (injection script manuelle, évite bug Turbopack)
+  - `src/app/api/square/payment/route.ts` — charge carte, valide montant côté serveur, met à jour Supabase
+  - `src/app/api/square/webhook/route.ts` — confirmation async Square (HMAC SHA256)
+  - `supabase/migrations/005_square_payment_id.sql` — colonne `square_payment_id` sur `orders`
+  - CSP dans `next.config.ts` mis à jour pour `sandbox.web.squarecdn.com`
+  - **Reste à faire (production) :**
+    - [ ] Remplacer credentials sandbox → production quand compte Square approuvé
+    - [ ] Configurer webhook dans Square Dashboard → URL : `https://floruspocus.ca/api/square/webhook`
+    - [ ] Ajouter `SQUARE_WEBHOOK_SIGNATURE_KEY` dans `.env.local` et Vercel
 
 ### Priorité moyenne
 - [ ] **Emails de confirmation** — après achat / inscription abonnement
@@ -240,8 +246,11 @@ FlorusPocus/
 │   └── migrations/
 │       ├── 001_initial_schema.sql   ← schéma + RLS + seed
 │       ├── 002_storage.sql          ← bucket floruspocus (Storage)
-│       └── 003_contact_messages.sql ← table contact_messages
+│       ├── 003_contact_messages.sql ← table contact_messages
+│       └── 004_product_season_text.sql ← colonne season ENUM → TEXT
 └── src/
+    ├── middleware.ts                ← point d'entrée Next.js (re-exporte proxy)
+    ├── proxy.ts                     ← implémentation middleware Supabase
     ├── app/
     │   ├── globals.css              ← @theme Tailwind v4, animations, botanical-float CSS
     │   ├── layout.tsx               ← root layout (fonts Cormorant 300/400/700 + CartProvider)
@@ -358,10 +367,11 @@ Classes CSS : `botanical-leaf-1`, `botanical-leaf-2` avec `will-change: transfor
 // createClient() a des cookies → NE PAS utiliser dans unstable_cache
 ```
 
-### proxy.ts (middleware Next.js)
-- Renommé de `middleware.ts` → `proxy.ts` dans ce projet
-- Rafraîchit les tokens Supabase sur chaque requête
+### middleware.ts + proxy.ts (middleware Next.js)
+- `src/middleware.ts` → point d'entrée Next.js, re-exporte `proxy` comme `middleware` et `config`
+- `src/proxy.ts` → implémentation : rafraîchit les tokens Supabase sur chaque requête avec `extractJwt()`
 - Matcher exclut les fichiers statiques
+- **Important** : Next.js exige que le middleware s'appelle `middleware.ts` — `proxy.ts` seul ne suffit pas
 
 ### Hero — Architecture rideaux
 - 2 panneaux absolus `height: 100svh`
