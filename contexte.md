@@ -137,18 +137,21 @@
 - [x] Audit sécurité — fixes critiques appliqués (idempotency key, upload whitelist, phone regex, arrondi panier, CSP worker-src)
 - [x] Emails confirmation commande — code prêt (`src/lib/resend.ts` + `src/lib/emails/orderConfirmation.ts`)
 
-### Priorité haute — À faire
-- [ ] **Emails de confirmation** — code prêt, attend accès compte Resend
-  - Créer compte resend.com → API Key → ajouter `RESEND_API_KEY` sur Vercel
+### En attente confirmation client (comptes créés, code prêt)
+- [ ] **Emails de confirmation** — compte Resend créé, en attente code de confirmation
+  - Une fois accès : API Key → `RESEND_API_KEY` sur Vercel
   - Vérifier domaine `floruspocus.com` sur Resend (DNS TXT + MX dans WHC)
-  - Redeploy → les emails partiront de `commandes@floruspocus.com`
+  - Code prêt : `src/lib/resend.ts` + `src/lib/emails/orderConfirmation.ts`
+- [ ] **Rate limiting** — compte Upstash créé, en attente code de confirmation
+  - Une fois accès : `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` sur Vercel → s'active automatiquement
+  - Code prêt : `src/lib/ratelimit.ts` (5 login/15min, 20 uploads/h)
+
+### Priorité basse
 - [ ] **Clés Supabase corrompues** — optionnel (fix `extractJwt` fonctionne)
   - Vercel → `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` → supprimer et recoller sur une seule ligne depuis `.env.local`
-
-### Priorité moyenne
-- [ ] **Rate limiting** — Upstash Redis sur `/admin/login` + `/api/upload`
-  - Créer compte upstash.com → Redis DB → `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` sur Vercel
-- [ ] **Validation localStorage cart** — Zod schema au rehydrate (sécurité mineure)
+- [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
+- [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
+- [ ] **Gestion stock** — sold out sur les produits
 
 ### Priorité basse
 - [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
