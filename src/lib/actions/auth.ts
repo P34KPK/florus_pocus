@@ -1,7 +1,9 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase-server";
+import { loginRatelimit } from "@/lib/ratelimit";
 
 function extractJwt(raw: string): string {
   const clean = raw.replace(/\s+/g, "");
@@ -18,6 +20,13 @@ const LoginSchema = z.object({
 export type LoginState = { error?: string; success?: boolean };
 
 export async function loginAdmin(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  // Rate limiting par IP
+  if (loginRatelimit) {
+    const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const { success } = await loginRatelimit.limit(`login:${ip}`);
+    if (!success) return { error: "Trop de tentatives. Réessayez dans 15 minutes." };
+  }
+
   const parsed = LoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase-server";
+import { uploadRatelimit } from "@/lib/ratelimit";
 
 const BUCKET = "floruspocus";
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -7,6 +8,15 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_FOLDERS = ["products", "blog", "pages", "misc"];
 
 export async function POST(request: NextRequest) {
+  // Rate limiting par IP
+  if (uploadRatelimit) {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const { success } = await uploadRatelimit.limit(`upload:${ip}`);
+    if (!success) {
+      return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une heure." }, { status: 429 });
+    }
+  }
+
   // Vérifier session + is_admin
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
