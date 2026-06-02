@@ -127,40 +127,33 @@
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
-### Priorité haute
-- [ ] **Connecter domaine `floruspocus.ca`** — domaine chez **WHC** (Web Hosting Canada), accès disponible
-  - **Étape 1 — Vercel** : compte `info@floruspocus.com` → projet `florus-pocus` → Settings → Domains → ajouter `floruspocus.ca` + `www.floruspocus.ca`
-  - **Étape 2 — WHC DNS** (cPanel ou gestionnaire de zones) :
-    - Supprimer l'enregistrement A existant sur `@` si présent
-    - Ajouter A `@` → `76.76.21.21` (TTL 3600)
-    - Ajouter CNAME `www` → `cname.vercel-dns.com` (TTL 3600)
-  - **Étape 3** : attendre propagation 5–30 min (vérifier sur dnschecker.org)
-  - **Étape 4 — Supabase Auth** : supabase.com → projet → Authentication → URL Configuration → Site URL → `https://floruspocus.ca` + Redirect URLs → `https://floruspocus.ca/**`
-  - **Étape 5 — Webhook Square** : developer.squareup.com → app → Webhooks → URL `https://floruspocus.ca/api/square/webhook` → événements `payment.completed` + `payment.failed` → copier Signature Key → Vercel env var `SQUARE_WEBHOOK_SIGNATURE_KEY`
-  - **Note :** pas Cloudflare — domaine directement sur WHC, DNS géré dans WHC
-- [x] **Square paiement** — intégration sandbox complète et testée (2026-05-31)
-  - Credentials sandbox dans `.env.local` (`NEXT_PUBLIC_SQUARE_APP_ID`, `SQUARE_SECRET_API_KEY`, `NEXT_PUBLIC_SQUARE_LOCATION_ID`, `SQUARE_LOCATION_ID`)
-  - `src/lib/square.ts` — SquareClient (sandbox auto-détecté via préfixe `sandbox-`)
-  - `src/app/checkout/page.tsx` — Square Web Payments SDK (injection script manuelle, évite bug Turbopack)
-  - `src/app/api/square/payment/route.ts` — charge carte, valide montant côté serveur, met à jour Supabase
-  - `src/app/api/square/webhook/route.ts` — confirmation async Square (HMAC SHA256)
-  - `supabase/migrations/005_square_payment_id.sql` — colonne `square_payment_id` sur `orders`
-  - CSP dans `next.config.ts` mis à jour pour `sandbox.web.squarecdn.com`
-  - **Reste à faire (production) :**
-    - [x] Credentials production configurés (App ID, Access Token, Location ID)
-    - [ ] Connecter domaine `floruspocus.ca` (voir section DNS Cloudflare + Vercel)
-    - [ ] Configurer webhook Square Dashboard → URL : `https://floruspocus.ca/api/square/webhook` → événements `payment.completed` + `payment.failed`
-    - [ ] Copier Signature Key du webhook → `SQUARE_WEBHOOK_SIGNATURE_KEY` dans `.env.local` ET sur Vercel
-    - [ ] Exécuter migration `005_square_payment_id.sql` sur Supabase (SQL Editor) si pas encore fait
+### Complété en session 2026-06-02 ✅
+- [x] Domaine `floruspocus.com` connecté (WHC DNS → Vercel)
+- [x] Square paiement production — credentials configurés, testé
+- [x] Webhook Square configuré (`https://www.floruspocus.com/api/square/webhook`, events: payment.updated/created/refund.updated, Signature Key sur Vercel)
+- [x] Migration `005_square_payment_id.sql` exécutée
+- [x] Favicon floral SVG (fleur 6 pétales terracotta sur fond vert)
+- [x] Repo GitHub rendu public (résout Vercel Hobby + deploys automatiques)
+- [x] Audit sécurité — fixes critiques appliqués (idempotency key, upload whitelist, phone regex, arrondi panier, CSP worker-src)
+- [x] Emails confirmation commande — code prêt (`src/lib/resend.ts` + `src/lib/emails/orderConfirmation.ts`)
+
+### Priorité haute — À faire
+- [ ] **Emails de confirmation** — code prêt, attend accès compte Resend
+  - Créer compte resend.com → API Key → ajouter `RESEND_API_KEY` sur Vercel
+  - Vérifier domaine `floruspocus.com` sur Resend (DNS TXT + MX dans WHC)
+  - Redeploy → les emails partiront de `commandes@floruspocus.com`
+- [ ] **Clés Supabase corrompues** — optionnel (fix `extractJwt` fonctionne)
+  - Vercel → `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` → supprimer et recoller sur une seule ligne depuis `.env.local`
 
 ### Priorité moyenne
-- [ ] **Emails de confirmation** — après achat / inscription abonnement
-  - Aucun service email choisi (Resend, SendGrid, etc.)
-- [ ] **Rate limiting** — Upstash sur `/api/auth/signout`, `/api/upload`, `/checkout`
+- [ ] **Rate limiting** — Upstash Redis sur `/admin/login` + `/api/upload`
+  - Créer compte upstash.com → Redis DB → `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` sur Vercel
+- [ ] **Validation localStorage cart** — Zod schema au rehydrate (sécurité mineure)
 
 ### Priorité basse
-- [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page (metadata déjà en place sur chaque page)
+- [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
+- [ ] **Gestion stock** — sold out sur les produits
 
 ---
 
