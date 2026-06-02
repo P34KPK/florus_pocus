@@ -14,9 +14,12 @@ function verifySignature(body: string, signature: string, url: string): boolean 
 }
 
 export async function POST(req: NextRequest) {
-  const rawBody  = await req.text();
+  const rawBody   = await req.text();
   const signature = req.headers.get("x-square-hmacsha256-signature") ?? "";
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL}/api/square/webhook`;
+
+  // Utiliser l'URL réelle de la requête pour que la signature corresponde
+  // peu importe www ou non dans NEXT_PUBLIC_SITE_URL
+  const url = req.url;
 
   if (!verifySignature(rawBody, signature, url)) {
     return NextResponse.json({ error: "Signature invalide." }, { status: 401 });
@@ -29,13 +32,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "JSON invalide." }, { status: 400 });
   }
 
-  if (event.type === "payment.completed") {
-    const payment = event.data?.object?.payment;
-    const orderId = payment?.reference_id;
-    const paymentId = payment?.id;
+  const payment  = event.data?.object?.payment;
+  const orderId  = payment?.reference_id;
+  const paymentId = payment?.id;
+  const status   = payment?.status;
 
+  const supabase = createAdminClient();
+
+  // payment.completed OU payment.updated/created avec status COMPLETED
+  if (
+    event.type === "payment.completed" ||
+    ((event.type === "payment.updated" || event.type === "payment.created") && status === "COMPLETED")
+  ) {
     if (orderId && paymentId) {
-      const supabase = createAdminClient();
       await supabase
         .from("orders")
         .update({
@@ -48,10 +57,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (event.type === "payment.failed") {
-    const orderId = event.data?.object?.payment?.reference_id;
+  // payment.failed OU payment.updated avec status FAILED/CANCELED
+  if (
+    event.type === "payment.failed" ||
+    (event.type === "payment.updated" && (status === "FAILED" || status === "CANCELED"))
+  ) {
     if (orderId) {
-      const supabase = createAdminClient();
       await supabase
         .from("orders")
         .update({ payment_status: "failed" })
