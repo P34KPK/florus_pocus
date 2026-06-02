@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase-server";
 const CustomerSchema = z.object({
   name:    z.string().min(2, "Le nom est requis.").max(255),
   email:   z.string().email("Adresse courriel invalide.").max(255),
-  phone:   z.string().max(20).optional(),
+  phone:   z.string().regex(/^\+?[\d\s\-().]{7,20}$/, "Numéro de téléphone invalide.").optional(),
   address: z.string().min(5, "L'adresse est requise.").max(500),
   notes:   z.string().max(1000).optional(),
 });

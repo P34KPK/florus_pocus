@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase-server";
 const BUCKET = "floruspocus";
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_FOLDERS = ["products", "blog", "pages", "misc"];
 
 export async function POST(request: NextRequest) {
   // Vérifier session + is_admin
@@ -28,6 +29,10 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   const folder = (formData.get("folder") as string) || "misc";
+
+  if (!ALLOWED_FOLDERS.includes(folder)) {
+    return NextResponse.json({ error: "Dossier invalide." }, { status: 400 });
+  }
 
   if (!file) {
     return NextResponse.json({ error: "Aucun fichier fourni." }, { status: 400 });

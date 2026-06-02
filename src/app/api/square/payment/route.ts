@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { squareClient, SQUARE_LOCATION_ID } from "@/lib/square";
 import { createAdminClient } from "@/lib/supabase-server";
-import { randomUUID } from "crypto";
 
 const PaymentSchema = z.object({
   sourceId:  z.string().min(1),
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
   try {
     const { payment } = await squareClient.payments.create({
       sourceId,
-      idempotencyKey: randomUUID(),
+      idempotencyKey: orderId,
       amountMoney: {
         amount:   amountMoney,
         currency: "CAD",

@@ -162,7 +162,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const itemCount = state.items.reduce((sum, i) => sum + i.quantity, 0);
-  const total     = state.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const total     = Math.round(state.items.reduce((sum, i) => sum + i.price * i.quantity, 0) * 100) / 100;
 
   return (
     <CartContext.Provider value={{
