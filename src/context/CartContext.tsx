@@ -8,7 +8,26 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { z } from "zod";
 import type { CartItem, CartState, ProductType, SubscriptionFrequency } from "@/types";
+
+const CartItemSchema = z.object({
+  cartId:      z.string().min(1).max(200),
+  type:        z.enum(["product", "subscription", "autocueillette"]),
+  referenceId: z.string().uuid(),
+  name:        z.string().min(1).max(500),
+  price:       z.number().nonnegative().max(100_000),
+  quantity:    z.number().int().min(1).max(999),
+  imageUrl:    z.string().url().nullable().optional(),
+  metadata:    z.object({
+    frequency:          z.enum(["1x_month", "2x_month", "4x_month"]).optional(),
+    dropoff_point_id:   z.string().optional(),
+    dropoff_point_name: z.string().optional(),
+    event_date:         z.string().optional(),
+  }).optional(),
+});
+
+const CartStorageSchema = z.array(CartItemSchema).max(50);
 
 /* ── Actions ──────────────────────────────────────────────── */
 type CartAction =
@@ -103,7 +122,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY);
       if (stored) {
-        dispatch({ type: "HYDRATE", payload: JSON.parse(stored) });
+        const parsed = CartStorageSchema.safeParse(JSON.parse(stored));
+        if (parsed.success) {
+          dispatch({ type: "HYDRATE", payload: parsed.data as CartItem[] });
+        } else {
+          localStorage.removeItem(CART_STORAGE_KEY);
+        }
       }
     } catch { /* corrupted storage */ }
     setHydrated(true);
