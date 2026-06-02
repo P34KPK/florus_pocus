@@ -8,7 +8,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return (
       <div className="flex min-h-screen" style={{ backgroundColor: "#F5F5F5" }}>
-        <Sidebar userEmail="dev@floruspocus.ca" />
+        <Sidebar userEmail="dev@floruspocus.com" />
         <div className="flex-1 overflow-y-auto">{children}</div>
       </div>
     );

@@ -33,7 +33,7 @@ export default function Footer() {
                   <circle cx="4" cy="4" r="2"/>
                 </svg>
               </a>
-              <a href="mailto:info@floruspocus.ca" aria-label="Email" className="opacity-60 hover:opacity-100 transition-opacity">
+              <a href="mailto:info@floruspocus.com" aria-label="Email" className="opacity-60 hover:opacity-100 transition-opacity">
                 <Mail size={20} />
               </a>
             </div>
@@ -84,7 +84,7 @@ export default function Footer() {
             <address className="text-sm not-italic space-y-2 opacity-60">
               <p>123 Chemin de la Ferme<br />Pont-Rouge, QC G3H 1A1</p>
               <p><a href="tel:+14185551234" className="hover:opacity-100 transition-opacity">+1 (418) 555-1234</a></p>
-              <p><a href="mailto:info@floruspocus.ca" className="hover:opacity-100 transition-opacity">info@floruspocus.ca</a></p>
+              <p><a href="mailto:info@floruspocus.com" className="hover:opacity-100 transition-opacity">info@floruspocus.com</a></p>
             </address>
           </div>
         </div>

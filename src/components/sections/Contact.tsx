@@ -13,7 +13,7 @@ interface ContactProps {
 const INFOS = [
   { icon: MapPin, label: "Adresse",   value: "123 Chemin de la Ferme, Pont-Rouge, QC G3H 1A1" },
   { icon: Phone,  label: "Téléphone", value: "+1 (418) 555-1234" },
-  { icon: Mail,   label: "Courriel",  value: "info@floruspocus.ca" },
+  { icon: Mail,   label: "Courriel",  value: "info@floruspocus.com" },
   { icon: Clock,  label: "Heures",    value: "Lun-Ven 9h-17h · Sam 9h-14h" },
 ];
 

@@ -9,7 +9,7 @@
 **Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
-**Dernière session :** 2026-05-31
+**Dernière session :** 2026-06-01
 
 ---
 
@@ -49,6 +49,19 @@
 ### Corrections & UI (2026-05-31)
 - [x] **Bug upload images admin** corrigé : `proxy.ts` n'était pas reconnu comme middleware Next.js (doit s'appeler `middleware.ts`) → sessions Supabase non rafraîchies → `getUser()` retournait null → 401. Fix : `src/middleware.ts` créé, re-exporte `proxy` comme `middleware`.
 - [x] **Gammes produits** : colonne `season` convertie ENUM → TEXT (migration `004_product_season_text.sql`). 4 nouvelles catégories : `fleurs-fraiches`, `comestibles`, `serre-inter-ligna`, `garde-robe`. Labels : "Fleurs Fraîches", "Produits Floraux Comestibles", "Serre Inter-Ligna", "La Garde-Robe du Jardinier".
+
+### Square paiement (2026-05-31 soir)
+- [x] SDK Square installé (`square` — pas `squareup` qui est obsolète)
+- [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`, sandbox auto-détecté via préfixe `NEXT_PUBLIC_SQUARE_APP_ID`
+- [x] `src/app/checkout/page.tsx` — champ carte Square Web Payments SDK (injection script manuelle, contourne bug Turbopack avec `next/script onLoad`)
+- [x] `src/app/api/square/payment/route.ts` — `squareClient.payments.create()`, validation montant côté serveur, mise à jour Supabase (`payment_status: "paid"`, `square_payment_id`)
+- [x] `src/app/api/square/webhook/route.ts` — signature HMAC SHA256, événements `payment.completed` / `payment.failed`
+- [x] `supabase/migrations/005_square_payment_id.sql` — colonne `square_payment_id TEXT` sur `orders` (**À EXÉCUTER sur Supabase si pas encore fait**)
+- [x] CSP `next.config.ts` mis à jour : `sandbox.web.squarecdn.com` + `web.squarecdn.com`
+- [x] `src/middleware.ts` supprimé (causait conflit avec `proxy.ts` sur Next.js 16 → build Vercel échouait)
+- [x] Credentials production configurés dans `.env.local` et sur Vercel (`info@floruspocus.com`)
+- [x] Paiement sandbox testé et fonctionnel
+- [x] Pushé sur GitHub (commit `463cdf0`) → Vercel auto-deploy en cours
 
 ### Contenu & UI (2026-05-26)
 - [x] **"Ferme florale artisanale" → "Floriculture écoresponsable"** partout (Hero, Footer, blog/page.tsx ×2, la-ferme/page.tsx)
@@ -115,10 +128,16 @@
 ## 3. CE QUI RESTE À FAIRE 🔲
 
 ### Priorité haute
-- [ ] **Connecter domaine `floruspocus.ca`**
-  - Vercel → florus-pocus → Settings → Domains → ajouter `floruspocus.ca`
-  - DNS Cloudflare : A `@` → `76.76.21.21` + CNAME `www` → `cname.vercel-dns.com` (nuage GRIS)
-  - Supabase Auth URL → `https://floruspocus.ca` après domaine actif
+- [ ] **Connecter domaine `floruspocus.ca`** — domaine chez **WHC** (Web Hosting Canada), accès disponible
+  - **Étape 1 — Vercel** : compte `info@floruspocus.com` → projet `florus-pocus` → Settings → Domains → ajouter `floruspocus.ca` + `www.floruspocus.ca`
+  - **Étape 2 — WHC DNS** (cPanel ou gestionnaire de zones) :
+    - Supprimer l'enregistrement A existant sur `@` si présent
+    - Ajouter A `@` → `76.76.21.21` (TTL 3600)
+    - Ajouter CNAME `www` → `cname.vercel-dns.com` (TTL 3600)
+  - **Étape 3** : attendre propagation 5–30 min (vérifier sur dnschecker.org)
+  - **Étape 4 — Supabase Auth** : supabase.com → projet → Authentication → URL Configuration → Site URL → `https://floruspocus.ca` + Redirect URLs → `https://floruspocus.ca/**`
+  - **Étape 5 — Webhook Square** : developer.squareup.com → app → Webhooks → URL `https://floruspocus.ca/api/square/webhook` → événements `payment.completed` + `payment.failed` → copier Signature Key → Vercel env var `SQUARE_WEBHOOK_SIGNATURE_KEY`
+  - **Note :** pas Cloudflare — domaine directement sur WHC, DNS géré dans WHC
 - [x] **Square paiement** — intégration sandbox complète et testée (2026-05-31)
   - Credentials sandbox dans `.env.local` (`NEXT_PUBLIC_SQUARE_APP_ID`, `SQUARE_SECRET_API_KEY`, `NEXT_PUBLIC_SQUARE_LOCATION_ID`, `SQUARE_LOCATION_ID`)
   - `src/lib/square.ts` — SquareClient (sandbox auto-détecté via préfixe `sandbox-`)
@@ -128,9 +147,11 @@
   - `supabase/migrations/005_square_payment_id.sql` — colonne `square_payment_id` sur `orders`
   - CSP dans `next.config.ts` mis à jour pour `sandbox.web.squarecdn.com`
   - **Reste à faire (production) :**
-    - [ ] Remplacer credentials sandbox → production quand compte Square approuvé
-    - [ ] Configurer webhook dans Square Dashboard → URL : `https://floruspocus.ca/api/square/webhook`
-    - [ ] Ajouter `SQUARE_WEBHOOK_SIGNATURE_KEY` dans `.env.local` et Vercel
+    - [x] Credentials production configurés (App ID, Access Token, Location ID)
+    - [ ] Connecter domaine `floruspocus.ca` (voir section DNS Cloudflare + Vercel)
+    - [ ] Configurer webhook Square Dashboard → URL : `https://floruspocus.ca/api/square/webhook` → événements `payment.completed` + `payment.failed`
+    - [ ] Copier Signature Key du webhook → `SQUARE_WEBHOOK_SIGNATURE_KEY` dans `.env.local` ET sur Vercel
+    - [ ] Exécuter migration `005_square_payment_id.sql` sur Supabase (SQL Editor) si pas encore fait
 
 ### Priorité moyenne
 - [ ] **Emails de confirmation** — après achat / inscription abonnement
@@ -425,16 +446,16 @@ Classes CSS : `botanical-leaf-1`, `botanical-leaf-2` avec `will-change: transfor
 - [x] Variables d'env configurées sur Vercel
 - [x] Auto-deploy depuis GitHub fonctionnel
 - [ ] Domaine `floruspocus.ca` connecté (Settings → Domains)
-- [ ] DNS Cloudflare configuré (nuage gris)
+- [ ] DNS WHC configuré (A + CNAME — voir section "CE QUI RESTE À FAIRE")
 - [ ] Supabase Auth URL mise à jour → `https://floruspocus.ca`
 
-### DNS Cloudflare — à faire
-| Type | Nom | Valeur | Proxy |
-|------|-----|--------|-------|
-| A | `@` | `76.76.21.21` | Nuage GRIS (DNS only) |
-| CNAME | `www` | `cname.vercel-dns.com` | Nuage GRIS (DNS only) |
+### DNS WHC — à faire
+| Type | Nom | Valeur | TTL |
+|------|-----|--------|-----|
+| A | `@` | `76.76.21.21` | 3600 |
+| CNAME | `www` | `cname.vercel-dns.com` | 3600 |
 
-**Important :** proxy Cloudflare = OFF (nuage gris) — Vercel gère SSL/CDN.
+**Note :** domaine chez WHC (Web Hosting Canada), pas Cloudflare. Vercel gère SSL/CDN automatiquement.
 
 ### Variables d'env Vercel (configurées)
 ```
