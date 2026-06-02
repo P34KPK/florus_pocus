@@ -6,10 +6,11 @@
 
 **Nom du projet :** Florus Pocus
 **Type :** Site e-commerce + panel admin
-**Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments (à venir)
+**Stack :** Next.js 16, TypeScript, Tailwind v4, Supabase, Square Payments
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
-**Dernière session :** 2026-06-01
+**Domaine production :** https://www.floruspocus.com
+**Dernière session :** 2026-06-02
 
 ---
 
@@ -24,15 +25,16 @@
 - [x] Page `/contact` — formulaire + infos
 - [x] Navbar multi-pages : vraies routes, visible immédiatement hors homepage, `hero-curtain` uniquement sur `/`
 - [x] Navbar responsive (desktop + mobile hamburger)
-- [x] Footer avec liens sociaux (Instagram, Facebook, Email)
+- [x] Footer avec liens sociaux (Instagram, LinkedIn, Email)
 - [x] CartDrawer avec gestion quantités
 - [x] Page `/blog` (listing magazine)
 - [x] Page `/blog/[slug]` (article complet + sanitization HTML)
 - [x] Page `/checkout` (formulaire client + sauvegarde commande en DB)
 - [x] Page 404 blog (`/blog/[slug]/not-found.tsx`)
+- [x] Favicon SVG fleur 6 pétales (`src/app/icon.svg`)
 
 ### Admin panel (`/admin/*`)
-- [x] Login avec Server Action (Supabase Auth)
+- [x] Login avec Server Action (Supabase Auth) + rate limiting (5 tentatives/15min par IP)
 - [x] Déconnexion (`/api/auth/signout`)
 - [x] Dashboard avec vraies données (revenus, commandes, abonnements, produits, messages)
 - [x] `/admin/produits` — CRUD complet
@@ -43,117 +45,64 @@
 - [x] `/admin/commandes` — suivi commandes
 - [x] `/admin/stats` — statistiques + exports
 - [x] `/admin/parametres` — configuration générale
-- [x] Upload d'images (Supabase Storage, bucket `floruspocus`)
-- [x] Middleware Supabase actif (`src/middleware.ts` créé — `proxy.ts` n'était pas reconnu)
+- [x] Upload d'images (Supabase Storage, bucket `floruspocus`) + rate limiting (20/h) + whitelist dossiers
 
-### Corrections & UI (2026-05-31)
-- [x] **Bug upload images admin** corrigé : `proxy.ts` n'était pas reconnu comme middleware Next.js (doit s'appeler `middleware.ts`) → sessions Supabase non rafraîchies → `getUser()` retournait null → 401. Fix : `src/middleware.ts` créé, re-exporte `proxy` comme `middleware`.
-- [x] **Gammes produits** : colonne `season` convertie ENUM → TEXT (migration `004_product_season_text.sql`). 4 nouvelles catégories : `fleurs-fraiches`, `comestibles`, `serre-inter-ligna`, `garde-robe`. Labels : "Fleurs Fraîches", "Produits Floraux Comestibles", "Serre Inter-Ligna", "La Garde-Robe du Jardinier".
+### Square paiement (production)
+- [x] SDK Square installé (`square`)
+- [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`
+- [x] `src/app/checkout/page.tsx` — Square Web Payments SDK
+- [x] `src/app/api/square/payment/route.ts` — charge carte, validation montant, idempotency key = orderId
+- [x] `src/app/api/square/webhook/route.ts` — HMAC SHA256, gère payment.updated/created/completed/failed
+- [x] Credentials production configurés sur Vercel
+- [x] Webhook Square configuré : `https://www.floruspocus.com/api/square/webhook`
+  - Events : `payment.updated`, `payment.created`, `refund.updated`
+  - Signature Key configurée sur Vercel (`SQUARE_WEBHOOK_SIGNATURE_KEY`)
+- [x] Migration `005_square_payment_id.sql` exécutée
 
-### Square paiement (2026-05-31 soir)
-- [x] SDK Square installé (`square` — pas `squareup` qui est obsolète)
-- [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`, sandbox auto-détecté via préfixe `NEXT_PUBLIC_SQUARE_APP_ID`
-- [x] `src/app/checkout/page.tsx` — champ carte Square Web Payments SDK (injection script manuelle, contourne bug Turbopack avec `next/script onLoad`)
-- [x] `src/app/api/square/payment/route.ts` — `squareClient.payments.create()`, validation montant côté serveur, mise à jour Supabase (`payment_status: "paid"`, `square_payment_id`)
-- [x] `src/app/api/square/webhook/route.ts` — signature HMAC SHA256, événements `payment.completed` / `payment.failed`
-- [x] `supabase/migrations/005_square_payment_id.sql` — colonne `square_payment_id TEXT` sur `orders` (**À EXÉCUTER sur Supabase si pas encore fait**)
-- [x] CSP `next.config.ts` mis à jour : `sandbox.web.squarecdn.com` + `web.squarecdn.com`
-- [x] `src/middleware.ts` supprimé (causait conflit avec `proxy.ts` sur Next.js 16 → build Vercel échouait)
-- [x] Credentials production configurés dans `.env.local` et sur Vercel (`info@floruspocus.com`)
-- [x] Paiement sandbox testé et fonctionnel
-- [x] Pushé sur GitHub (commit `463cdf0`) → Vercel auto-deploy en cours
-
-### Contenu & UI (2026-05-26)
-- [x] **"Ferme florale artisanale" → "Floriculture écoresponsable"** partout (Hero, Footer, blog/page.tsx ×2, la-ferme/page.tsx)
-- [x] **Footer — logos certifications** : `aliments-du-qc-logo-white.webp` + `APFCQ-logo-white.webp` (copiés dans `/public`, affichés sous les icônes sociales)
-- [x] **Footer — réseaux sociaux mis à jour** :
-  - Instagram → `https://www.instagram.com/florus_pocus` (@florus_pocus)
-  - Facebook supprimé → remplacé par **LinkedIn** `https://www.linkedin.com/company/floruspocus/`
-  - Icônes SVG inline (lucide-react v1.16 n'a pas Instagram/Linkedin)
-- [x] **Description SEO** (`layout.tsx`) → commence par "Cultiver la Vie!"
-- [x] **Bug build Vercel** corrigé : `Instagram` et `Linkedin` absents de lucide-react v1.16 → SVG inline
-
-### Performance (optimisations 2026-05-25)
-- [x] `next.config.ts` : `optimizePackageImports` (framer-motion, lucide-react), format AVIF, cache 1 an `/images/`
-- [x] Fonts : Cormorant weights 300+400+700 (normal seulement), DM Sans 400/500/600/700, Inter 400/500/600
-- [x] `BotanicalLayers.tsx` → Server Component pur (retiré Framer Motion + useScroll + useTransform, animations CSS pures `@keyframes botanical-float-1/2`)
-- [x] `ClientCartDrawer.tsx` (nouveau) → wrapper `"use client"` + `dynamic(ssr: false)` pour CartDrawer — requis par Turbopack
-- [x] `Hero.tsx` : particules réduites de 60 → 20 (10 gauche + 10 droite)
-- [x] `supabase-server.ts` : `createPublicClient()` sans cookies + 7 helpers `unstable_cache` (revalidate 3600, tags par table)
-- [x] Toutes les pages publiques : passées en `○ Static` avec revalidation 1h via les helpers cachés
-- [x] 10 sections : suppression `backdropFilter: blur(24px)` → fonds semi-transparents solides (GPU)
-- [x] Blog + CartDrawer : `<img>` → `<Image>` Next.js avec `fill` + `sizes`
-- [x] `globals.css` : `will-change: transform` sur les layers botaniques, `prefers-reduced-motion` respecté
-
-### Design & UI (2026-05-25)
-- [x] **Typographie Cormorant Garamond** sur tout le site : bold (700) pour titres, thin (300) pour textes de corps
-  - `--font-heading`, `--font-body`, `--font-display` tous → Cormorant Garamond
-  - `--font-ui` → DM Sans (gardé pour éléments UI si besoin)
-  - `body { font-weight: 300 }` / `h1-h6 { font-weight: 700 }`
-- [x] **Logo SVG** dans la navbar : `/public/florus_pocus_logo.svg` (copié depuis `IMG/`)
-  - Filtre CSS : `brightness(0) invert(1)` sur le Hero (fond sombre), aucun filtre ailleurs
-  - Dimensions : 160×36px dans le Navbar
-- [x] **WhyLocal** : espace insécable (` `) avant `?` dans le titre — le `?` ne passe plus à la ligne
-
-### Sécurité & bugs corrigés
+### Sécurité (audit 2026-06-02)
 - [x] `dangerouslySetInnerHTML` → sanitize-html (blog)
-- [x] Formulaire contact → Server Action + Supabase (table `contact_messages`)
-- [x] Navbar invisible au scroll → corrigé
-- [x] `<img>` → `<Image>` Next.js partout
-- [x] Validation upload côté client (MIME + taille)
-- [x] ParallaxPetals : max 5 sur mobile + respect `prefers-reduced-motion`
-- [x] Comparaison de dates Autocueillette → `setHours(0,0,0,0)`
-- [x] CartContext : quantité ≤ 0 supprime l'item
-- [x] Emojis produits → SVG botanique cohérent (#D4A574 / #F4D4B0)
-- [x] Logo admin → SVG floral 6 pétales
-- [x] Jauge SVG bouquets (arc 270°) dans section Abonnements
-- [x] Navbar cachée tant que le rideau Hero est fermé (custom event `hero-curtain`)
-- [x] Navbar : animation tiroir (slide-down spring) après ouverture du rideau (délai 800ms)
-- [x] Navbar multi-pages : `usePathname()` — visible immédiatement hors `/`, `hero-curtain` ignoré hors `/`
-- [x] Couleurs Navbar : `dark = scrolled || !isHomepage` — fond blanc + liens sombres dès le chargement sur pages sans Hero
-- [x] Menu mobile : fermeture automatique au changement de route (`useEffect([pathname])`)
-- [x] Route group `(public)` — layout partagé (BotanicalLayers + Navbar + Footer + CartDrawer), toutes les pages publiques dedans sauf `/checkout` (isolé volontairement)
-- [x] Liens Hero → `/abonnements` et `/autocueillette` (ancres supprimées)
-- [x] WhyLocal : CTA "Découvrir notre ferme →" → `/la-ferme` ajouté
-- [x] Farm : `href="#contact"` → `Link href="/contact"` corrigé
+- [x] Validation Zod côté serveur sur tous les inputs
+- [x] Validation localStorage cart (Zod schema au rehydrate)
+- [x] Headers sécurité dans `next.config.ts` (HSTS, CSP, X-Frame-Options, etc.)
+- [x] CSP : `worker-src blob:` ajouté pour Square Web Workers
+- [x] Upload : whitelist dossiers (`products`, `blog`, `pages`, `misc`)
+- [x] Phone : validation regex dans checkout
+- [x] Arrondi flottant total panier corrigé (`Math.round * 100 / 100`)
+- [x] Rate limiting : code prêt (`src/lib/ratelimit.ts`) — actif dès que vars Upstash configurées
+- [x] Emails confirmation : code prêt (`src/lib/resend.ts`) — actif dès que `RESEND_API_KEY` configurée
+
+### Déploiement & Infrastructure
+- [x] Repo GitHub public (`P34KPK/florus_pocus`) — requis pour Vercel Hobby auto-deploy
+- [x] Auto-deploy GitHub → Vercel fonctionnel
+- [x] Domaine `floruspocus.com` connecté (WHC DNS → Vercel)
+  - A `@` → `76.76.21.21`
+  - CNAME `www` → `cname.vercel-dns.com`
+- [x] Supabase Auth URL → `https://floruspocus.com`
 
 ### Base de données
-- [x] Migration `001_initial_schema.sql` exécutée (tables + RLS + seed)
-- [x] Migration `002_storage.sql` exécutée (bucket Supabase Storage)
-- [x] Migration `003_contact_messages.sql` exécutée (table contact_messages)
-- [x] Migration `004_product_season_text.sql` exécutée (colonne season ENUM → TEXT)
+- [x] Migration `001_initial_schema.sql` — schéma + RLS + seed
+- [x] Migration `002_storage.sql` — bucket floruspocus (Storage)
+- [x] Migration `003_contact_messages.sql` — table contact_messages
+- [x] Migration `004_product_season_text.sql` — colonne season ENUM → TEXT
+- [x] Migration `005_square_payment_id.sql` — colonne square_payment_id sur orders
 
 ---
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
-### Complété en session 2026-06-02 ✅
-- [x] Domaine `floruspocus.com` connecté (WHC DNS → Vercel)
-- [x] Square paiement production — credentials configurés, testé
-- [x] Webhook Square configuré (`https://www.floruspocus.com/api/square/webhook`, events: payment.updated/created/refund.updated, Signature Key sur Vercel)
-- [x] Migration `005_square_payment_id.sql` exécutée
-- [x] Favicon floral SVG (fleur 6 pétales terracotta sur fond vert)
-- [x] Repo GitHub rendu public (résout Vercel Hobby + deploys automatiques)
-- [x] Audit sécurité — fixes critiques appliqués (idempotency key, upload whitelist, phone regex, arrondi panier, CSP worker-src)
-- [x] Emails confirmation commande — code prêt (`src/lib/resend.ts` + `src/lib/emails/orderConfirmation.ts`)
-
 ### En attente confirmation client (comptes créés, code prêt)
 - [ ] **Emails de confirmation** — compte Resend créé, en attente code de confirmation
-  - Une fois accès : API Key → `RESEND_API_KEY` sur Vercel
+  - Une fois accès : API Key → `RESEND_API_KEY` sur Vercel → Redeploy
   - Vérifier domaine `floruspocus.com` sur Resend (DNS TXT + MX dans WHC)
   - Code prêt : `src/lib/resend.ts` + `src/lib/emails/orderConfirmation.ts`
+  - Envoi depuis `commandes@floruspocus.com`
 - [ ] **Rate limiting** — compte Upstash créé, en attente code de confirmation
   - Une fois accès : `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` sur Vercel → s'active automatiquement
   - Code prêt : `src/lib/ratelimit.ts` (5 login/15min, 20 uploads/h)
 
 ### Priorité basse
-- [ ] **Clés Supabase corrompues** — optionnel (fix `extractJwt` fonctionne)
-  - Vercel → `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` → supprimer et recoller sur une seule ligne depuis `.env.local`
-- [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
-- [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
-- [ ] **Gestion stock** — sold out sur les produits
-
-### Priorité basse
+- [ ] **Clés Supabase corrompues** — optionnel, fix `extractJwt` fonctionne
+  - Vercel → supprimer et recoller `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` sur une seule ligne depuis `.env.local`
 - [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
 - [ ] **Gestion stock** — sold out sur les produits
@@ -169,17 +118,23 @@
 - Variables publiques : préfixe `NEXT_PUBLIC_` obligatoire
 - Variables serveur (sans préfixe) : `SUPABASE_SERVICE_ROLE_KEY`, `SQUARE_SECRET_API_KEY` — backend ONLY
 
-### Variables d'environnement
+### Variables d'environnement Vercel (production)
 ```
 # PUBLIC (visibles côté client)
 NEXT_PUBLIC_SUPABASE_URL=https://msxyptzedflnfbtbvrwi.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[voir .env.local]
-NEXT_PUBLIC_SQUARE_APP_ID=placeholder   ← à remplacer quand Square prêt
-NEXT_PUBLIC_SITE_URL=https://floruspocus.ca
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[configurée — corrompue, fix extractJwt en place]
+NEXT_PUBLIC_SQUARE_APP_ID=sq0idp-HOzOJErC5EBgA-kB21iu9A
+NEXT_PUBLIC_SQUARE_LOCATION_ID=LQ69J6Z1KMTPB
+NEXT_PUBLIC_SITE_URL=https://floruspocus.com
 
 # SERVEUR UNIQUEMENT
-SUPABASE_SERVICE_ROLE_KEY=[voir .env.local]
-SQUARE_SECRET_API_KEY=placeholder       ← à remplacer quand Square prêt
+SUPABASE_SERVICE_ROLE_KEY=[configurée — corrompue, fix extractJwt en place]
+SQUARE_SECRET_API_KEY=[configurée]
+SQUARE_LOCATION_ID=LQ69J6Z1KMTPB
+SQUARE_WEBHOOK_SIGNATURE_KEY=[configurée]
+RESEND_API_KEY=[à configurer — en attente]
+UPSTASH_REDIS_REST_URL=[à configurer — en attente]
+UPSTASH_REDIS_REST_TOKEN=[à configurer — en attente]
 ```
 
 ### Supabase RLS
@@ -199,10 +154,6 @@ SQUARE_SECRET_API_KEY=placeholder       ← à remplacer quand Square prêt
 - Validation Zod côté serveur pour tous les inputs
 - HTML sanitisé avec `sanitize-html` (blog posts)
 - JAMAIS `dangerouslySetInnerHTML` avec contenu user
-
-### API & Réseau
-- Headers de sécurité dans `next.config.ts` (HSTS, CSP, X-Frame-Options, etc.)
-- HTTPS obligatoire en production
 
 ---
 
@@ -234,17 +185,15 @@ Dark Sub:    #0a1504  (Vert nuit — section abonnements)
 - Weights chargés via `next/font/google` : `["300", "400", "700"]`, normal seulement
 - Tailles : H1 hero `clamp(2.8rem, 8vw, 6.5rem)` | H2 sections `clamp(2.4rem, 5vw, 4rem)` | Body `1rem`
 
-### Logo
-- Fichier : `/public/florus_pocus_logo.svg` (copié depuis `IMG/florus_pocus_logo.svg`)
-- Couleur SVG : `#2F4F3E` (vert foncé fixe)
-- Navbar : `filter: none` sur fond clair, `brightness(0) invert(1)` sur Hero (fond sombre)
-- Dimensions dans Navbar : 160×36px
+### Logo & Favicon
+- Logo : `/public/florus_pocus_logo.svg` — couleur SVG `#2F4F3E`, dimensions 160×36px dans Navbar
+- Favicon : `src/app/icon.svg` — fleur 6 pétales terracotta sur fond vert `#2D5016`
+- Navbar : `filter: none` (fond clair) ou `brightness(0) invert(1)` (Hero sombre)
 
 ### Z-index hierarchy
 ```
 BotanicalLayers (fixed) : z-index 1
 Toutes les sections     : z-index 2
-BranchDivider           : z-index 2
 Navbar / CartDrawer     : z-index 50
 ```
 
@@ -255,127 +204,66 @@ Navbar / CartDrawer     : z-index 50
 ```
 FlorusPocus/
 ├── .env.local                   ← secrets locaux (JAMAIS commiter)
-├── .env.example                 ← template sans valeurs
-├── .gitignore
-├── next.config.ts               ← headers sécurité, remotePatterns Supabase, optimizePackageImports
+├── next.config.ts               ← headers sécurité, CSP, remotePatterns, optimizePackageImports
 ├── contexte.md                  ← CE FICHIER — point de reprise
-├── supabase/
-│   └── migrations/
-│       ├── 001_initial_schema.sql   ← schéma + RLS + seed
-│       ├── 002_storage.sql          ← bucket floruspocus (Storage)
-│       ├── 003_contact_messages.sql ← table contact_messages
-│       └── 004_product_season_text.sql ← colonne season ENUM → TEXT
+├── supabase/migrations/
+│   ├── 001_initial_schema.sql
+│   ├── 002_storage.sql
+│   ├── 003_contact_messages.sql
+│   ├── 004_product_season_text.sql
+│   └── 005_square_payment_id.sql
 └── src/
-    ├── middleware.ts                ← point d'entrée Next.js (re-exporte proxy)
-    ├── proxy.ts                     ← implémentation middleware Supabase
+    ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
+    ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
     ├── app/
-    │   ├── globals.css              ← @theme Tailwind v4, animations, botanical-float CSS
-    │   ├── layout.tsx               ← root layout (fonts Cormorant 300/400/700 + CartProvider)
-    │   ├── (public)/                ← route group — layout partagé
-    │   │   ├── layout.tsx           ← BotanicalLayers + Navbar + Footer + ClientCartDrawer
-    │   │   ├── page.tsx             ← / homepage : Hero + WhyLocal + BlogPreview
-    │   │   ├── abonnements/page.tsx ← getActiveSubscriptions()
-    │   │   ├── autocueillette/page.tsx ← getUpcomingEvents()
-    │   │   ├── boutique/page.tsx    ← getActiveProducts()
-    │   │   ├── la-ferme/page.tsx    ← getPublishedPage("farm")
-    │   │   ├── contact/page.tsx     ← getPublishedPage("contact")
-    │   │   └── blog/
-    │   │       ├── page.tsx         ← getPublishedBlogPosts()
-    │   │       └── [slug]/
-    │   │           ├── page.tsx     ← getBlogPost(slug) + cache() React
-    │   │           └── not-found.tsx
-    │   ├── checkout/page.tsx        ← Client Component, flow isolé
+    │   ├── icon.svg             ← favicon fleur 6 pétales
+    │   ├── globals.css          ← @theme Tailwind v4, animations botanical-float CSS
+    │   ├── layout.tsx           ← root layout (fonts + CartProvider)
+    │   ├── (public)/layout.tsx  ← BotanicalLayers + Navbar + Footer + ClientCartDrawer
+    │   ├── (public)/page.tsx    ← homepage
+    │   ├── checkout/page.tsx    ← Client Component, Square Web Payments SDK
     │   ├── api/
     │   │   ├── auth/signout/route.ts
-    │   │   ├── upload/route.ts
-    │   │   ├── pages/route.ts
+    │   │   ├── upload/route.ts       ← rate limiting + whitelist dossiers
+    │   │   ├── square/payment/route.ts
+    │   │   ├── square/webhook/route.ts
     │   │   ├── products/route.ts
     │   │   ├── subscriptions/route.ts
     │   │   ├── events/route.ts
-    │   │   └── blog/route.ts
+    │   │   ├── blog/route.ts
+    │   │   └── pages/route.ts
     │   └── admin/...
-    ├── components/
-    │   ├── Navbar.tsx               ← Logo SVG 160×36, filtre CSS dark/light
-    │   ├── ClientCartDrawer.tsx     ← "use client" + dynamic(ssr:false) — requis Turbopack
-    │   ├── CartDrawer.tsx
-    │   ├── BotanicalLayers.tsx      ← Server Component pur, animations CSS (plus de Framer Motion)
-    │   ├── Footer.tsx
-    │   ├── BranchDivider.tsx
-    │   ├── GrowingStem.tsx
-    │   ├── ParallaxPetals.tsx       ← max 5 mobile + reduced-motion
-    │   ├── LeafTrail.tsx
-    │   └── sections/
-    │       ├── Hero.tsx             ← 20 particules (réduit de 60)
-    │       ├── WhyLocal.tsx         ←   avant ? dans le titre
-    │       ├── Subscriptions.tsx
-    │       ├── Autocueillette.tsx
-    │       ├── Fleuristes.tsx
-    │       ├── TransformedProducts.tsx
-    │       ├── BlogPreview.tsx
-    │       ├── Farm.tsx
-    │       └── Contact.tsx
-    ├── context/CartContext.tsx
+    ├── components/...
+    ├── context/CartContext.tsx  ← Zod validation au rehydrate localStorage
     ├── lib/
-    │   ├── supabase-server.ts       ← createClient + createPublicClient + createAdminClient
-    │   │                               + 7 helpers unstable_cache (revalidate:3600, tags)
-    │   └── actions/...
+    │   ├── supabase-server.ts   ← createClient + createPublicClient + createAdminClient + helpers cache
+    │   ├── square.ts            ← SquareClient + SQUARE_LOCATION_ID
+    │   ├── resend.ts            ← client Resend (actif si RESEND_API_KEY présente)
+    │   ├── ratelimit.ts         ← Upstash limiteurs (actif si vars Upstash présentes)
+    │   ├── emails/
+    │   │   └── orderConfirmation.ts  ← template HTML + texte FR
+    │   └── actions/
+    │       ├── auth.ts          ← loginAdmin avec rate limiting
+    │       ├── checkout.ts      ← createOrder
+    │       └── contact.ts       ← sendContactMessage
     └── types/index.ts
 ```
 
 ---
 
-## 7. supabase-server.ts — Helpers cachés
+## 7. Notes techniques critiques
 
+### extractJwt() — Clés Supabase corrompues sur Vercel
+Les variables `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sur Vercel contiennent des retours chariot (clé doublée → 5 segments JWT au lieu de 3). Fix en place dans `supabase-server.ts`, `proxy.ts` et `auth.ts` :
 ```ts
-// createClient()       → @supabase/ssr → cookies → session utilisateur
-// createPublicClient() → @supabase/supabase-js → pas de cookies → compatible cache Next.js
-// createAdminClient()  → service role → bypass RLS
-
-// Helpers unstable_cache (revalidate: 3600, tags pour invalidation):
-getPublishedPages()           → tags: ["pages"]
-getPublishedBlogPosts(limit?) → tags: ["blog_posts"]
-getBlogPost(slug)             → tags: ["blog_posts"]
-getPublishedPage(slug)        → tags: ["pages"]
-getActiveSubscriptions()      → tags: ["subscriptions"]
-getActiveProducts()           → tags: ["products"]
-getUpcomingEvents()           → tags: ["events"]
+function extractJwt(raw: string): string {
+  const clean = raw.replace(/\s+/g, "");
+  const parts = clean.split(".");
+  if (parts.length === 5) return `${parts[0]}.${parts[1]}.${parts[4]}`;
+  return clean;
+}
 ```
-
----
-
-## 8. Base de données (Supabase PostgreSQL)
-
-### Tables et RLS
-
-| Table | SELECT | INSERT | UPDATE | DELETE |
-|-------|--------|--------|--------|--------|
-| users | own + admin | — | own + admin | admin |
-| pages | published=true | admin | admin | admin |
-| products | active=true | admin | admin | admin |
-| subscriptions | active=true | admin | admin | admin |
-| subscription_dropoff_points | public | admin | admin | admin |
-| autocueillette_events | active=true | admin | admin | admin |
-| blog_posts | published=true | admin | admin | admin |
-| orders | own email + admin | service role | admin | admin |
-| order_items | own orders + admin | service role | admin | admin |
-| contact_messages | admin | service role | admin | admin |
-
-### Supabase Storage
-- Bucket : `floruspocus` (public, 5MB max, images seulement)
-- Dossiers : `products/`, `blog/`, `pages/`
-- Upload via `/api/upload` (admin uniquement, service role key)
-
----
-
-## 9. Notes techniques critiques
-
-### Turbopack — `dynamic(ssr: false)` doit être dans un Client Component
-`dynamic(() => import(...), { ssr: false })` n'est pas autorisé dans un Server Component avec Turbopack.
-Solution : wrapper `"use client"` → c'est le rôle de `ClientCartDrawer.tsx`.
-
-### BotanicalLayers — Server Component pur
-Retiré tout Framer Motion. Animations via `@keyframes botanical-float-1/2` dans `globals.css`.
-Classes CSS : `botanical-leaf-1`, `botanical-leaf-2` avec `will-change: transform`.
+**À corriger proprement** : Vercel → supprimer/recoller les clés sur une seule ligne.
 
 ### supabase-server.ts — IMPORTANT
 ```ts
@@ -384,120 +272,55 @@ Classes CSS : `botanical-leaf-1`, `botanical-leaf-2` avec `will-change: transfor
 // createClient() a des cookies → NE PAS utiliser dans unstable_cache
 ```
 
-### middleware.ts + proxy.ts (middleware Next.js)
-- `src/middleware.ts` → point d'entrée Next.js, re-exporte `proxy` comme `middleware` et `config`
-- `src/proxy.ts` → implémentation : rafraîchit les tokens Supabase sur chaque requête avec `extractJwt()`
-- Matcher exclut les fichiers statiques
-- **Important** : Next.js exige que le middleware s'appelle `middleware.ts` — `proxy.ts` seul ne suffit pas
+### Square Webhook — URL dynamique
+Le handler utilise `req.url` (pas `NEXT_PUBLIC_SITE_URL`) pour la vérification HMAC — évite le mismatch www vs non-www.
 
-### Hero — Architecture rideaux
-- 2 panneaux absolus `height: 100svh`
-- Auto-ouverture après 2800ms
-- Fermeture si `scrollY < 40`, ré-ouverture si `scrollY > 80`
-- Images : `/public/images/hero/FLEUR-L.webp` et `FLEUR-R.webp`
-- Logo : `/public/images/fp_logo.png` (z-30)
-
-### Navbar
-- Logo SVG : `filter: none` (fond clair) ou `brightness(0) invert(1)` (Hero sombre)
-- `dark = scrolled || !isHomepage`
-- Sur `/` : navVisible déclenché par `hero-curtain` event → délai 800ms → slide-down spring
-- Sur autres pages : `navVisible = true` immédiatement
-- Menu mobile ferme automatiquement au changement de route
-
-### Hydration
-- JAMAIS `Math.random()` en SSR → hydration mismatch
-- Données placeholder avec valeurs fixes
+### Turbopack — `dynamic(ssr: false)`
+Doit être dans un Client Component. `ClientCartDrawer.tsx` sert de wrapper.
 
 ### Tailwind v4
-- Config dans `globals.css` avec `@theme {}`
-- Pas de `tailwind.config.js`
-- `--font-ui` disponible pour DM Sans si besoin
+Config dans `globals.css` avec `@theme {}`. Pas de `tailwind.config.js`.
 
 ### Safari mobile
-- Utiliser `100svh` (small viewport height) plutôt que `100vh`
+Utiliser `100svh` plutôt que `100vh`.
 
 ---
 
-## 10. Déploiement — Vercel
+## 8. Déploiement — Vercel
 
 ### Compte Vercel
 - **Compte :** FlorusPocus Hobby (`info@floruspocus.com`)
 - **Username :** `info-74995045`
 - **Plan :** Hobby (gratuit)
-- **Projet :** `florus-pocus` → `florus-pocus.vercel.app`
-- **Team ID :** `team_K1ZplOff9VGYK3Ce3SkAvLdw`
+- **Projet :** `florus-pocus` → `www.floruspocus.com`
 
 ### Repo GitHub
-- URL : https://github.com/P34KPK/florus_pocus.git (privé)
+- URL : https://github.com/P34KPK/florus_pocus.git (**public**)
 - Branch : `main`
-- Git user email : `peakafeller@me.com` (vérifié sur GitHub — obligatoire pour Vercel)
+- Git user : `peakafeller@me.com` (Sébastien Hamel)
+- **Repo public requis** — Vercel Hobby bloque les deploys de collaborateurs sur repos privés
 
 ### Paramètres Vercel importants
-- **Deployment Protection → Vercel Authentication** : **DÉSACTIVÉ** (sinon les auto-deploys GitHub sont bloqués)
-- **Require Verified Commits** : désactivé
+- **Deployment Protection** : DÉSACTIVÉ
 - **GitHub App** : connecté au repo `P34KPK/florus_pocus`
+- **Auto-deploy** : actif sur push vers `main`
 
-### Statut déploiement
-- [x] Build réussi — toutes les pages publiques `○ Static` avec revalidation 1h
-- [x] Variables d'env configurées sur Vercel
-- [x] Auto-deploy depuis GitHub fonctionnel
-- [ ] Domaine `floruspocus.ca` connecté (Settings → Domains)
-- [ ] DNS WHC configuré (A + CNAME — voir section "CE QUI RESTE À FAIRE")
-- [ ] Supabase Auth URL mise à jour → `https://floruspocus.ca`
-
-### DNS WHC — à faire
-| Type | Nom | Valeur | TTL |
-|------|-----|--------|-----|
-| A | `@` | `76.76.21.21` | 3600 |
-| CNAME | `www` | `cname.vercel-dns.com` | 3600 |
-
-**Note :** domaine chez WHC (Web Hosting Canada), pas Cloudflare. Vercel gère SSL/CDN automatiquement.
-
-### Variables d'env Vercel (configurées)
-```
-NEXT_PUBLIC_SUPABASE_URL=https://msxyptzedflnfbtbvrwi.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[configurée]
-SUPABASE_SERVICE_ROLE_KEY=[configurée — Sensitive]
-NEXT_PUBLIC_SITE_URL=https://floruspocus.ca
-NEXT_PUBLIC_SQUARE_APP_ID=placeholder
-SQUARE_SECRET_API_KEY=placeholder       ← Sensitive
-```
-
-### Problèmes résolus (historique)
-- Email git corrompu (`deeplink@p34k.compeakafeller@me.com`) → corrigé : `git config user.email "peakafeller@me.com"`
-- Vercel Authentication activé → bloquait les auto-deploys → désactivé
-- Email `peakafeller@me.com` non vérifié sur GitHub → ajouté et vérifié → résolu
-- `Instagram` + `Linkedin` absents de lucide-react v1.16 → build fail → corrigé avec SVG inline
-- **Login admin cassé (2026-05-26)** — `NEXT_PUBLIC_SUPABASE_ANON_KEY` corrompue sur Vercel (clé doublée avec retours chariot, possiblement causé par le downgrade Pro→Hobby). Corrigé via `extractJwt()` dans le code.
-
-### Note importante — lucide-react v1.16
-Les icônes `Instagram` et `Linkedin` n'existent pas dans cette version.
-Toujours utiliser des **SVG inline** pour les logos de réseaux sociaux.
-
-### Note importante — Clés Supabase corrompues sur Vercel
-Les variables `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sur le compte Vercel `info@floruspocus.com` contiennent des retours chariot (clé doublée → 5 segments JWT au lieu de 3).
-
-**Fix en place :** `extractJwt()` dans `supabase-server.ts`, `supabase.ts`, `proxy.ts` et `auth.ts` reconstruit la bonne clé : `parts[0].parts[1].parts[4]`.
-
-**À corriger proprement un jour :** aller sur Vercel → Settings → Environment Variables → supprimer et recoller les clés proprement (une seule ligne, pas de retour chariot). Les clés correctes sont dans `.env.local`.
-
-### Note importante — Compte Vercel CLI
-- CLI `npx vercel` connecté au compte **p34kpk** (Sébastien Hamel — compte personnel)
-- Le vrai projet déployé est sur le compte **info@floruspocus.com** (FlorusPocus Hobby)
-- Les `vercel env add` via CLI vont au mauvais compte — ne pas utiliser pour gérer les env vars de prod
-- Pour gérer les env vars : aller directement sur vercel.com → compte `info@floruspocus.com`
+### Vercel CLI
+- CLI connecté au compte **p34kpk** (compte personnel Sébastien) — pas au compte client
+- Ne pas utiliser `vercel env add` pour les vars de prod
+- Gérer les vars directement sur vercel.com → compte `info@floruspocus.com`
 
 ---
 
-## 11. Identifiants admin (dev)
+## 9. Identifiants admin
 
 - **Email :** info@floruspocus.com
 - **Mot de passe :** FlorusPocus2026!
-- **URL admin :** http://localhost:3000/admin (dev) / https://floruspocus.ca/admin (prod)
+- **URL admin :** http://localhost:3000/admin (dev) / https://www.floruspocus.com/admin (prod)
 
 ---
 
-## 12. Dépendances principales
+## 10. Dépendances principales
 
 ```json
 {
@@ -505,6 +328,10 @@ Les variables `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sur
   "react": "19.x",
   "@supabase/supabase-js": "^2.x",
   "@supabase/ssr": "^0.x",
+  "square": "latest",
+  "resend": "^6.x",
+  "@upstash/ratelimit": "^2.x",
+  "@upstash/redis": "^1.x",
   "framer-motion": "^12.x",
   "lucide-react": "^0.x",
   "sanitize-html": "^2.x",
@@ -515,4 +342,3 @@ Les variables `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sur
 **Polices Google (next/font) :**
 - `Cormorant_Garamond` → heading + body + display (weights 300/400/700, normal)
 - `DM_Sans` → font-ui (weights 400/500/600/700)
-- `Inter` → chargé mais non utilisé comme font principale (conservé au cas où)
