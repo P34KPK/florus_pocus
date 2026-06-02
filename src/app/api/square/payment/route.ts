@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { squareClient, SQUARE_LOCATION_ID } from "@/lib/square";
 import { createAdminClient } from "@/lib/supabase-server";
+import { resend, FROM_EMAIL } from "@/lib/resend";
+import { orderConfirmationHtml, orderConfirmationText } from "@/lib/emails/orderConfirmation";
 
 const PaymentSchema = z.object({
   sourceId:  z.string().min(1),
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, total_amount, payment_status")
+    .select("id, total_amount, payment_status, customer_name, customer_email")
     .eq("id", orderId)
     .single();
 
@@ -62,6 +64,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (payment?.status === "COMPLETED") {
+      // Récupérer les items pour l'email
+      const { data: orderItems } = await supabase
+        .from("order_items")
+        .select("price_per_unit, quantity, metadata")
+        .eq("order_id", orderId);
+
       await supabase
         .from("orders")
         .update({
@@ -70,6 +78,23 @@ export async function POST(req: NextRequest) {
           square_payment_id: payment.id,
         })
         .eq("id", orderId);
+
+      // Envoyer email de confirmation (non-bloquant)
+      if (order.customer_email) {
+        const items = (orderItems ?? []).map((i) => ({
+          name:     (i.metadata as { product_name?: string })?.product_name ?? "Article",
+          quantity: i.quantity,
+          price:    i.price_per_unit,
+        }));
+
+        resend.emails.send({
+          from:    FROM_EMAIL,
+          to:      order.customer_email,
+          subject: `Confirmation de commande #${orderId.slice(0, 8).toUpperCase()} — Florus Pocus`,
+          html:    orderConfirmationHtml({ orderId, customerName: order.customer_name, items, total: order.total_amount }),
+          text:    orderConfirmationText({ orderId, customerName: order.customer_name, items, total: order.total_amount }),
+        }).catch((err) => console.error("[email] confirmation failed:", err));
+      }
 
       return NextResponse.json({ success: true, paymentId: payment.id });
     }
