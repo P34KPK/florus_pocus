@@ -11,11 +11,16 @@ interface Props {
   onSuccess: () => void;
 }
 
-const SEASONS = [
-  { value: "fleurs-fraiches",    label: "Fleurs Fraîches" },
-  { value: "comestibles",        label: "Produits Floraux Comestibles" },
-  { value: "serre-inter-ligna",  label: "Serre Inter-Ligna" },
-  { value: "garde-robe",         label: "La Garde-Robe du Jardinier" },
+const CATEGORY_SUGGESTIONS = [
+  "Fleurs Fraîches",
+  "Bouquets",
+  "Roses",
+  "Vivaces",
+  "Comestibles",
+  "Serre Inter-Ligna",
+  "La Garde-Robe",
+  "Séchées",
+  "Couronnes",
 ];
 
 export default function ProductForm({ action, product, onSuccess }: Props) {
@@ -51,11 +56,17 @@ export default function ProductForm({ action, product, onSuccess }: Props) {
         </div>
 
         <div>
-          <label className={label}>Saison</label>
-          <select name="season" defaultValue={product?.season ?? ""} className={field}>
-            <option value="">Toutes saisons</option>
-            {SEASONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+          <label className={label}>Catégorie (filtre boutique)</label>
+          <input
+            name="season"
+            list="category-suggestions"
+            defaultValue={product?.season ?? ""}
+            className={field}
+            placeholder="Ex: Fleurs Fraîches, Bouquets…"
+          />
+          <datalist id="category-suggestions">
+            {CATEGORY_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
+          </datalist>
         </div>
 
         <div>

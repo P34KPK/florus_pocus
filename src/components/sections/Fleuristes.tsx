@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Grid, List, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import type { Product, ProductSeason } from "@/types";
+import type { Product } from "@/types";
 
 interface FleuristesProps {
   products?: Product[];
@@ -23,12 +23,16 @@ const PLACEHOLDER_FLEURS: Product[] = [
   { id: "f10", name: "Sirop de Lavande", description: "Sirop de lavande artisanal, idéal en cocktail ou en dessert.", category: "transforme", price: 12, stock: 35, image_url: null, season: "comestibles", active: true, created_at: "", updated_at: "" },
 ];
 
-const SEASON_LABELS: Record<ProductSeason, string> = {
-  "fleurs-fraiches":  "Fleurs Fraîches",
-  "comestibles":      "Produits Comestibles",
+const LEGACY_LABELS: Record<string, string> = {
+  "fleurs-fraiches":   "Fleurs Fraîches",
+  "comestibles":       "Produits Comestibles",
   "serre-inter-ligna": "Serre Inter-Ligna",
-  "garde-robe":       "La Garde-Robe",
+  "garde-robe":        "La Garde-Robe",
 };
+
+function categoryLabel(season: string): string {
+  return LEGACY_LABELS[season] ?? season;
+}
 
 function FlowerPlaceholder({ size = 56 }: { size?: number }) {
   return (
@@ -68,7 +72,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
             <h4 className="font-heading font-semibold">{product.name}</h4>
             {product.season && (
               <span className="text-xs px-2 py-0.5 rounded-full opacity-60" style={{ backgroundColor: "#F4D4B0" }}>
-                {SEASON_LABELS[product.season]}
+                {categoryLabel(product.season)}
               </span>
             )}
           </div>
@@ -104,7 +108,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
         <div className="flex items-start justify-between gap-2 mb-1">
           <h4 className="font-heading font-semibold leading-tight">{product.name}</h4>
           {product.season && (
-            <span className="text-xs opacity-60 flex-shrink-0">{SEASON_LABELS[product.season]}</span>
+            <span className="text-xs opacity-60 flex-shrink-0">{categoryLabel(product.season)}</span>
           )}
         </div>
         <p className="text-sm opacity-55 mb-4 leading-relaxed line-clamp-2">{product.description}</p>
@@ -127,11 +131,15 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
 
 export default function Fleuristes({ products }: FleuristesProps) {
   const fleurs = (products && products.length > 0) ? products : PLACEHOLDER_FLEURS;
-  const [view,   setView]   = useState<"grid" | "list">("grid");
-  const [season, setSeason] = useState<ProductSeason | "all">("all");
+  const [view,     setView]     = useState<"grid" | "list">("grid");
+  const [category, setCategory] = useState<string>("all");
 
-  const seasons: (ProductSeason | "all")[] = ["all", "fleurs-fraiches", "comestibles", "serre-inter-ligna", "garde-robe"];
-  const filtered = season === "all" ? fleurs : fleurs.filter((p) => p.season === season);
+  // Catégories disponibles extraites dynamiquement des produits
+  const categories = Array.from(
+    new Set(fleurs.map((p) => p.season).filter(Boolean) as string[])
+  );
+
+  const filtered = category === "all" ? fleurs : fleurs.filter((p) => p.season === category);
 
   return (
     <section id="boutique-fleurs" className="section-padding relative" style={{ backgroundColor: "#FAFAF8", zIndex: 2 }}>
@@ -146,19 +154,29 @@ export default function Fleuristes({ products }: FleuristesProps) {
 
           {/* Controls */}
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Season filter */}
-            <div className="flex bg-white border border-border rounded-xl overflow-hidden shadow-sm">
-              {seasons.map((s) => (
-                <button key={s} onClick={() => setSeason(s)}
+            {/* Category filter — dynamique */}
+            {categories.length > 0 && (
+              <div className="flex bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+                <button onClick={() => setCategory("all")}
                   className="px-3 py-2 text-xs font-semibold transition-all"
                   style={{
-                    backgroundColor: season === s ? "#2D5016" : "transparent",
-                    color: season === s ? "#fff" : "#1A1A1A",
+                    backgroundColor: category === "all" ? "#2D5016" : "transparent",
+                    color: category === "all" ? "#fff" : "#1A1A1A",
                   }}>
-                  {s === "all" ? "Tous" : SEASON_LABELS[s as ProductSeason]}
+                  Tous
                 </button>
-              ))}
-            </div>
+                {categories.map((c) => (
+                  <button key={c} onClick={() => setCategory(c)}
+                    className="px-3 py-2 text-xs font-semibold transition-all"
+                    style={{
+                      backgroundColor: category === c ? "#2D5016" : "transparent",
+                      color: category === c ? "#fff" : "#1A1A1A",
+                    }}>
+                    {categoryLabel(c)}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* View toggle */}
             <div className="flex bg-white border border-border rounded-xl overflow-hidden shadow-sm">
