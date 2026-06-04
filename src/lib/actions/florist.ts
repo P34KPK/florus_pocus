@@ -29,6 +29,7 @@ export async function verifyFloristCode(_prev: FloristState, formData: FormData)
   const jar = await cookies();
   jar.set(COOKIE, "1", {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: COOKIE_MAX_AGE,

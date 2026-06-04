@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
+import { assertAdmin } from "./auth-guard";
 
 const ItemSchema = z.object({
   name:        z.string().min(1).max(200),
@@ -21,6 +22,9 @@ function invalidate() {
 }
 
 export async function createMangeMoiItem(_prev: MangeMoiState, formData: FormData): Promise<MangeMoiState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const raw = {
     name:        formData.get("name"),
     description: formData.get("description") ?? "",
@@ -44,6 +48,9 @@ export async function createMangeMoiItem(_prev: MangeMoiState, formData: FormDat
 }
 
 export async function updateMangeMoiItem(_prev: MangeMoiState, formData: FormData): Promise<MangeMoiState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
@@ -70,6 +77,9 @@ export async function updateMangeMoiItem(_prev: MangeMoiState, formData: FormDat
 }
 
 export async function deleteMangeMoiItem(id: string): Promise<MangeMoiState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const supabase = await createAdminClient();
   const { error } = await supabase.from("mange_moi_items").delete().eq("id", id);
   if (error) return { error: error.message };

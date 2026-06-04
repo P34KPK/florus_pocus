@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
+import { assertAdmin } from "./auth-guard";
 
 const SubscriptionSchema = z.object({
   name: z.string().min(1).max(200),
@@ -24,7 +25,17 @@ const DropoffSchema = z.object({
 
 export type SubFormState = { error?: string; success?: boolean };
 
+function invalidate() {
+  revalidateTag("subscriptions", "max");
+  revalidatePath("/abonnements");
+  revalidatePath("/admin/abonnements");
+  revalidatePath("/");
+}
+
 export async function createSubscription(_prev: SubFormState, formData: FormData): Promise<SubFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const frequencies = formData.getAll("frequencies") as string[];
   const raw = {
     name: formData.get("name"),
@@ -42,12 +53,14 @@ export async function createSubscription(_prev: SubFormState, formData: FormData
   const { error } = await supabase.from("subscriptions").insert(parsed.data);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/abonnements");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function updateSubscription(_prev: SubFormState, formData: FormData): Promise<SubFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
@@ -68,22 +81,26 @@ export async function updateSubscription(_prev: SubFormState, formData: FormData
   const { error } = await supabase.from("subscriptions").update(parsed.data).eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/abonnements");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function deleteSubscription(id: string): Promise<SubFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const supabase = await createAdminClient();
   const { error } = await supabase.from("subscriptions").delete().eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/abonnements");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function createDropoffPoint(_prev: SubFormState, formData: FormData): Promise<SubFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const daysRaw = formData.getAll("days_available");
   const raw = {
     subscription_id: formData.get("subscription_id"),
@@ -106,6 +123,9 @@ export async function createDropoffPoint(_prev: SubFormState, formData: FormData
 }
 
 export async function deleteDropoffPoint(id: string): Promise<SubFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const supabase = await createAdminClient();
   const { error } = await supabase.from("subscription_dropoff_points").delete().eq("id", id);
   if (error) return { error: error.message };

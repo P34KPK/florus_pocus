@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
+import { assertAdmin } from "./auth-guard";
 
 const PageSchema = z.object({
   title: z.string().min(1).max(200),
@@ -15,6 +16,9 @@ const PageSchema = z.object({
 export type PageFormState = { error?: string; success?: boolean };
 
 export async function updatePage(_prev: PageFormState, formData: FormData): Promise<PageFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
@@ -39,6 +43,7 @@ export async function updatePage(_prev: PageFormState, formData: FormData): Prom
   const { error } = await supabase.from("pages").update(data).eq("id", id);
   if (error) return { error: error.message };
 
+  revalidateTag("pages", "max");
   revalidatePath("/admin/pages");
   revalidatePath("/");
   return { success: true };

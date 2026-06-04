@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
+import { assertAdmin } from "./auth-guard";
 
 const BlogSchema = z.object({
   title: z.string().min(1).max(500),
@@ -17,7 +18,17 @@ const BlogSchema = z.object({
 
 export type BlogFormState = { error?: string; success?: boolean };
 
+function invalidate() {
+  revalidateTag("blog_posts", "max");
+  revalidatePath("/blog");
+  revalidatePath("/admin/blog");
+  revalidatePath("/");
+}
+
 export async function createBlogPost(_prev: BlogFormState, formData: FormData): Promise<BlogFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const tagsRaw = formData.get("tags") as string;
   const tags = tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : [];
 
@@ -45,12 +56,14 @@ export async function createBlogPost(_prev: BlogFormState, formData: FormData): 
   const { error } = await supabase.from("blog_posts").insert(data);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/blog");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function updateBlogPost(_prev: BlogFormState, formData: FormData): Promise<BlogFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
@@ -81,22 +94,26 @@ export async function updateBlogPost(_prev: BlogFormState, formData: FormData): 
   const { error } = await supabase.from("blog_posts").update(data).eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/blog");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function deleteBlogPost(id: string): Promise<BlogFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const supabase = await createAdminClient();
   const { error } = await supabase.from("blog_posts").delete().eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/blog");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function togglePublished(id: string, published: boolean): Promise<BlogFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const supabase = await createAdminClient();
   const { error } = await supabase
     .from("blog_posts")
@@ -104,7 +121,6 @@ export async function togglePublished(id: string, published: boolean): Promise<B
     .eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/blog");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }

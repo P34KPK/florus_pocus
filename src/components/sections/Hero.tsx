@@ -47,7 +47,7 @@ const PARTICLES = [
 export default function Hero({ page }: HeroProps) {
   const ref   = useRef<HTMLElement>(null);
   const title = page?.title       ?? "Cultiver la Vie";
-  const desc  = page?.description ?? "Des fleurs fraîches de la ferme à votre porte. Abonnements, autocueillette et bouquets artisanaux cultivés avec amour au cœur du Québec.";
+  const desc  = page?.description ?? "Des fleurs fraîches de la ferme à votre porte. Abonnements, bouquets artisanaux et créations comestibles cultivés avec amour au cœur du Québec.";
 
   const [curtainOpen, setCurtainOpen] = useState(false);
   const [curtainDone, setCurtainDone] = useState(false);

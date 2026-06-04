@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
+import { assertAdmin } from "./auth-guard";
 
 const EventSchema = z.object({
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -15,6 +16,9 @@ const EventSchema = z.object({
 export type EventFormState = { error?: string; success?: boolean };
 
 export async function createEvent(_prev: EventFormState, formData: FormData): Promise<EventFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const raw = {
     event_date: formData.get("event_date"),
     capacity: formData.get("capacity"),
@@ -40,6 +44,9 @@ export async function createEvent(_prev: EventFormState, formData: FormData): Pr
 }
 
 export async function updateEvent(_prev: EventFormState, formData: FormData): Promise<EventFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
@@ -68,6 +75,9 @@ export async function updateEvent(_prev: EventFormState, formData: FormData): Pr
 }
 
 export async function deleteEvent(id: string): Promise<EventFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const supabase = await createAdminClient();
   const { error } = await supabase.from("autocueillette_events").delete().eq("id", id);
   if (error) return { error: error.message };

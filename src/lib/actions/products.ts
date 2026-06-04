@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
+import { assertAdmin } from "./auth-guard";
 
 const ProductSchema = z.object({
   name: z.string().min(1).max(200),
@@ -18,7 +19,18 @@ const ProductSchema = z.object({
 
 export type ProductFormState = { error?: string; success?: boolean };
 
+function invalidate() {
+  revalidateTag("products", "max");
+  revalidatePath("/boutique");
+  revalidatePath("/fleuristes");
+  revalidatePath("/admin/produits");
+  revalidatePath("/");
+}
+
 export async function createProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const raw = {
     name: formData.get("name"),
     description: formData.get("description"),
@@ -40,12 +52,14 @@ export async function createProduct(_prev: ProductFormState, formData: FormData)
   const { error } = await supabase.from("products").insert(data);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/produits");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function updateProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
@@ -70,29 +84,30 @@ export async function updateProduct(_prev: ProductFormState, formData: FormData)
   const { error } = await supabase.from("products").update(data).eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/produits");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function deleteProduct(id: string): Promise<ProductFormState> {
-  if (!id) return { error: "ID manquant" };
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
 
   const supabase = await createAdminClient();
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/produits");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }
 
 export async function toggleProductActive(id: string, active: boolean): Promise<ProductFormState> {
+  const authErr = await assertAdmin();
+  if (authErr) return authErr;
+
   const supabase = await createAdminClient();
   const { error } = await supabase.from("products").update({ active: !active }).eq("id", id);
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/produits");
-  revalidatePath("/");
+  invalidate();
   return { success: true };
 }

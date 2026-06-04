@@ -155,9 +155,10 @@ export default function Navbar() {
                 >
                   <Link
                     href={link.href}
-                    className="block py-3 font-display font-bold leading-tight transition-colors"
+                    className="flex items-center gap-2 py-3 font-display font-bold leading-tight transition-colors"
                     style={{ fontSize: "clamp(1.25rem, 5vw, 1.75rem)", color: "rgba(255,255,255,0.72)" }}
                   >
+                    {link.icon && <link.icon size={16} style={{ opacity: 0.6, flexShrink: 0 }} />}
                     {link.label}
                   </Link>
                 </motion.li>
