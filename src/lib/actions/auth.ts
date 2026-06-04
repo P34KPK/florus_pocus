@@ -5,13 +5,6 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase-server";
 import { loginRatelimit } from "@/lib/ratelimit";
 
-function extractJwt(raw: string): string {
-  const clean = raw.replace(/\s+/g, "");
-  const parts = clean.split(".");
-  if (parts.length === 5) return `${parts[0]}.${parts[1]}.${parts[4]}`;
-  return clean;
-}
-
 const LoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -48,8 +41,8 @@ export async function loginAdmin(_prev: LoginState, formData: FormData): Promise
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/users?id=eq.${user.id}&select=is_admin`,
     {
       headers: {
-        apikey: extractJwt(process.env.SUPABASE_SERVICE_ROLE_KEY!),
-        Authorization: `Bearer ${extractJwt(process.env.SUPABASE_SERVICE_ROLE_KEY!)}`,
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!.trim(),
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!.trim()}`,
       },
       cache: "no-store",
     }
