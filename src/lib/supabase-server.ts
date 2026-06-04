@@ -112,7 +112,7 @@ export const getActiveSubscriptions = unstable_cache(
       .from("subscriptions")
       .select("*, dropoff_points:subscription_dropoff_points(*)")
       .eq("active", true)
-      .order("price_monthly", { ascending: true });
+      .order("price", { ascending: true });
     return data ?? [];
   },
   ["active-subscriptions"],

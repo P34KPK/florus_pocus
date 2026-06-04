@@ -66,8 +66,8 @@ export default function AbonnementsClient({ subscriptions }: Props) {
                       </div>
                       <p className="text-sm opacity-60 mb-2">{sub.description}</p>
                       <div className="flex gap-4 text-sm items-center flex-wrap">
-                        <span className="font-bold text-lg font-display" style={{ color: "#2D5016" }}>{sub.price_monthly} $/mois</span>
-                        <span className="opacity-60">{sub.stems_count} tiges</span>
+                        <span className="font-bold text-lg font-display" style={{ color: "#2D5016" }}>{sub.price} $/bouquet</span>
+                        <span className="opacity-60">Format {sub.format}</span>
                         <div className="flex gap-1.5 flex-wrap">
                           {(sub.frequencies ?? []).map((f) => (
                             <span key={f} className="text-xs px-2.5 py-0.5 rounded-full" style={{ backgroundColor: "#F0F5EC", color: "#2D5016" }}>{FREQ_LABELS[f] ?? f}</span>

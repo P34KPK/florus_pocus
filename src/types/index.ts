@@ -35,8 +35,8 @@ export interface Subscription {
   id: string;
   name: string;
   description: string;
-  price_monthly: number;
-  stems_count: number;
+  price: number;
+  format: string;
   frequencies: SubscriptionFrequency[];
   active: boolean;
   dropoff_points?: DropoffPoint[];

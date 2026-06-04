@@ -7,7 +7,7 @@ export async function GET() {
     .from("subscriptions")
     .select("*, dropoff_points:subscription_dropoff_points(*)")
     .eq("active", true)
-    .order("price_monthly", { ascending: true });
+    .order("price", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);

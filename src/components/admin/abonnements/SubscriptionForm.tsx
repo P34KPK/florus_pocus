@@ -46,12 +46,17 @@ export default function SubscriptionForm({ action, subscription, onSuccess }: Pr
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={label}>Prix mensuel ($) *</label>
-          <input name="price_monthly" type="number" step="0.01" min="0" defaultValue={subscription?.price_monthly} required className={field} />
+          <label className={label}>Prix par bouquet ($) *</label>
+          <input name="price" type="number" step="0.01" min="0" defaultValue={subscription?.price} required className={field} placeholder="Ex: 45.00" />
         </div>
         <div>
-          <label className={label}>Nombre de tiges *</label>
-          <input name="stems_count" type="number" min="1" defaultValue={subscription?.stems_count} required className={field} />
+          <label className={label}>Format *</label>
+          <select name="format" defaultValue={subscription?.format ?? "Moyen"} required className={field}>
+            <option value="Petit">Petit</option>
+            <option value="Moyen">Moyen</option>
+            <option value="Grand">Grand</option>
+            <option value="XL">XL</option>
+          </select>
         </div>
       </div>
 

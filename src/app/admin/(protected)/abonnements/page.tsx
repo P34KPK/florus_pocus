@@ -10,7 +10,7 @@ export default async function AdminAbonnementsPage() {
   const { data } = await supabase
     .from("subscriptions")
     .select("*, dropoff_points:subscription_dropoff_points(*)")
-    .order("price_monthly", { ascending: true });
+    .order("price", { ascending: true });
 
   const subscriptions: Subscription[] = (data ?? []).map((s) => ({
     ...s,

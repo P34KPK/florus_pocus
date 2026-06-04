@@ -92,7 +92,7 @@ interface CartContextValue {
   addSubscription: (sub: {
     id: string;
     name: string;
-    price_monthly: number;
+    price: number;
     frequency: SubscriptionFrequency;
     dropoff_point_id: string;
     dropoff_point_name: string;
@@ -154,7 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   function addSubscription(sub: {
-    id: string; name: string; price_monthly: number;
+    id: string; name: string; price: number;
     frequency: SubscriptionFrequency; dropoff_point_id: string; dropoff_point_name: string;
   }) {
     const cartId = makeCartId("subscription", sub.id, `${sub.frequency}_${sub.dropoff_point_id}`);
@@ -166,7 +166,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       payload: {
         cartId, type: "subscription", referenceId: sub.id,
         name: `${sub.name} — ${freqLabel[sub.frequency]}`,
-        price: sub.price_monthly, quantity: 1,
+        price: sub.price, quantity: 1,
         metadata: { frequency: sub.frequency, dropoff_point_id: sub.dropoff_point_id, dropoff_point_name: sub.dropoff_point_name },
       },
     });

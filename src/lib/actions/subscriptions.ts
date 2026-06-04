@@ -7,8 +7,8 @@ import { createAdminClient } from "@/lib/supabase-server";
 const SubscriptionSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().min(1),
-  price_monthly: z.coerce.number().positive(),
-  stems_count: z.coerce.number().int().positive(),
+  price: z.coerce.number().positive(),
+  format: z.string().min(1).max(100),
   frequencies: z.array(z.enum(["1x_month", "2x_month", "4x_month"])).min(1),
   active: z.coerce.boolean(),
 });
@@ -29,8 +29,8 @@ export async function createSubscription(_prev: SubFormState, formData: FormData
   const raw = {
     name: formData.get("name"),
     description: formData.get("description"),
-    price_monthly: formData.get("price_monthly"),
-    stems_count: formData.get("stems_count"),
+    price: formData.get("price"),
+    format: formData.get("format"),
     frequencies,
     active: formData.get("active") === "true",
   };
@@ -55,8 +55,8 @@ export async function updateSubscription(_prev: SubFormState, formData: FormData
   const raw = {
     name: formData.get("name"),
     description: formData.get("description"),
-    price_monthly: formData.get("price_monthly"),
-    stems_count: formData.get("stems_count"),
+    price: formData.get("price"),
+    format: formData.get("format"),
     frequencies,
     active: formData.get("active") === "true",
   };

@@ -12,19 +12,19 @@ interface SubscriptionsProps {
 }
 
 const PLACEHOLDER_SUBS: Subscription[] = [
-  { id: "sub-1", name: "Petit Bouquet", description: "Un bouquet délicat de fleurs de saison pour égayer votre espace.", price_monthly: 39, stems_count: 10, frequencies: ["1x_month", "2x_month"], active: true, created_at: "", updated_at: "",
+  { id: "sub-1", name: "Petit Bouquet", description: "Un bouquet délicat de fleurs de saison pour égayer votre espace.", price: 39, format: "Petit", frequencies: ["1x_month", "2x_month"], active: true, created_at: "", updated_at: "",
     dropoff_points: [
       { id: "dp-1", subscription_id: "sub-1", name: "Pont-Rouge", address: "123 Rue Principale, Pont-Rouge", days_available: [1,3,5], hours_start: "09:00", hours_end: "17:00", created_at: "", updated_at: "" },
       { id: "dp-2", subscription_id: "sub-1", name: "Québec — Saint-Roch", address: "456 Rue Saint-Joseph, Québec", days_available: [2,4], hours_start: "10:00", hours_end: "18:00", created_at: "", updated_at: "" },
     ],
   },
-  { id: "sub-2", name: "Bouquet Moyen", description: "Un généreux bouquet qui transforme chaque pièce en jardin fleuri.", price_monthly: 65, stems_count: 20, frequencies: ["1x_month", "2x_month", "4x_month"], active: true, created_at: "", updated_at: "",
+  { id: "sub-2", name: "Bouquet Moyen", description: "Un généreux bouquet qui transforme chaque pièce en jardin fleuri.", price: 65, format: "Moyen", frequencies: ["1x_month", "2x_month", "4x_month"], active: true, created_at: "", updated_at: "",
     dropoff_points: [
       { id: "dp-3", subscription_id: "sub-2", name: "Pont-Rouge", address: "123 Rue Principale, Pont-Rouge", days_available: [1,3,5], hours_start: "09:00", hours_end: "17:00", created_at: "", updated_at: "" },
       { id: "dp-4", subscription_id: "sub-2", name: "Québec — Saint-Roch", address: "456 Rue Saint-Joseph, Québec", days_available: [2,4], hours_start: "10:00", hours_end: "18:00", created_at: "", updated_at: "" },
     ],
   },
-  { id: "sub-3", name: "Bouquet Complet", description: "L'expérience florale ultime — un bouquet spectaculaire chaque livraison.", price_monthly: 95, stems_count: 30, frequencies: ["1x_month", "2x_month", "4x_month"], active: true, created_at: "", updated_at: "",
+  { id: "sub-3", name: "Bouquet Complet", description: "L'expérience florale ultime — un bouquet spectaculaire chaque livraison.", price: 95, format: "Grand", frequencies: ["1x_month", "2x_month", "4x_month"], active: true, created_at: "", updated_at: "",
     dropoff_points: [
       { id: "dp-5", subscription_id: "sub-3", name: "Pont-Rouge", address: "123 Rue Principale, Pont-Rouge", days_available: [1,3,5], hours_start: "09:00", hours_end: "17:00", created_at: "", updated_at: "" },
       { id: "dp-6", subscription_id: "sub-3", name: "Québec — Saint-Roch", address: "456 Rue Saint-Joseph, Québec", days_available: [2,4], hours_start: "10:00", hours_end: "18:00", created_at: "", updated_at: "" },
@@ -38,48 +38,21 @@ const FREQ_LABELS: Record<SubscriptionFrequency, string> = {
   "4x_month": "4× par mois (hebdomadaire)",
 };
 
-function BouquetGauge({ stems, isPopular, index }: { stems: number; isPopular: boolean; index: number }) {
-  const R         = 44;
-  const CX        = 60;
-  const CY        = 60;
-  const CIRC      = 2 * Math.PI * R;          // ≈ 276.46
-  const GAUGE_ARC = (270 / 360) * CIRC;       // 270° arc ≈ 207.35
-
-  const fillArc  = (stems / 30) * GAUGE_ARC;
-
-  const fillColor  = isPopular ? "#2D5016" : "#D4A574";
-  const trackColor = isPopular ? "rgba(45,80,22,0.15)" : "rgba(255,255,255,0.1)";
-  const textColor  = isPopular ? "#1a2e0a" : "#ffffff";
-  const subColor   = isPopular ? "rgba(45,80,22,0.50)" : "rgba(255,255,255,0.40)";
-
+function FormatBadge({ format, isPopular }: { format: string; isPopular: boolean }) {
   return (
     <div className="flex justify-center mb-5">
-      <div className="relative" style={{ width: 108, height: 108 }}>
-        <svg viewBox="0 0 120 120" width="108" height="108">
-          {/* rotate(135) positions the gap at the bottom */}
-          <g transform={`rotate(135, ${CX}, ${CY})`}>
-            <circle cx={CX} cy={CY} r={R} fill="none" stroke={trackColor}
-              strokeWidth="7" strokeLinecap="round"
-              strokeDasharray={`${GAUGE_ARC} ${CIRC - GAUGE_ARC}`}
-            />
-            <motion.circle cx={CX} cy={CY} r={R} fill="none" stroke={fillColor}
-              strokeWidth="7" strokeLinecap="round"
-              strokeDasharray={`${GAUGE_ARC} ${CIRC - GAUGE_ARC}`}
-              initial={{ strokeDashoffset: GAUGE_ARC }}
-              whileInView={{ strokeDashoffset: GAUGE_ARC - fillArc }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1], delay: 0.2 + index * 0.15 }}
-            />
-          </g>
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display font-bold leading-none" style={{ fontSize: "1.6rem", color: textColor }}>
-            {stems}
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest mt-0.5" style={{ color: subColor }}>
-            tiges
-          </span>
-        </div>
+      <div className="flex flex-col items-center justify-center rounded-2xl px-8 py-4"
+        style={isPopular
+          ? { backgroundColor: "rgba(45,80,22,0.1)", border: "1.5px solid rgba(45,80,22,0.2)" }
+          : { backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }
+        }
+      >
+        <span className="font-display font-bold leading-none" style={{ fontSize: "1.8rem", color: isPopular ? "#1a2e0a" : "#ffffff" }}>
+          {format}
+        </span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest mt-1" style={{ color: isPopular ? "rgba(45,80,22,0.5)" : "rgba(255,255,255,0.4)" }}>
+          format
+        </span>
       </div>
     </div>
   );
@@ -90,11 +63,11 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
   const [freq,    setFreq]    = useState<SubscriptionFrequency>(sub.frequencies[0]);
   const [dropoff, setDropoff] = useState<DropoffPoint | null>(sub.dropoff_points?.[0] ?? null);
   const [added,   setAdded]   = useState(false);
-  const isPopular = sub.stems_count === 20;
+  const isPopular = sub.format === "Moyen";
 
   function handleAdd() {
     if (!dropoff) return;
-    addSubscription({ id: sub.id, name: sub.name, price_monthly: sub.price_monthly, frequency: freq, dropoff_point_id: dropoff.id, dropoff_point_name: dropoff.name });
+    addSubscription({ id: sub.id, name: sub.name, price: sub.price, frequency: freq, dropoff_point_id: dropoff.id, dropoff_point_name: dropoff.name });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }
@@ -123,7 +96,7 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
       )}
 
       <div className="p-8 flex flex-col">
-        <BouquetGauge stems={sub.stems_count} isPopular={isPopular} index={index} />
+        <FormatBadge format={sub.format} isPopular={isPopular} />
 
         <h3 className={`font-heading font-bold text-xl mb-1 ${isPopular ? "text-[#1a2e0a]" : "text-white"}`}>
           {sub.name}
@@ -137,12 +110,12 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
             className={`font-display font-bold ${isPopular ? "text-[#1a2e0a]" : "text-white"}`}
             style={{ fontSize: "clamp(2.8rem, 5vw, 3.5rem)", lineHeight: 1 }}
           >
-            {sub.price_monthly}$
+            {sub.price}$
           </span>
-          <span className={`text-sm ml-1 ${isPopular ? "text-[#2D5016]/60" : "text-white/40"}`}>/mois</span>
+          <span className={`text-sm ml-1 ${isPopular ? "text-[#2D5016]/60" : "text-white/40"}`}>/bouquet</span>
         </div>
         <p className={`text-xs mb-6 ${isPopular ? "text-[#2D5016]/50" : "text-white/40"}`}>
-          {sub.stems_count} tiges de fleurs de saison
+          Fleurs fraîches de saison — format {sub.format.toLowerCase()}
         </p>
 
         <ul className="space-y-2 mb-6">
