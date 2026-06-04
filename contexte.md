@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-04 (session 3)
+**Dernière session :** 2026-06-04 (session 4 — audit approfondi)
 
 ---
 
@@ -20,8 +20,8 @@
 - [x] Homepage allégée : Hero + WhyLocal + BlogPreview (3 sections, 2 queries Supabase)
 - [x] Page `/abonnements` — section Subscriptions complète
 - [x] Page `/boutique` — Fleuristes + BranchDivider + TransformedProducts
-- [x] Page `/autocueillette` — existe encore mais n'est plus dans la nav (remplacé par Mange Moi)
 - [x] Page `/mange-moi` — catalogue vitrine comestibles (photo + description, sans achat)
+- [x] `/autocueillette` SUPPRIMÉE — redirection 301 → `/mange-moi` (next.config.ts)
 - [x] Page `/la-ferme` — histoire + stats + CTA → /contact
 - [x] Page `/contact` — formulaire + infos
 - [x] Page `/fleuristes` — espace professionnel protégé par code (cookie 30j)
@@ -41,17 +41,19 @@
 ### Admin panel (`/admin/*`)
 - [x] Login avec Server Action (Supabase Auth) + rate limiting (5 tentatives/15min par IP)
 - [x] Déconnexion (`/api/auth/signout`)
-- [x] Dashboard avec vraies données (revenus, commandes, abonnements, produits, messages)
+- [x] Dashboard avec vraies données (revenus, commandes, abonnements, produits, messages) — bouton "Voir les messages" → /admin/messages (corrigé)
+- [x] Notification email à l'admin à chaque message de contact (vers contact_email)
 - [x] `/admin/produits` — CRUD complet + champ prix fleuriste + catégorie libre
 - [x] `/admin/abonnements` — CRUD abonnements + points de chute (modèle prix/bouquet + format)
-- [x] `/admin/autocueillette` — gestion dates + capacités (cache invalidé immédiatement) — page accessible mais hors sidebar
 - [x] `/admin/mange-moi` — CRUD catalogue Mange Moi (nom, description, photo, ordre, statut)
 - [x] `/admin/pages` — édition contenu homepage (4 sections)
 - [x] `/admin/contenu` — CMS global : adresse, téléphone, email, réseaux sociaux, footer, WhyLocal (4 cartes), abonnements, code fleuristes
 - [x] `/admin/blog` — CRUD articles + éditeur riche TipTap (H2/H3, gras, italique, listes, liens, citations, alignement…)
-- [x] `/admin/commandes` — suivi commandes
+- [x] `/admin/commandes` — VRAIES commandes : filtres par statut, détail (client/articles/note), changement de statut, export CSV
+- [x] `/admin/messages` — lecture messages contact : marquer lu, répondre (mailto), supprimer
 - [x] `/admin/stats` — statistiques + exports
 - [x] `/admin/parametres` — configuration générale
+- [x] `/admin/autocueillette` SUPPRIMÉE (fonctionnalité retirée)
 - [x] Upload d'images : Sharp → WebP automatique, max 10 MB, rate limiting (20/h)
 
 ### Square paiement (production)
@@ -267,13 +269,16 @@ FlorusPocus/
     │   └── actions/
     │       ├── auth.ts          ← loginAdmin avec rate limiting
     │       ├── checkout.ts      ← createOrder
-    │       ├── contact.ts       ← sendContactMessage
+    │       ├── contact.ts       ← sendContactMessage + notification email admin
     │       ├── settings.ts      ← updateSiteSettings (CMS)
     │       ├── auth-guard.ts    ← assertAdmin() : JWT + is_admin DB (partagé par toutes les actions)
     │       ├── florist.ts       ← verifyFloristCode + isFloristAuthenticated
     │       ├── mangeMoi.ts      ← CRUD mange_moi_items
-    │       └── events.ts        ← CRUD events + revalidateTag("events", "max")
+    │       ├── messages.ts      ← markMessageRead + deleteMessage
+    │       └── orders.ts        ← updateOrderStatus (statuts enum stricts)
     └── types/index.ts           ← Product.florist_price + MangeMoiItem + season: string | null
+    (supprimés session 4 : actions/events.ts, api/events, sections/Autocueillette.tsx,
+     admin/autocueillette, public/autocueillette, getUpcomingEvents, type AutocueilletteEvent)
 ```
 
 ---
@@ -305,6 +310,16 @@ function extractJwt(raw: string): string {
 revalidateTag("events", "max");   // ✅
 revalidateTag("events");          // ❌ TypeScript error
 ```
+
+### ⚠️ Statuts de commande — enums Postgres STRICTS (ne pas dévier)
+Les colonnes `orders.status` et `orders.payment_status` sont des ENUMS Postgres. **Écrire une valeur hors liste fait échouer l'UPDATE.**
+```
+order_status   = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+payment_status = 'pending' | 'completed' | 'failed'
+```
+Après un paiement réussi : `status = "paid"`, `payment_status = "completed"`.
+(Bug historique session 4 : le code écrivait `"confirmed"` / `"paid"` invalides → UPDATE échouait en silence → commandes bloquées à pending. Corrigé.)
+Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 
 ### Square Webhook — URL dynamique
 Le handler utilise `req.url` (pas `NEXT_PUBLIC_SITE_URL`) pour la vérification HMAC — évite le mismatch www vs non-www.
@@ -354,7 +369,7 @@ Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_setti
 - RLS : lecture publique des items actifs uniquement
 - `getMangeMoiItems()` → caché avec tag `mange_moi`
 - Navbar/Footer/Hero : "Autocueillette" remplacé par "Mange Moi" → `/mange-moi`
-- `/admin/autocueillette` toujours accessible directement (données historiques) mais retiré de la sidebar
+- Autocueillette entièrement retirée (session 4) : pages, admin, action, API supprimés ; redirection 301 `/autocueillette` → `/mange-moi`. Table `autocueillette_events` conservée en DB (données historiques, plus utilisée par le code).
 
 ### Produits — catégorie libre
 - Champ `season` = sous-catégorie libre (TEXT) depuis migration 004
