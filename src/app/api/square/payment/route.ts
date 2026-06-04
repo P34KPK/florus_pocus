@@ -70,14 +70,20 @@ export async function POST(req: NextRequest) {
         .select("price_per_unit, quantity, metadata")
         .eq("order_id", orderId);
 
-      await supabase
+      const { error: updateErr } = await supabase
         .from("orders")
         .update({
-          payment_status:    "paid",
-          status:            "confirmed",
+          payment_status:    "completed",
+          status:            "paid",
           square_payment_id: payment.id,
         })
         .eq("id", orderId);
+
+      if (updateErr) {
+        // Le paiement Square a réussi mais la mise à jour DB a échoué.
+        // On log en priorité — la commande est récupérable via square_payment_id.
+        console.error("[square/payment] order update failed:", updateErr.message, "orderId:", orderId, "paymentId:", payment.id);
+      }
 
       // Envoyer email de confirmation — JAMAIS bloquant : un échec d'email
       // ne doit pas masquer un paiement réussi (carte déjà débitée).

@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
       const { data: updated } = await supabase
         .from("orders")
         .update({
-          payment_status:    "paid",
-          status:            "confirmed",
+          payment_status:    "completed",
+          status:            "paid",
           square_payment_id: paymentId,
         })
         .eq("id", orderId)
