@@ -4,6 +4,7 @@ import Farm             from "@/components/sections/Farm";
 export const metadata = {
   title: "La Ferme",
   description: "Découvrez l'histoire de Florus Pocus, notre floriculture écoresponsable au cœur du Québec.",
+  alternates: { canonical: "/la-ferme" },
 };
 
 export default async function LaFermePage() {

@@ -5,8 +5,9 @@ import { getMangeMoiItems } from "@/lib/supabase-server";
 import type { MangeMoiItem } from "@/types";
 
 export const metadata = {
-  title: "Mange Moi — Florus Pocus",
+  title: "Mange Moi",
   description: "Découvrez nos créations comestibles et produits de la ferme Florus Pocus.",
+  alternates: { canonical: "/mange-moi" },
 };
 
 function ItemCard({ item }: { item: MangeMoiItem }) {

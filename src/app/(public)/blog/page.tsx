@@ -7,6 +7,7 @@ import type { BlogPost } from "@/types";
 export const metadata = {
   title: "Blogue — Histoires de la ferme",
   description: "Conseils, actualités et histoires de notre floriculture écoresponsable au Québec.",
+  alternates: { canonical: "/blog" },
 };
 
 function PostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {

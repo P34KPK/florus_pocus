@@ -7,6 +7,7 @@ import type { Product }     from "@/types";
 export const metadata = {
   title: "Boutique",
   description: "Fleurs fraîches de saison et produits transformés artisanaux de la ferme Florus Pocus.",
+  alternates: { canonical: "/boutique" },
 };
 
 export default async function BoutiquePage() {

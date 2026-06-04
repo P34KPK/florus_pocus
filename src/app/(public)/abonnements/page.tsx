@@ -5,6 +5,7 @@ import type { Subscription } from "@/types";
 export const metadata = {
   title: "Abonnements floraux",
   description: "Recevez des bouquets frais de la ferme chaque semaine ou chaque mois. Choisissez votre formule et votre point de chute.",
+  alternates: { canonical: "/abonnements" },
 };
 
 export default async function AbonnementsPage() {
