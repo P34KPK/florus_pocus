@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, Tag } from "lucide-react";
+import { ArrowLeft, ArrowRight, Tag, X } from "lucide-react";
 import { getPublishedBlogPosts } from "@/lib/supabase-server";
 import type { BlogPost } from "@/types";
 
@@ -21,7 +21,6 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
   return (
     <Link href={`/blog/${post.slug}`} className="group block h-full">
       <article className={`bg-white rounded-3xl border border-[#E0D5C8] overflow-hidden h-full flex flex-col hover:shadow-xl transition-shadow duration-300 ${featured ? "lg:flex-row" : ""}`}>
-        {/* Image / placeholder */}
         <div className={`relative overflow-hidden flex-shrink-0 ${featured ? "lg:w-2/5 aspect-[4/3] lg:aspect-auto" : "aspect-[16/10]"}`}
           style={{ backgroundColor: "#1a3009" }}>
           {post.featured_image_url ? (
@@ -43,7 +42,6 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
           )}
         </div>
 
-        {/* Content */}
         <div className="p-8 flex flex-col flex-1">
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
@@ -87,56 +85,103 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
   );
 }
 
-export default async function BlogPage() {
+export default async function BlogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string }>;
+}) {
+  const { tag: activeTag } = await searchParams;
   const posts = await getPublishedBlogPosts();
-  const articles: BlogPost[] = posts as BlogPost[];
+  const allPosts: BlogPost[] = posts as BlogPost[];
+
+  // Extraire tous les tags uniques de tous les articles
+  const allTags = Array.from(
+    new Set(allPosts.flatMap((p) => p.tags))
+  ).sort();
+
+  // Filtrer par tag si sélectionné
+  const articles = activeTag
+    ? allPosts.filter((p) => p.tags.includes(activeTag))
+    : allPosts;
+
   const [featured, ...rest] = articles;
 
   return (
     <main className="min-h-screen pt-24" style={{ backgroundColor: "#FAFAF8" }}>
-        {/* Header */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <Link href="/#blogue"
-            className="inline-flex items-center gap-2 text-sm font-medium mb-8 hover:gap-3 transition-all"
-            style={{ color: "#2D5016" }}>
-            <ArrowLeft size={16} /> Retour à l&apos;accueil
-          </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Link href="/#blogue"
+          className="inline-flex items-center gap-2 text-sm font-medium mb-8 hover:gap-3 transition-all"
+          style={{ color: "#2D5016" }}>
+          <ArrowLeft size={16} /> Retour à l&apos;accueil
+        </Link>
 
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: "#D4A574" }}>
-            Actualités
-          </p>
-          <h1 className="font-display font-bold mb-4" style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", color: "#2D5016" }}>
-            Histoires<br />de la ferme
-          </h1>
-          <p className="text-base max-w-xl" style={{ color: "#666" }}>
-            Conseils, coulisses et actualités de notre floriculture écoresponsable au Québec.
-          </p>
-        </div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: "#D4A574" }}>
+          Actualités
+        </p>
+        <h1 className="font-display font-bold mb-4" style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)", color: "#2D5016" }}>
+          Histoires<br />de la ferme
+        </h1>
+        <p className="text-base max-w-xl mb-10" style={{ color: "#666" }}>
+          Conseils, coulisses et actualités de notre floriculture écoresponsable au Québec.
+        </p>
 
-        {articles.length === 0 ? (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-            <p className="font-heading text-lg" style={{ color: "#999" }}>Aucun article publié pour le moment.</p>
-            <p className="text-sm mt-2" style={{ color: "#bbb" }}>Revenez bientôt !</p>
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 space-y-8">
-            {/* Article vedette */}
-            {featured && (
-              <div>
-                <PostCard post={featured} featured />
-              </div>
-            )}
-
-            {/* Grille reste */}
-            {rest.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {rest.map((post) => (
-                  <PostCard key={post.id} post={post} />
-                ))}
-              </div>
-            )}
+        {/* Filtre par tags */}
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-10">
+            <Link
+              href="/blog"
+              className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border transition-colors font-medium"
+              style={
+                !activeTag
+                  ? { backgroundColor: "#2D5016", color: "#fff", borderColor: "#2D5016" }
+                  : { backgroundColor: "transparent", color: "#2D5016", borderColor: "#2D5016" }
+              }
+            >
+              Tous
+            </Link>
+            {allTags.map((tag) => (
+              <Link
+                key={tag}
+                href={activeTag === tag ? "/blog" : `/blog?tag=${encodeURIComponent(tag)}`}
+                className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-full border transition-colors font-medium"
+                style={
+                  activeTag === tag
+                    ? { backgroundColor: "#2D5016", color: "#fff", borderColor: "#2D5016" }
+                    : { backgroundColor: "transparent", color: "#2D5016", borderColor: "#2D5016" }
+                }
+              >
+                <Tag size={11} />
+                {tag}
+                {activeTag === tag && <X size={11} />}
+              </Link>
+            ))}
           </div>
         )}
+      </div>
+
+      {articles.length === 0 ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+          <p className="font-heading text-lg" style={{ color: "#999" }}>
+            Aucun article trouvé{activeTag ? ` pour le tag « ${activeTag} »` : ""}.
+          </p>
+          {activeTag && (
+            <Link href="/blog" className="text-sm mt-4 inline-block underline" style={{ color: "#2D5016" }}>
+              Voir tous les articles
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 space-y-8">
+          {featured && <PostCard post={featured} featured={!activeTag} />}
+          {rest.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rest.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </main>
   );
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
 
@@ -32,6 +32,8 @@ export async function createEvent(_prev: EventFormState, formData: FormData): Pr
   const { error } = await supabase.from("autocueillette_events").insert(data);
   if (error) return { error: error.message };
 
+  revalidateTag("events");
+  revalidatePath("/autocueillette");
   revalidatePath("/admin/autocueillette");
   revalidatePath("/");
   return { success: true };
@@ -58,6 +60,8 @@ export async function updateEvent(_prev: EventFormState, formData: FormData): Pr
   const { error } = await supabase.from("autocueillette_events").update(data).eq("id", id);
   if (error) return { error: error.message };
 
+  revalidateTag("events");
+  revalidatePath("/autocueillette");
   revalidatePath("/admin/autocueillette");
   revalidatePath("/");
   return { success: true };
@@ -68,6 +72,8 @@ export async function deleteEvent(id: string): Promise<EventFormState> {
   const { error } = await supabase.from("autocueillette_events").delete().eq("id", id);
   if (error) return { error: error.message };
 
+  revalidateTag("events");
+  revalidatePath("/autocueillette");
   revalidatePath("/admin/autocueillette");
   revalidatePath("/");
   return { success: true };

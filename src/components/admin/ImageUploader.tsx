@@ -20,13 +20,13 @@ export default function ImageUploader({ name, folder, currentUrl, label = "Image
   async function handleFile(file: File) {
     setError(null);
 
-    const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
     if (!ALLOWED.includes(file.type)) {
-      setError("Format non supporté. Utilisez JPG, PNG, WebP ou GIF.");
+      setError("Format non supporté. Utilisez JPG, PNG, WebP, GIF ou AVIF.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Fichier trop lourd. Maximum 5 Mo.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Fichier trop lourd. Maximum 10 Mo.");
       return;
     }
 
@@ -141,7 +141,7 @@ export default function ImageUploader({ name, folder, currentUrl, label = "Image
               <ImageIcon size={22} style={{ color: "#2D5016", opacity: 0.5 }} />
               <p className="text-xs text-center" style={{ color: "#999" }}>
                 Cliquez ou déposez une image<br />
-                <span style={{ opacity: 0.6 }}>JPG, PNG, WebP — max 5 Mo</span>
+                <span style={{ opacity: 0.6 }}>JPG, PNG, WebP, GIF — max 10 Mo</span>
               </p>
             </>
           )}
@@ -155,7 +155,7 @@ export default function ImageUploader({ name, folder, currentUrl, label = "Image
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
         className="hidden"
         onChange={handleChange}
       />
