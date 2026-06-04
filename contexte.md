@@ -23,13 +23,17 @@
 - [x] Page `/autocueillette` — calendrier + réservation billets
 - [x] Page `/la-ferme` — histoire + stats + CTA → /contact
 - [x] Page `/contact` — formulaire + infos
-- [x] Navbar multi-pages : vraies routes, visible immédiatement hors homepage, `hero-curtain` uniquement sur `/`
+- [x] Page `/fleuristes` — espace professionnel protégé par code (cookie 30j)
+- [x] Page `/politique-confidentialite` — page légale complète
+- [x] Page `/conditions-utilisation` — page légale complète
+- [x] Navbar multi-pages : vraies routes, visible immédiatement hors homepage
+- [x] Navbar : lien Fleuristes avec icône cadenas 🔒
 - [x] Navbar responsive (desktop + mobile hamburger)
-- [x] Footer avec liens sociaux (Instagram, LinkedIn, Email)
+- [x] Footer dynamique (adresse, email, téléphone, réseaux sociaux depuis DB)
 - [x] CartDrawer avec gestion quantités
-- [x] Page `/blog` (listing magazine)
-- [x] Page `/blog/[slug]` (article complet + sanitization HTML)
-- [x] Page `/checkout` (formulaire client + sauvegarde commande en DB)
+- [x] Page `/blog` — listing magazine + filtre cliquable par tags (URL params)
+- [x] Page `/blog/[slug]` — article complet + sanitization HTML
+- [x] Page `/checkout` — formulaire client + sauvegarde commande en DB
 - [x] Page 404 blog (`/blog/[slug]/not-found.tsx`)
 - [x] Favicon SVG fleur 6 pétales (`src/app/icon.svg`)
 
@@ -37,39 +41,36 @@
 - [x] Login avec Server Action (Supabase Auth) + rate limiting (5 tentatives/15min par IP)
 - [x] Déconnexion (`/api/auth/signout`)
 - [x] Dashboard avec vraies données (revenus, commandes, abonnements, produits, messages)
-- [x] `/admin/produits` — CRUD complet
-- [x] `/admin/abonnements` — CRUD abonnements + points de chute
-- [x] `/admin/autocueillette` — gestion dates + capacités
-- [x] `/admin/pages` — édition contenu homepage
-- [x] `/admin/blog` — CRUD articles
+- [x] `/admin/produits` — CRUD complet + champ prix fleuriste + catégorie libre
+- [x] `/admin/abonnements` — CRUD abonnements + points de chute (modèle prix/bouquet + format)
+- [x] `/admin/autocueillette` — gestion dates + capacités (cache invalidé immédiatement)
+- [x] `/admin/pages` — édition contenu homepage (4 sections)
+- [x] `/admin/contenu` — CMS global : adresse, téléphone, email, réseaux sociaux, footer, WhyLocal (4 cartes), abonnements, code fleuristes
+- [x] `/admin/blog` — CRUD articles + éditeur riche TipTap (H2/H3, gras, italique, listes, liens, citations, alignement…)
 - [x] `/admin/commandes` — suivi commandes
 - [x] `/admin/stats` — statistiques + exports
 - [x] `/admin/parametres` — configuration générale
-- [x] Upload d'images (Supabase Storage, bucket `floruspocus`) + rate limiting (20/h) + whitelist dossiers
+- [x] Upload d'images : Sharp → WebP automatique, max 10 MB, rate limiting (20/h)
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
 - [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`
 - [x] `src/app/checkout/page.tsx` — Square Web Payments SDK
 - [x] `src/app/api/square/payment/route.ts` — charge carte, validation montant, idempotency key = orderId
-- [x] `src/app/api/square/webhook/route.ts` — HMAC SHA256, gère payment.updated/created/completed/failed
+- [x] `src/app/api/square/webhook/route.ts` — HMAC SHA256, gère payment.updated/created/completed/failed + envoi email Resend
 - [x] Credentials production configurés sur Vercel
 - [x] Webhook Square configuré : `https://www.floruspocus.com/api/square/webhook`
-  - Events : `payment.updated`, `payment.created`, `refund.updated`
-  - Signature Key configurée sur Vercel (`SQUARE_WEBHOOK_SIGNATURE_KEY`)
 - [x] Migration `005_square_payment_id.sql` exécutée
 
-### Sécurité (audit 2026-06-02)
-- [x] `dangerouslySetInnerHTML` → sanitize-html (blog)
+### Sécurité
+- [x] `dangerouslySetInnerHTML` → sanitize-html (blog) + balises TipTap (h4, s) autorisées
 - [x] Validation Zod côté serveur sur tous les inputs
 - [x] Validation localStorage cart (Zod schema au rehydrate)
 - [x] Headers sécurité dans `next.config.ts` (HSTS, CSP, X-Frame-Options, etc.)
-- [x] CSP : `worker-src blob:` ajouté pour Square Web Workers
-- [x] Upload : whitelist dossiers (`products`, `blog`, `pages`, `misc`)
-- [x] Phone : validation regex dans checkout
-- [x] Arrondi flottant total panier corrigé (`Math.round * 100 / 100`)
-- [x] Rate limiting : actif en production (Upstash `ca-central-1`, vars configurées sur Vercel)
-- [x] Emails confirmation : actifs en production (Resend, domaine vérifié, envoi depuis `commandes@floruspocus.com`)
+- [x] Upload : whitelist dossiers + conversion WebP via Sharp
+- [x] Rate limiting : actif en production (Upstash `ca-central-1`)
+- [x] Emails confirmation : actifs en production (Resend, domaine vérifié, `commandes@floruspocus.com`)
+- [x] Accès fleuristes : cookie HttpOnly 30j, code vérifié côté serveur depuis DB
 
 ### Déploiement & Infrastructure
 - [x] Repo GitHub public (`P34KPK/florus_pocus`) — requis pour Vercel Hobby auto-deploy
@@ -85,17 +86,19 @@
 - [x] Migration `003_contact_messages.sql` — table contact_messages
 - [x] Migration `004_product_season_text.sql` — colonne season ENUM → TEXT
 - [x] Migration `005_square_payment_id.sql` — colonne square_payment_id sur orders
+- [x] Migration `006_subscriptions_format.sql` — price_monthly→price, stems_count→format (TEXT)
+- [x] Migration `007_site_settings.sql` — table site_settings (CMS global, RLS public read)
+- [x] Migration `008_florist_price.sql` — florist_price sur products + code accès fleuristes
 
 ---
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
-### Priorité basse
 - [ ] **Clés Supabase corrompues** — optionnel, fix `extractJwt` fonctionne
   - Vercel → supprimer et recoller `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` sur une seule ligne depuis `.env.local`
 - [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
-- [ ] **Gestion stock** — sold out sur les produits
+- [ ] **Gestion stock** — sold out sur les produits (champ stock existe, affichage "Épuisé" existe, mais pas de logique automatique)
 
 ---
 
@@ -128,21 +131,23 @@ UPSTASH_REDIS_REST_TOKEN=[configurée — ca-central-1]
 ```
 
 ### Supabase RLS
-- RLS activé sur TOUTES les tables
+- RLS activé sur TOUTES les tables (y compris site_settings)
 - Tout bloqué par défaut
 - `auth.uid()` UNIQUEMENT dans les policies (jamais `user_metadata`)
 - `WITH CHECK` sur toutes les policies UPDATE et INSERT
 - `service_role_key` jamais exposée au frontend
+- `site_settings` : lecture publique autorisée, écriture via service_role uniquement
 
 ### Authentication
 - Vérification `is_admin` côté SERVEUR (pas seulement client)
 - Logout via `/api/auth/signout` (POST) → `supabase.auth.signOut()` + redirect
 - JWT validé sur chaque requête sensible
+- Fleuristes : cookie `fp_florist` HttpOnly, SameSite=lax, 30 jours, code vérifié en DB
 
 ### Inputs
 - Uniquement parameterized queries avec Supabase
 - Validation Zod côté serveur pour tous les inputs
-- HTML sanitisé avec `sanitize-html` (blog posts)
+- HTML sanitisé avec `sanitize-html` (blog posts) — balises TipTap incluses (h4, s)
 - JAMAIS `dangerouslySetInnerHTML` avec contenu user
 
 ---
@@ -201,7 +206,10 @@ FlorusPocus/
 │   ├── 002_storage.sql
 │   ├── 003_contact_messages.sql
 │   ├── 004_product_season_text.sql
-│   └── 005_square_payment_id.sql
+│   ├── 005_square_payment_id.sql
+│   ├── 006_subscriptions_format.sql
+│   ├── 007_site_settings.sql
+│   └── 008_florist_price.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -210,33 +218,48 @@ FlorusPocus/
     │   ├── globals.css          ← @theme Tailwind v4, animations botanical-float CSS
     │   ├── layout.tsx           ← root layout (fonts + CartProvider)
     │   ├── (public)/layout.tsx  ← BotanicalLayers + Navbar + Footer + ClientCartDrawer
-    │   ├── (public)/page.tsx    ← homepage
+    │   ├── (public)/page.tsx    ← homepage (charge site_settings pour WhyLocal)
+    │   ├── (public)/fleuristes/page.tsx ← vérifie cookie fp_florist, affiche Gate ou Catalog
+    │   ├── (public)/politique-confidentialite/page.tsx
+    │   ├── (public)/conditions-utilisation/page.tsx
     │   ├── checkout/page.tsx    ← Client Component, Square Web Payments SDK
     │   ├── api/
     │   │   ├── auth/signout/route.ts
-    │   │   ├── upload/route.ts       ← rate limiting + whitelist dossiers
+    │   │   ├── upload/route.ts       ← Sharp WebP + rate limiting + whitelist
     │   │   ├── square/payment/route.ts
-    │   │   ├── square/webhook/route.ts
+    │   │   ├── square/webhook/route.ts ← confirme paiement + envoie email Resend
     │   │   ├── products/route.ts
     │   │   ├── subscriptions/route.ts
     │   │   ├── events/route.ts
     │   │   ├── blog/route.ts
     │   │   └── pages/route.ts
-    │   └── admin/...
-    ├── components/...
+    │   └── admin/
+    │       └── (protected)/
+    │           ├── contenu/page.tsx  ← CMS global (site_settings)
+    │           └── ...autres pages admin
+    ├── components/
+    │   ├── admin/
+    │   │   ├── blog/RichTextEditor.tsx  ← TipTap WYSIWYG
+    │   │   └── contenu/ContenuClient.tsx
+    │   └── sections/
+    │       ├── FloristGate.tsx    ← formulaire code d'accès
+    │       └── FloristCatalog.tsx ← catalogue pro avec prix de gros
     ├── context/CartContext.tsx  ← Zod validation au rehydrate localStorage
     ├── lib/
-    │   ├── supabase-server.ts   ← createClient + createPublicClient + createAdminClient + helpers cache
+    │   ├── supabase-server.ts   ← createClient + createPublicClient + createAdminClient + getSiteSettings
     │   ├── square.ts            ← SquareClient + SQUARE_LOCATION_ID
-    │   ├── resend.ts            ← client Resend (actif si RESEND_API_KEY présente)
-    │   ├── ratelimit.ts         ← Upstash limiteurs (actif si vars Upstash présentes)
+    │   ├── resend.ts            ← client Resend
+    │   ├── ratelimit.ts         ← Upstash limiteurs
     │   ├── emails/
-    │   │   └── orderConfirmation.ts  ← template HTML + texte FR
+    │   │   └── orderConfirmation.ts
     │   └── actions/
     │       ├── auth.ts          ← loginAdmin avec rate limiting
     │       ├── checkout.ts      ← createOrder
-    │       └── contact.ts       ← sendContactMessage
-    └── types/index.ts
+    │       ├── contact.ts       ← sendContactMessage
+    │       ├── settings.ts      ← updateSiteSettings (CMS)
+    │       ├── florist.ts       ← verifyFloristCode + isFloristAuthenticated
+    │       └── events.ts        ← CRUD events + revalidateTag("events", "max")
+    └── types/index.ts           ← Product.florist_price + season: string | null
 ```
 
 ---
@@ -262,6 +285,13 @@ function extractJwt(raw: string): string {
 // createClient() a des cookies → NE PAS utiliser dans unstable_cache
 ```
 
+### revalidateTag — Next.js 16
+```ts
+// Next.js 16 requiert un 2e argument obligatoire
+revalidateTag("events", "max");   // ✅
+revalidateTag("events");          // ❌ TypeScript error
+```
+
 ### Square Webhook — URL dynamique
 Le handler utilise `req.url` (pas `NEXT_PUBLIC_SITE_URL`) pour la vérification HMAC — évite le mismatch www vs non-www.
 
@@ -273,6 +303,32 @@ Config dans `globals.css` avec `@theme {}`. Pas de `tailwind.config.js`.
 
 ### Safari mobile
 Utiliser `100svh` plutôt que `100vh`.
+
+### Upload images
+Sharp converti tout en WebP (qualité 80, max 1920px). Limite : 10 MB avant compression. Formats acceptés : JPG, PNG, WebP, GIF, AVIF.
+
+### Abonnements — modèle de prix (migration 006)
+- `price` (pas `price_monthly`) = prix par bouquet
+- `format` (TEXT, pas `stems_count`) = Petit / Moyen / Grand / XL
+- `isPopular` basé sur `format === "Moyen"` dans Subscriptions.tsx
+
+### CMS — site_settings
+- Table `site_settings` (key, value, label, grp)
+- `getSiteSettings()` → retourne `Record<string, string>` — caché avec tag `site_settings`
+- Groupes : `contact`, `reseaux_sociaux`, `footer`, `pourquoi_local`, `abonnements`, `fleuristes`
+- Admin : `/admin/contenu`
+
+### Fleuristes — accès privé
+- Cookie `fp_florist=1`, HttpOnly, SameSite=lax, 30 jours
+- Code stocké dans `site_settings.florist_access_code` (défaut: `fleuriste2026`)
+- Changer le code : Admin → Contenu → section "Accès fleuristes"
+- `florist_price` sur products : prix de gros affiché dans FloristCatalog (null = prix public)
+
+### Produits — catégorie libre
+- Champ `season` = sous-catégorie libre (TEXT) depuis migration 004
+- Admin : champ texte libre avec datalist suggestions
+- Boutique : filtres générés dynamiquement depuis les valeurs réelles en DB
+- Rétrocompatibilité anciens slugs via `LEGACY_LABELS` dans Fleuristes.tsx et TransformedProducts.tsx
 
 ---
 
@@ -307,6 +363,7 @@ Utiliser `100svh` plutôt que `100vh`.
 - **Email :** info@floruspocus.com
 - **Mot de passe :** FlorusPocus2026!
 - **URL admin :** http://localhost:3000/admin (dev) / https://www.floruspocus.com/admin (prod)
+- **Code fleuristes :** `fleuriste2026` (changeable dans Admin → Contenu)
 
 ---
 
@@ -322,6 +379,13 @@ Utiliser `100svh` plutôt que `100vh`.
   "resend": "^6.x",
   "@upstash/ratelimit": "^2.x",
   "@upstash/redis": "^1.x",
+  "sharp": "latest",
+  "@tiptap/react": "latest",
+  "@tiptap/pm": "latest",
+  "@tiptap/starter-kit": "latest",
+  "@tiptap/extension-link": "latest",
+  "@tiptap/extension-placeholder": "latest",
+  "@tiptap/extension-text-align": "latest",
   "framer-motion": "^12.x",
   "lucide-react": "^0.x",
   "sanitize-html": "^2.x",
