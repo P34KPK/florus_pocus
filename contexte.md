@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-02
+**Dernière session :** 2026-06-04
 
 ---
 
@@ -68,8 +68,8 @@
 - [x] Upload : whitelist dossiers (`products`, `blog`, `pages`, `misc`)
 - [x] Phone : validation regex dans checkout
 - [x] Arrondi flottant total panier corrigé (`Math.round * 100 / 100`)
-- [x] Rate limiting : code prêt (`src/lib/ratelimit.ts`) — actif dès que vars Upstash configurées
-- [x] Emails confirmation : code prêt (`src/lib/resend.ts`) — actif dès que `RESEND_API_KEY` configurée
+- [x] Rate limiting : actif en production (Upstash `ca-central-1`, vars configurées sur Vercel)
+- [x] Emails confirmation : actifs en production (Resend, domaine vérifié, envoi depuis `commandes@floruspocus.com`)
 
 ### Déploiement & Infrastructure
 - [x] Repo GitHub public (`P34KPK/florus_pocus`) — requis pour Vercel Hobby auto-deploy
@@ -89,16 +89,6 @@
 ---
 
 ## 3. CE QUI RESTE À FAIRE 🔲
-
-### En attente confirmation client (comptes créés, code prêt)
-- [ ] **Emails de confirmation** — compte Resend créé, en attente code de confirmation
-  - Une fois accès : API Key → `RESEND_API_KEY` sur Vercel → Redeploy
-  - Vérifier domaine `floruspocus.com` sur Resend (DNS TXT + MX dans WHC)
-  - Code prêt : `src/lib/resend.ts` + `src/lib/emails/orderConfirmation.ts`
-  - Envoi depuis `commandes@floruspocus.com`
-- [ ] **Rate limiting** — compte Upstash créé, en attente code de confirmation
-  - Une fois accès : `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` sur Vercel → s'active automatiquement
-  - Code prêt : `src/lib/ratelimit.ts` (5 login/15min, 20 uploads/h)
 
 ### Priorité basse
 - [ ] **Clés Supabase corrompues** — optionnel, fix `extractJwt` fonctionne
@@ -132,9 +122,9 @@ SUPABASE_SERVICE_ROLE_KEY=[configurée — corrompue, fix extractJwt en place]
 SQUARE_SECRET_API_KEY=[configurée]
 SQUARE_LOCATION_ID=LQ69J6Z1KMTPB
 SQUARE_WEBHOOK_SIGNATURE_KEY=[configurée]
-RESEND_API_KEY=[à configurer — en attente]
-UPSTASH_REDIS_REST_URL=[à configurer — en attente]
-UPSTASH_REDIS_REST_TOKEN=[à configurer — en attente]
+RESEND_API_KEY=[configurée — domaine floruspocus.com vérifié]
+UPSTASH_REDIS_REST_URL=[configurée — ca-central-1]
+UPSTASH_REDIS_REST_TOKEN=[configurée — ca-central-1]
 ```
 
 ### Supabase RLS
