@@ -8,15 +8,20 @@ import { Sprout, Truck, Leaf, Users, ArrowRight } from "lucide-react";
 import GrowingStem from "@/components/GrowingStem";
 import type { Page } from "@/types";
 
+const ICONS = [Sprout, Truck, Leaf, Users];
+
+export interface WhyLocalReason { title: string; desc: string }
+
 interface WhyLocalProps {
   page?: Page | null;
+  reasons?: WhyLocalReason[];
 }
 
-const REASONS = [
-  { Icon: Sprout, title: "Cultivées sans pesticides",   desc: "Chaque fleur est cultivée en harmonie avec la nature, sans produits chimiques nocifs." },
-  { Icon: Truck,  title: "Livraison locale",             desc: "De la ferme à votre porte, fraîches et épanouies, directement dans votre région." },
-  { Icon: Leaf,   title: "Saisons respectées",           desc: "Nos fleurs suivent le rythme naturel des saisons québécoises pour une qualité maximale." },
-  { Icon: Users,  title: "Soutenir l'économie locale",  desc: "En choisissant Florus Pocus, vous investissez dans votre communauté et l'agriculture locale." },
+const DEFAULT_REASONS: WhyLocalReason[] = [
+  { title: "Cultivées sans pesticides",  desc: "Chaque fleur est cultivée en harmonie avec la nature, sans produits chimiques nocifs." },
+  { title: "Livraison locale",           desc: "De la ferme à votre porte, fraîches et épanouies, directement dans votre région." },
+  { title: "Saisons respectées",         desc: "Nos fleurs suivent le rythme naturel des saisons québécoises pour une qualité maximale." },
+  { title: "Soutenir l'économie locale", desc: "En choisissant Florus Pocus, vous investissez dans votre communauté et l'agriculture locale." },
 ];
 
 function PassingFlower({ scrollYProgress }: { scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"] }) {
@@ -52,7 +57,8 @@ function FadeInView({ children, delay = 0, className = "" }: { children: React.R
   );
 }
 
-export default function WhyLocal({ page }: WhyLocalProps) {
+export default function WhyLocal({ page, reasons }: WhyLocalProps) {
+  const REASONS = (reasons && reasons.length > 0) ? reasons : DEFAULT_REASONS;
   const ref     = useRef<HTMLElement>(null);
   const rawTitle = page?.title ?? "Pourquoi choisir local ?";
   const title    = rawTitle.replace(/ \?/g, " ?");
@@ -99,22 +105,25 @@ export default function WhyLocal({ page }: WhyLocalProps) {
             </FadeInView>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2">
-              {REASONS.map((r, i) => (
-                <FadeInView key={r.title} delay={0.3 + i * 0.1}>
-                  <div className="flex gap-3">
-                    <div
-                      className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: "rgba(45,80,22,0.08)" }}
-                    >
-                      <r.Icon size={16} style={{ color: "#2D5016" }} />
+              {REASONS.map((r, i) => {
+                const Icon = ICONS[i % ICONS.length];
+                return (
+                  <FadeInView key={i} delay={0.3 + i * 0.1}>
+                    <div className="flex gap-3">
+                      <div
+                        className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: "rgba(45,80,22,0.08)" }}
+                      >
+                        <Icon size={16} style={{ color: "#2D5016" }} />
+                      </div>
+                      <div>
+                        <p className="font-heading font-semibold text-sm mb-1" style={{ color: "#2D5016" }}>{r.title}</p>
+                        <p className="text-sm leading-relaxed opacity-65">{r.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-heading font-semibold text-sm mb-1" style={{ color: "#2D5016" }}>{r.title}</p>
-                      <p className="text-sm leading-relaxed opacity-65">{r.desc}</p>
-                    </div>
-                  </div>
-                </FadeInView>
-              ))}
+                  </FadeInView>
+                );
+              })}
             </div>
 
             <FadeInView delay={0.75}>

@@ -9,6 +9,8 @@ import type { Subscription, SubscriptionFrequency, DropoffPoint } from "@/types"
 
 interface SubscriptionsProps {
   subscriptions?: Subscription[];
+  sectionTitle?: string;
+  sectionSubtitle?: string;
 }
 
 const PLACEHOLDER_SUBS: Subscription[] = [
@@ -195,7 +197,7 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
   );
 }
 
-export default function Subscriptions({ subscriptions }: SubscriptionsProps) {
+export default function Subscriptions({ subscriptions, sectionTitle, sectionSubtitle }: SubscriptionsProps) {
   const subs = (subscriptions && subscriptions.length > 0) ? subscriptions : PLACEHOLDER_SUBS;
   const ref  = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -226,10 +228,12 @@ export default function Subscriptions({ subscriptions }: SubscriptionsProps) {
           </p>
           <h2 className="font-display font-bold leading-tight text-white"
             style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)" }}>
-            Des fleurs de saison,<br />chaque mois
+            {(sectionTitle ?? "Des fleurs de saison, chaque mois").split(",").map((part, i, arr) => (
+              <span key={i}>{part}{i < arr.length - 1 ? "," : ""}{i < arr.length - 1 && <br />}</span>
+            ))}
           </h2>
           <p className="mt-4 max-w-xl mx-auto text-base text-white/50">
-            Choisissez votre abonnement, votre fréquence de livraison et votre point de chute préféré.
+            {sectionSubtitle ?? "Choisissez votre abonnement, votre fréquence de livraison et votre point de chute préféré."}
           </p>
         </motion.div>
 

@@ -1,5 +1,5 @@
-import { getActiveSubscriptions } from "@/lib/supabase-server";
-import Subscriptions    from "@/components/sections/Subscriptions";
+import { getActiveSubscriptions, getSiteSettings } from "@/lib/supabase-server";
+import Subscriptions from "@/components/sections/Subscriptions";
 import type { Subscription } from "@/types";
 
 export const metadata = {
@@ -8,12 +8,17 @@ export const metadata = {
 };
 
 export default async function AbonnementsPage() {
-  const subscriptions = await getActiveSubscriptions();
+  const [subscriptions, settings] = await Promise.all([
+    getActiveSubscriptions(),
+    getSiteSettings(),
+  ]);
 
   return (
     <main className="pt-16">
       <Subscriptions
         subscriptions={(subscriptions as unknown as Subscription[]) ?? undefined}
+        sectionTitle={settings["abonnements_title"]}
+        sectionSubtitle={settings["abonnements_subtitle"]}
       />
     </main>
   );

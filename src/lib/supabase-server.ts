@@ -148,6 +148,19 @@ export const getUpcomingEvents = unstable_cache(
   { revalidate: 3600, tags: ["events"] }
 );
 
+export const getSiteSettings = unstable_cache(
+  async (): Promise<Record<string, string>> => {
+    const { data } = await createPublicClient()
+      .from("site_settings")
+      .select("key, value");
+    const map: Record<string, string> = {};
+    for (const row of data ?? []) map[row.key] = row.value;
+    return map;
+  },
+  ["site-settings"],
+  { revalidate: 3600, tags: ["site_settings"] }
+);
+
 export function createAdminClient() {
   return createSupabaseClient(
     SUPABASE_URL,
