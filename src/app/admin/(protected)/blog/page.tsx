@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-server";
 import type { BlogPost } from "@/types";
 import BlogClient from "@/components/admin/blog/BlogClient";
 
 export const metadata: Metadata = { title: "Blog" };
 
 export default async function AdminBlogPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("blog_posts")
     .select("*")

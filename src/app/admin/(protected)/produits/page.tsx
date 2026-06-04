@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-server";
 import type { Product } from "@/types";
 import ProductsClient from "@/components/admin/produits/ProductsClient";
 
 export const metadata: Metadata = { title: "Produits" };
 
 export default async function AdminProduitsPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("products")
     .select("*")

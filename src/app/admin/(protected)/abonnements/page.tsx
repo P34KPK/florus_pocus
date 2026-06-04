@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-server";
 import type { Subscription } from "@/types";
 import AbonnementsClient from "@/components/admin/abonnements/AbonnementsClient";
 
 export const metadata: Metadata = { title: "Abonnements" };
 
 export default async function AdminAbonnementsPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("subscriptions")
     .select("*, dropoff_points:subscription_dropoff_points(*)")
