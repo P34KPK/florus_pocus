@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 import { createAdminClient } from "@/lib/supabase-server";
+import { getResend, FROM_EMAIL } from "@/lib/resend";
+import { orderConfirmationHtml, orderConfirmationText } from "@/lib/emails/orderConfirmation";
 
 function verifySignature(body: string, signature: string, url: string): boolean {
   const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
     ((event.type === "payment.updated" || event.type === "payment.created") && status === "COMPLETED")
   ) {
     if (orderId && paymentId) {
-      await supabase
+      const { data: updated } = await supabase
         .from("orders")
         .update({
           payment_status:    "paid",
@@ -53,7 +55,37 @@ export async function POST(req: NextRequest) {
           square_payment_id: paymentId,
         })
         .eq("id", orderId)
-        .eq("payment_status", "pending");
+        .eq("payment_status", "pending")
+        .select("id, customer_name, customer_email")
+        .single();
+
+      if (updated?.customer_email) {
+        const { data: orderItems } = await supabase
+          .from("order_items")
+          .select("price_per_unit, quantity, metadata")
+          .eq("order_id", orderId);
+
+        const items = (orderItems ?? []).map((row) => ({
+          name:     (row.metadata as { product_name?: string })?.product_name ?? "Article",
+          quantity: row.quantity,
+          price:    row.price_per_unit,
+        }));
+
+        const total = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+
+        try {
+          const resend = getResend();
+          await resend.emails.send({
+            from:    FROM_EMAIL,
+            to:      updated.customer_email,
+            subject: "Votre commande Florus Pocus est confirmée 🌸",
+            html:    orderConfirmationHtml({ orderId, customerName: updated.customer_name, items, total }),
+            text:    orderConfirmationText({ orderId, customerName: updated.customer_name, items, total }),
+          });
+        } catch (err) {
+          console.error("[webhook] resend error:", err);
+        }
+      }
     }
   }
 
