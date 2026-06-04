@@ -132,22 +132,6 @@ export const getActiveProducts = unstable_cache(
   { revalidate: 3600, tags: ["products"] }
 );
 
-export const getUpcomingEvents = unstable_cache(
-  async () => {
-    const today = new Date().toISOString().split("T")[0];
-    const { data } = await createPublicClient()
-      .from("autocueillette_events")
-      .select("*")
-      .eq("active", true)
-      .gte("event_date", today)
-      .order("event_date", { ascending: true })
-      .limit(60);
-    return data ?? [];
-  },
-  ["upcoming-events"],
-  { revalidate: 3600, tags: ["events"] }
-);
-
 export const getMangeMoiItems = unstable_cache(
   async () => {
     const { data } = await createPublicClient()

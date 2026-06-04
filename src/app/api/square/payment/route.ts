@@ -79,21 +79,27 @@ export async function POST(req: NextRequest) {
         })
         .eq("id", orderId);
 
-      // Envoyer email de confirmation (non-bloquant)
+      // Envoyer email de confirmation — JAMAIS bloquant : un échec d'email
+      // ne doit pas masquer un paiement réussi (carte déjà débitée).
       if (order.customer_email) {
-        const items = (orderItems ?? []).map((i) => ({
-          name:     (i.metadata as { product_name?: string })?.product_name ?? "Article",
-          quantity: i.quantity,
-          price:    i.price_per_unit,
-        }));
+        try {
+          const items = (orderItems ?? []).map((i) => ({
+            name:     (i.metadata as { product_name?: string })?.product_name ?? "Article",
+            quantity: i.quantity,
+            price:    i.price_per_unit,
+          }));
 
-        getResend().emails.send({
-          from:    FROM_EMAIL,
-          to:      order.customer_email,
-          subject: `Confirmation de commande #${orderId.slice(0, 8).toUpperCase()} — Florus Pocus`,
-          html:    orderConfirmationHtml({ orderId, customerName: order.customer_name, items, total: order.total_amount }),
-          text:    orderConfirmationText({ orderId, customerName: order.customer_name, items, total: order.total_amount }),
-        }).catch((err) => console.error("[email] confirmation failed:", err));
+          await getResend().emails.send({
+            from:    FROM_EMAIL,
+            to:      order.customer_email,
+            subject: `Confirmation de commande #${orderId.slice(0, 8).toUpperCase()} — Florus Pocus`,
+            html:    orderConfirmationHtml({ orderId, customerName: order.customer_name, items, total: order.total_amount }),
+            text:    orderConfirmationText({ orderId, customerName: order.customer_name, items, total: order.total_amount }),
+          });
+        } catch (err) {
+          // getResend() peut throw si RESEND_API_KEY manque — on log et on continue.
+          console.error("[email] confirmation failed:", err);
+        }
       }
 
       return NextResponse.json({ success: true, paymentId: payment.id });

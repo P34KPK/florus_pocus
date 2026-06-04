@@ -56,18 +56,6 @@ export interface DropoffPoint {
   updated_at: string;
 }
 
-export interface AutocueilletteEvent {
-  id: string;
-  event_date: string; // ISO date "YYYY-MM-DD"
-  capacity: number;
-  tickets_sold: number;
-  price_per_ticket: number;
-  description: string | null;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface BlogPost {
   id: string;
   title: string;

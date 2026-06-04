@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["framer-motion", "lucide-react"],
   },
 
+  async redirects() {
+    return [
+      // Autocueillette retirée — redirige les anciens liens/favoris vers Mange Moi
+      { source: "/autocueillette", destination: "/mange-moi", permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {

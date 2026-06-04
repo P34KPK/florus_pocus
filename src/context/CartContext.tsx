@@ -97,12 +97,6 @@ interface CartContextValue {
     dropoff_point_id: string;
     dropoff_point_name: string;
   }) => void;
-  addAutocueillette: (event: {
-    id: string;
-    event_date: string;
-    price_per_ticket: number;
-    quantity: number;
-  }) => void;
   removeItem: (cartId: string) => void;
   updateQuantity: (cartId: string, quantity: number) => void;
   clearCart: () => void;
@@ -172,26 +166,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function addAutocueillette(event: { id: string; event_date: string; price_per_ticket: number; quantity: number }) {
-    const cartId = makeCartId("autocueillette", event.id);
-    const date = new Date(event.event_date).toLocaleDateString("fr-CA", { month: "long", day: "numeric", year: "numeric" });
-    dispatch({
-      type: "ADD_ITEM",
-      payload: {
-        cartId, type: "autocueillette", referenceId: event.id,
-        name: `Autocueillette — ${date}`, price: event.price_per_ticket, quantity: event.quantity,
-        metadata: { event_date: event.event_date },
-      },
-    });
-  }
-
   const itemCount = state.items.reduce((sum, i) => sum + i.quantity, 0);
   const total     = Math.round(state.items.reduce((sum, i) => sum + i.price * i.quantity, 0) * 100) / 100;
 
   return (
     <CartContext.Provider value={{
       items: state.items, isOpen: state.isOpen, itemCount, total,
-      addProduct, addSubscription, addAutocueillette,
+      addProduct, addSubscription,
       removeItem: (cartId) => dispatch({ type: "REMOVE_ITEM", payload: { cartId } }),
       updateQuantity: (cartId, quantity) => dispatch({ type: "UPDATE_QUANTITY", payload: { cartId, quantity } }),
       clearCart: () => dispatch({ type: "CLEAR_CART" }),
