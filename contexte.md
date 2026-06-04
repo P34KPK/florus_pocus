@@ -105,7 +105,7 @@
 
 - [ ] **Clés Supabase corrompues** — optionnel, fix `extractJwt` fonctionne
   - Vercel → supprimer et recoller `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` sur une seule ligne depuis `.env.local`
-- [ ] **Sitemap + SEO** — `sitemap.xml`, meta dynamiques par page
+- [x] ~~Sitemap + SEO~~ — FAIT : `app/sitemap.ts` (statiques + blog), `app/robots.ts`, metadataBase, openGraph/twitter, canonical par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
 - [ ] **Gestion stock** — sold out sur les produits (champ stock existe, affichage "Épuisé" existe, mais pas de logique automatique)
 
@@ -332,6 +332,11 @@ Config dans `globals.css` avec `@theme {}`. Pas de `tailwind.config.js`.
 
 ### Safari mobile
 Utiliser `100svh` plutôt que `100vh`.
+
+### SEO — URL canonique
+`src/lib/site.ts` exporte `SITE_URL` = `NEXT_PUBLIC_SITE_URL` (sans slash final) ou `https://www.floruspocus.com` par défaut. Utilisé par `metadataBase`, `sitemap.ts`, `robots.ts` et les canonical.
+⚠️ Vérifier que `NEXT_PUBLIC_SITE_URL` sur Vercel correspond au domaine canonique souhaité (www vs non-www) et que l'autre redirige vers lui — sinon mismatch www/non-www pour Google.
+`/sitemap.xml` et `/robots.txt` sont générés automatiquement. `/admin`, `/checkout`, `/api`, `/fleuristes` sont exclus de l'indexation.
 
 ### Upload images
 Sharp converti tout en WebP (qualité 80, max 1920px). Limite : 10 MB avant compression. Formats acceptés : JPG, PNG, WebP, GIF, AVIF.
