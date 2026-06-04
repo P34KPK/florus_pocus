@@ -70,8 +70,13 @@ export default function ProductForm({ action, product, onSuccess }: Props) {
         </div>
 
         <div>
-          <label className={label}>Prix ($) *</label>
+          <label className={label}>Prix public ($) *</label>
           <input name="price" type="number" step="0.01" min="0" defaultValue={product?.price} required className={field} placeholder="0.00" />
+        </div>
+
+        <div>
+          <label className={label}>Prix fleuriste ($)</label>
+          <input name="florist_price" type="number" step="0.01" min="0" defaultValue={product?.florist_price ?? ""} className={field} placeholder="Optionnel — prix de gros" />
         </div>
 
         <div>

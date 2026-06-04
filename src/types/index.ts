@@ -21,9 +21,10 @@ export interface Product {
   description: string;
   category: ProductCategory;
   price: number;
+  florist_price: number | null;
   stock: number | null;
   image_url: string | null;
-  season: ProductSeason | null;
+  season: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;

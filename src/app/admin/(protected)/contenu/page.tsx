@@ -10,6 +10,7 @@ const GROUP_LABELS: Record<string, string> = {
   footer:         "Pied de page",
   pourquoi_local: "Section « Pourquoi local »",
   abonnements:    "Section abonnements",
+  fleuristes:     "Accès fleuristes",
 };
 
 export default async function AdminContenuPage() {

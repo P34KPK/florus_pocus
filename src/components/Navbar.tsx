@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, Menu, X } from "lucide-react";
+import { ShoppingBag, Menu, X, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 
@@ -15,6 +15,7 @@ const navLinks = [
   { label: "La Ferme",       href: "/la-ferme" },
   { label: "Blogue",         href: "/blog" },
   { label: "Contact",        href: "/contact" },
+  { label: "Fleuristes",     href: "/fleuristes", icon: Lock },
 ];
 
 export default function Navbar() {
@@ -94,9 +95,10 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="relative text-sm font-medium transition-colors group"
+                className="relative text-sm font-medium transition-colors group flex items-center gap-1"
                 style={{ color: dark ? "#1A1A1A" : "#F4D4B0" }}
               >
+                {link.icon && <link.icon size={12} style={{ opacity: 0.6 }} />}
                 {link.label}
                 <span
                   className="absolute -bottom-0.5 left-0 w-0 h-px group-hover:w-full transition-all duration-300"

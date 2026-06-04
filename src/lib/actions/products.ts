@@ -9,9 +9,10 @@ const ProductSchema = z.object({
   description: z.string().min(1),
   category: z.enum(["fleur", "transforme"]),
   price: z.coerce.number().positive(),
+  florist_price: z.coerce.number().positive().nullable(),
   stock: z.coerce.number().int().min(0).nullable(),
   image_url: z.string().url().nullable().or(z.literal("")),
-  season: z.enum(["spring", "summer", "fall", "winter"]).nullable(),
+  season: z.string().max(100).nullable(),
   active: z.coerce.boolean(),
 });
 
@@ -23,6 +24,7 @@ export async function createProduct(_prev: ProductFormState, formData: FormData)
     description: formData.get("description"),
     category: formData.get("category"),
     price: formData.get("price"),
+    florist_price: formData.get("florist_price") || null,
     stock: formData.get("stock") || null,
     image_url: formData.get("image_url") || null,
     season: formData.get("season") || null,
@@ -52,6 +54,7 @@ export async function updateProduct(_prev: ProductFormState, formData: FormData)
     description: formData.get("description"),
     category: formData.get("category"),
     price: formData.get("price"),
+    florist_price: formData.get("florist_price") || null,
     stock: formData.get("stock") || null,
     image_url: formData.get("image_url") || null,
     season: formData.get("season") || null,
