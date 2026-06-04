@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase-server";
 import { uploadRatelimit } from "@/lib/ratelimit";
+import sharp from "sharp";
 
 const BUCKET = "floruspocus";
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_SIZE = 10 * 1024 * 1024; // 10 MB avant compression
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 const ALLOWED_FOLDERS = ["products", "blog", "pages", "misc"];
 
 export async function POST(request: NextRequest) {
@@ -53,20 +54,23 @@ export async function POST(request: NextRequest) {
   }
 
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "Fichier trop volumineux. Maximum 5 Mo." }, { status: 400 });
+    return NextResponse.json({ error: "Fichier trop volumineux. Maximum 10 Mo." }, { status: 400 });
   }
 
-  // Générer un nom de fichier unique
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
+  // Convertir et compresser en WebP via Sharp
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = new Uint8Array(arrayBuffer);
+  const compressed = await sharp(Buffer.from(arrayBuffer))
+    .resize({ width: 1920, withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  // Nom de fichier unique toujours en .webp
+  const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
 
   const { error: uploadError } = await admin.storage
     .from(BUCKET)
-    .upload(filename, buffer, {
-      contentType: file.type,
+    .upload(filename, compressed, {
+      contentType: "image/webp",
       upsert: false,
     });
 
