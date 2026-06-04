@@ -1,11 +1,24 @@
--- Bucket public pour les images du site
+-- ⚠️ IMPORTANT : sur Supabase hébergé, ce fichier ne crée PAS le bucket de façon fiable.
+-- Les `CREATE POLICY ON storage.objects` plus bas requièrent une permission que
+-- l'éditeur SQL n'a pas toujours → la transaction échoue et l'INSERT du bucket
+-- est annulé (c'est ce qui s'est produit : bucket jamais créé → upload "Bucket not found").
+--
+-- ✅ Méthode fiable de création du bucket (faite via l'API service_role) :
+--    sb.storage.createBucket("floruspocus", {
+--      public: true,
+--      fileSizeLimit: 10485760,                 -- 10 Mo
+--      allowedMimeTypes: ["image/jpeg","image/png","image/webp","image/gif","image/avif"],
+--    })
+-- Ou via le Dashboard Supabase → Storage → New bucket (Public coché).
+
+-- Bucket public pour les images du site (conservé pour référence — voir note ci-dessus)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'floruspocus',
   'floruspocus',
   true,
-  5242880,  -- 5 MB
-  ARRAY['image/jpeg','image/png','image/webp','image/gif']
+  10485760,  -- 10 MB
+  ARRAY['image/jpeg','image/png','image/webp','image/gif','image/avif']
 )
 ON CONFLICT (id) DO NOTHING;
 
