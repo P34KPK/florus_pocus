@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-04 (session 2)
+**Dernière session :** 2026-06-04 (session 3)
 
 ---
 
@@ -64,7 +64,7 @@
 - [x] Webhook Square configuré : `https://www.floruspocus.com/api/square/webhook`
 - [x] Migration `005_square_payment_id.sql` exécutée
 
-### Sécurité
+### Sécurité (audit 2026-06-04)
 - [x] `dangerouslySetInnerHTML` → sanitize-html (blog) + balises TipTap (h4, s) autorisées
 - [x] Validation Zod côté serveur sur tous les inputs
 - [x] Validation localStorage cart (Zod schema au rehydrate)
@@ -72,7 +72,11 @@
 - [x] Upload : whitelist dossiers + conversion WebP via Sharp
 - [x] Rate limiting : actif en production (Upstash `ca-central-1`)
 - [x] Emails confirmation : actifs en production (Resend, domaine vérifié, `commandes@floruspocus.com`)
-- [x] Accès fleuristes : cookie HttpOnly 30j, code vérifié côté serveur depuis DB
+- [x] Accès fleuristes : cookie HttpOnly + Secure(prod) + SameSite=lax, 30j, code vérifié en DB
+- [x] `assertAdmin()` — helper partagé dans `auth-guard.ts` : vérifie JWT + is_admin DB
+- [x] Toutes les Server Actions protégées par `assertAdmin()` (blog, produits, abonnements, pages, events, settings, mangeMoi)
+- [x] `revalidateTag(..., "max")` sur toutes les actions — invalidation immédiate du cache
+- [x] `ProductSeason` type supprimé — season est `string | null` libre depuis migration 004
 
 ### Déploiement & Infrastructure
 - [x] Repo GitHub public (`P34KPK/florus_pocus`) — requis pour Vercel Hobby auto-deploy
@@ -265,6 +269,7 @@ FlorusPocus/
     │       ├── checkout.ts      ← createOrder
     │       ├── contact.ts       ← sendContactMessage
     │       ├── settings.ts      ← updateSiteSettings (CMS)
+    │       ├── auth-guard.ts    ← assertAdmin() : JWT + is_admin DB (partagé par toutes les actions)
     │       ├── florist.ts       ← verifyFloristCode + isFloristAuthenticated
     │       ├── mangeMoi.ts      ← CRUD mange_moi_items
     │       └── events.ts        ← CRUD events + revalidateTag("events", "max")
@@ -327,8 +332,19 @@ Sharp converti tout en WebP (qualité 80, max 1920px). Limite : 10 MB avant comp
 - Groupes : `contact`, `reseaux_sociaux`, `footer`, `pourquoi_local`, `abonnements`, `fleuristes`
 - Admin : `/admin/contenu`
 
+### Server Actions — protection
+Toutes les actions d'écriture passent par `assertAdmin()` (`src/lib/actions/auth-guard.ts`) :
+1. `createClient().auth.getUser()` → vérifie que le JWT est valide
+2. `createAdminClient().from("users").select("is_admin")` → vérifie le flag en DB
+
+Pattern de retour en cas d'échec : `{ error: "Non autorisé." }` ou `{ error: "Accès refusé." }`
+
+### Cache invalidation — pattern standard
+Chaque action utilise `revalidateTag(tag, "max")` + `revalidatePath()` via une fonction locale `invalidate()`.
+Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_settings`, `mange_moi`.
+
 ### Fleuristes — accès privé
-- Cookie `fp_florist=1`, HttpOnly, SameSite=lax, 30 jours
+- Cookie `fp_florist=1`, HttpOnly, Secure(prod), SameSite=lax, 30 jours
 - Code stocké dans `site_settings.florist_access_code` (défaut: `fleuriste2026`)
 - Changer le code : Admin → Contenu → section "Accès fleuristes"
 - `florist_price` sur products : prix de gros affiché dans FloristCatalog (null = prix public)
