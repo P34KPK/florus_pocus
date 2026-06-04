@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import type { BlogPost } from "@/types";
 import type { BlogFormState } from "@/lib/actions/blog";
 import ImageUploader from "@/components/admin/ImageUploader";
+import RichTextEditor from "@/components/admin/blog/RichTextEditor";
 
 interface Props {
   action: (prev: BlogFormState, formData: FormData) => Promise<BlogFormState>;
@@ -79,7 +80,7 @@ export default function BlogPostForm({ action, post, onSuccess }: Props) {
 
       <div>
         <label className={label}>Contenu *</label>
-        <textarea name="content" defaultValue={post?.content} required rows={10} className={`${field} resize-none font-mono text-xs`} placeholder="Contenu de l'article (HTML ou texte brut)..." />
+        <RichTextEditor name="content" defaultValue={post?.content ?? ""} />
       </div>
 
       <div>

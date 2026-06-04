@@ -32,7 +32,7 @@ export async function createEvent(_prev: EventFormState, formData: FormData): Pr
   const { error } = await supabase.from("autocueillette_events").insert(data);
   if (error) return { error: error.message };
 
-  revalidateTag("events");
+  revalidateTag("events", "max");
   revalidatePath("/autocueillette");
   revalidatePath("/admin/autocueillette");
   revalidatePath("/");
@@ -60,7 +60,7 @@ export async function updateEvent(_prev: EventFormState, formData: FormData): Pr
   const { error } = await supabase.from("autocueillette_events").update(data).eq("id", id);
   if (error) return { error: error.message };
 
-  revalidateTag("events");
+  revalidateTag("events", "max");
   revalidatePath("/autocueillette");
   revalidatePath("/admin/autocueillette");
   revalidatePath("/");
@@ -72,7 +72,7 @@ export async function deleteEvent(id: string): Promise<EventFormState> {
   const { error } = await supabase.from("autocueillette_events").delete().eq("id", id);
   if (error) return { error: error.message };
 
-  revalidateTag("events");
+  revalidateTag("events", "max");
   revalidatePath("/autocueillette");
   revalidatePath("/admin/autocueillette");
   revalidatePath("/");

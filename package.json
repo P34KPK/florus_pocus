@@ -11,6 +11,12 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
+    "@tiptap/extension-link": "^3.25.0",
+    "@tiptap/extension-placeholder": "^3.25.0",
+    "@tiptap/extension-text-align": "^3.25.0",
+    "@tiptap/pm": "^3.25.0",
+    "@tiptap/react": "^3.25.0",
+    "@tiptap/starter-kit": "^3.25.0",
     "@types/sanitize-html": "^2.16.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",

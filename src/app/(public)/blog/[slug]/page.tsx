@@ -8,8 +8,8 @@ import { getBlogPost, getPublishedBlogPosts } from "@/lib/supabase-server";
 import type { Metadata } from "next";
 
 const ALLOWED_HTML: sanitizeHtml.IOptions = {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "figure", "figcaption", "h1", "h2", "h3"]),
-  allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ["src", "alt", "title", "width", "height"], "*": ["class", "style"] },
+  allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "figure", "figcaption", "h1", "h2", "h3", "h4", "s"]),
+  allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ["src", "alt", "title", "width", "height"], a: ["href", "target", "rel"], "*": ["class", "style"] },
 };
 
 interface Props {
