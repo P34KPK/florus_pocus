@@ -103,8 +103,7 @@
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
-- [ ] **Clés Supabase corrompues** — optionnel, fix `extractJwt` fonctionne
-  - Vercel → supprimer et recoller `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` sur une seule ligne depuis `.env.local`
+- [x] ~~Clés Supabase corrompues~~ — RÉGLÉ : clés ANON + SERVICE recollées proprement dans Vercel, contournement `extractJwt` retiré du code
 - [x] ~~Sitemap + SEO~~ — FAIT : `app/sitemap.ts` (statiques + blog), `app/robots.ts`, metadataBase, openGraph/twitter, canonical par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
 - [ ] **Gestion stock** — sold out sur les produits (champ stock existe, affichage "Épuisé" existe, mais pas de logique automatique)
@@ -285,17 +284,10 @@ FlorusPocus/
 
 ## 7. Notes techniques critiques
 
-### extractJwt() — Clés Supabase corrompues sur Vercel
-Les variables `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sur Vercel contiennent des retours chariot (clé doublée → 5 segments JWT au lieu de 3). Fix en place dans `supabase-server.ts`, `proxy.ts` et `auth.ts` :
-```ts
-function extractJwt(raw: string): string {
-  const clean = raw.replace(/\s+/g, "");
-  const parts = clean.split(".");
-  if (parts.length === 5) return `${parts[0]}.${parts[1]}.${parts[4]}`;
-  return clean;
-}
-```
-**À corriger proprement** : Vercel → supprimer/recoller les clés sur une seule ligne.
+### Clés Supabase — RÉGLÉ (historique)
+Les clés sur Vercel étaient corrompues (collées avec retours à la ligne → JWT dédoublé) → login admin "Identifiants invalides". Un contournement `extractJwt()` reconstruisait la clé, mais c'était fragile.
+**Résolu** : clés `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` recollées proprement (une seule ligne) dans Vercel. Le hack `extractJwt` a été retiré ; le code utilise simplement `.trim()`.
+⚠️ Si jamais le login admin recasse en "Identifiants invalides" en prod : re-vérifier que ces 2 clés Vercel n'ont pas de retour à la ligne (les recopier depuis Supabase → Settings → API).
 
 ### supabase-server.ts — IMPORTANT
 ```ts
