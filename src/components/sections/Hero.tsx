@@ -242,10 +242,10 @@ export default function Hero({ page }: HeroProps) {
             whileHover={{ scale: 1.05, backgroundColor: "rgba(244,212,176,0.08)" }}
             whileTap={{ scale: 0.97 }}
             style={{ borderRadius: "9999px", display: "inline-block" }}>
-            <Link href="/autocueillette"
+            <Link href="/mange-moi"
               className="block font-heading font-semibold px-7 py-3.5 rounded-full text-sm uppercase tracking-wider border-2"
               style={{ borderColor: "#F4D4B0", color: "#F4D4B0" }}>
-              Autocueillette
+              Mange Moi
             </Link>
           </motion.div>
         </div>

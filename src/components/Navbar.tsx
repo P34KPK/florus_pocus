@@ -11,7 +11,7 @@ import { useCart } from "@/context/CartContext";
 const navLinks = [
   { label: "Abonnements",    href: "/abonnements" },
   { label: "Boutique",       href: "/boutique" },
-  { label: "Autocueillette", href: "/autocueillette" },
+  { label: "Mange Moi",      href: "/mange-moi" },
   { label: "La Ferme",       href: "/la-ferme" },
   { label: "Blogue",         href: "/blog" },
   { label: "Contact",        href: "/contact" },

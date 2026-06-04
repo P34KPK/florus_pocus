@@ -148,6 +148,20 @@ export const getUpcomingEvents = unstable_cache(
   { revalidate: 3600, tags: ["events"] }
 );
 
+export const getMangeMoiItems = unstable_cache(
+  async () => {
+    const { data } = await createPublicClient()
+      .from("mange_moi_items")
+      .select("*")
+      .eq("active", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    return data ?? [];
+  },
+  ["mange-moi-items"],
+  { revalidate: 3600, tags: ["mange_moi"] }
+);
+
 export const getSiteSettings = unstable_cache(
   async (): Promise<Record<string, string>> => {
     const { data } = await createPublicClient()

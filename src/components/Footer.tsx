@@ -57,14 +57,18 @@ export default async function Footer() {
           <div>
             <h4 className="font-heading font-semibold mb-4 text-sm uppercase tracking-wider opacity-50">Navigation</h4>
             <ul className="space-y-2 text-sm">
-              {["Abonnements", "Autocueillette", "Boutique", "Blogue", "La Ferme", "Contact"].map((label) => (
-                <li key={label}>
-                  <a
-                    href={`#${label.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-")}`}
-                    className="opacity-60 hover:opacity-100 transition-opacity"
-                  >
+              {[
+                { label: "Abonnements", href: "/abonnements" },
+                { label: "Mange Moi",   href: "/mange-moi" },
+                { label: "Boutique",    href: "/boutique" },
+                { label: "Blogue",      href: "/blog" },
+                { label: "La Ferme",    href: "/la-ferme" },
+                { label: "Contact",     href: "/contact" },
+              ].map(({ label, href }) => (
+                <li key={href}>
+                  <Link href={href} className="opacity-60 hover:opacity-100 transition-opacity">
                     {label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

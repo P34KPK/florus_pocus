@@ -122,6 +122,17 @@ export interface OrderItem {
   created_at: string;
 }
 
+export interface MangeMoiItem {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string | null;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AppUser {
   id: string;
   email: string;
