@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { squareClient, SQUARE_LOCATION_ID } from "@/lib/square";
 import { createAdminClient } from "@/lib/supabase-server";
-import { resend, FROM_EMAIL } from "@/lib/resend";
+import { getResend, FROM_EMAIL } from "@/lib/resend";
 import { orderConfirmationHtml, orderConfirmationText } from "@/lib/emails/orderConfirmation";
 
 const PaymentSchema = z.object({
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
           price:    i.price_per_unit,
         }));
 
-        resend.emails.send({
+        getResend().emails.send({
           from:    FROM_EMAIL,
           to:      order.customer_email,
           subject: `Confirmation de commande #${orderId.slice(0, 8).toUpperCase()} — Florus Pocus`,
