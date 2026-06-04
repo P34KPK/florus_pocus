@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-04
+**Dernière session :** 2026-06-04 (session 2)
 
 ---
 
@@ -20,16 +20,17 @@
 - [x] Homepage allégée : Hero + WhyLocal + BlogPreview (3 sections, 2 queries Supabase)
 - [x] Page `/abonnements` — section Subscriptions complète
 - [x] Page `/boutique` — Fleuristes + BranchDivider + TransformedProducts
-- [x] Page `/autocueillette` — calendrier + réservation billets
+- [x] Page `/autocueillette` — existe encore mais n'est plus dans la nav (remplacé par Mange Moi)
+- [x] Page `/mange-moi` — catalogue vitrine comestibles (photo + description, sans achat)
 - [x] Page `/la-ferme` — histoire + stats + CTA → /contact
 - [x] Page `/contact` — formulaire + infos
 - [x] Page `/fleuristes` — espace professionnel protégé par code (cookie 30j)
 - [x] Page `/politique-confidentialite` — page légale complète
 - [x] Page `/conditions-utilisation` — page légale complète
 - [x] Navbar multi-pages : vraies routes, visible immédiatement hors homepage
-- [x] Navbar : lien Fleuristes avec icône cadenas 🔒
+- [x] Navbar : "Autocueillette" remplacé par "Mange Moi" + lien Fleuristes avec icône cadenas 🔒
 - [x] Navbar responsive (desktop + mobile hamburger)
-- [x] Footer dynamique (adresse, email, téléphone, réseaux sociaux depuis DB)
+- [x] Footer dynamique (adresse, email, téléphone, réseaux sociaux depuis DB) — liens vrais routes (plus de #anchors)
 - [x] CartDrawer avec gestion quantités
 - [x] Page `/blog` — listing magazine + filtre cliquable par tags (URL params)
 - [x] Page `/blog/[slug]` — article complet + sanitization HTML
@@ -43,7 +44,8 @@
 - [x] Dashboard avec vraies données (revenus, commandes, abonnements, produits, messages)
 - [x] `/admin/produits` — CRUD complet + champ prix fleuriste + catégorie libre
 - [x] `/admin/abonnements` — CRUD abonnements + points de chute (modèle prix/bouquet + format)
-- [x] `/admin/autocueillette` — gestion dates + capacités (cache invalidé immédiatement)
+- [x] `/admin/autocueillette` — gestion dates + capacités (cache invalidé immédiatement) — page accessible mais hors sidebar
+- [x] `/admin/mange-moi` — CRUD catalogue Mange Moi (nom, description, photo, ordre, statut)
 - [x] `/admin/pages` — édition contenu homepage (4 sections)
 - [x] `/admin/contenu` — CMS global : adresse, téléphone, email, réseaux sociaux, footer, WhyLocal (4 cartes), abonnements, code fleuristes
 - [x] `/admin/blog` — CRUD articles + éditeur riche TipTap (H2/H3, gras, italique, listes, liens, citations, alignement…)
@@ -89,6 +91,7 @@
 - [x] Migration `006_subscriptions_format.sql` — price_monthly→price, stems_count→format (TEXT)
 - [x] Migration `007_site_settings.sql` — table site_settings (CMS global, RLS public read)
 - [x] Migration `008_florist_price.sql` — florist_price sur products + code accès fleuristes
+- [x] Migration `009_mange_moi.sql` — table mange_moi_items (name, description, image_url, sort_order, active)
 
 ---
 
@@ -209,7 +212,8 @@ FlorusPocus/
 │   ├── 005_square_payment_id.sql
 │   ├── 006_subscriptions_format.sql
 │   ├── 007_site_settings.sql
-│   └── 008_florist_price.sql
+│   ├── 008_florist_price.sql
+│   └── 009_mange_moi.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -219,7 +223,8 @@ FlorusPocus/
     │   ├── layout.tsx           ← root layout (fonts + CartProvider)
     │   ├── (public)/layout.tsx  ← BotanicalLayers + Navbar + Footer + ClientCartDrawer
     │   ├── (public)/page.tsx    ← homepage (charge site_settings pour WhyLocal)
-    │   ├── (public)/fleuristes/page.tsx ← vérifie cookie fp_florist, affiche Gate ou Catalog
+    │   ├── (public)/fleuristes/page.tsx  ← vérifie cookie fp_florist, affiche Gate ou Catalog
+    │   ├── (public)/mange-moi/page.tsx   ← catalogue vitrine comestibles (sans achat)
     │   ├── (public)/politique-confidentialite/page.tsx
     │   ├── (public)/conditions-utilisation/page.tsx
     │   ├── checkout/page.tsx    ← Client Component, Square Web Payments SDK
@@ -235,18 +240,21 @@ FlorusPocus/
     │   │   └── pages/route.ts
     │   └── admin/
     │       └── (protected)/
-    │           ├── contenu/page.tsx  ← CMS global (site_settings)
+    │           ├── contenu/page.tsx   ← CMS global (site_settings)
+    │           ├── mange-moi/page.tsx ← CRUD catalogue Mange Moi
     │           └── ...autres pages admin
     ├── components/
     │   ├── admin/
-    │   │   ├── blog/RichTextEditor.tsx  ← TipTap WYSIWYG
-    │   │   └── contenu/ContenuClient.tsx
+    │   │   ├── blog/RichTextEditor.tsx       ← TipTap WYSIWYG
+    │   │   ├── contenu/ContenuClient.tsx
+    │   │   └── mange-moi/MangeMoiClient.tsx  ← CRUD catalogue
     │   └── sections/
-    │       ├── FloristGate.tsx    ← formulaire code d'accès
-    │       └── FloristCatalog.tsx ← catalogue pro avec prix de gros
+    │       ├── FloristGate.tsx     ← formulaire code d'accès fleuristes
+    │       ├── FloristCatalog.tsx  ← catalogue pro avec prix de gros
+    │       └── (MangeMoi affiché directement dans /mange-moi/page.tsx)
     ├── context/CartContext.tsx  ← Zod validation au rehydrate localStorage
     ├── lib/
-    │   ├── supabase-server.ts   ← createClient + createPublicClient + createAdminClient + getSiteSettings
+    │   ├── supabase-server.ts   ← createClient + createPublicClient + createAdminClient + getSiteSettings + getMangeMoiItems
     │   ├── square.ts            ← SquareClient + SQUARE_LOCATION_ID
     │   ├── resend.ts            ← client Resend
     │   ├── ratelimit.ts         ← Upstash limiteurs
@@ -258,8 +266,9 @@ FlorusPocus/
     │       ├── contact.ts       ← sendContactMessage
     │       ├── settings.ts      ← updateSiteSettings (CMS)
     │       ├── florist.ts       ← verifyFloristCode + isFloristAuthenticated
+    │       ├── mangeMoi.ts      ← CRUD mange_moi_items
     │       └── events.ts        ← CRUD events + revalidateTag("events", "max")
-    └── types/index.ts           ← Product.florist_price + season: string | null
+    └── types/index.ts           ← Product.florist_price + MangeMoiItem + season: string | null
 ```
 
 ---
@@ -323,6 +332,13 @@ Sharp converti tout en WebP (qualité 80, max 1920px). Limite : 10 MB avant comp
 - Code stocké dans `site_settings.florist_access_code` (défaut: `fleuriste2026`)
 - Changer le code : Admin → Contenu → section "Accès fleuristes"
 - `florist_price` sur products : prix de gros affiché dans FloristCatalog (null = prix public)
+
+### Mange Moi — catalogue vitrine
+- Table `mange_moi_items` (id, name, description, image_url, active, sort_order)
+- RLS : lecture publique des items actifs uniquement
+- `getMangeMoiItems()` → caché avec tag `mange_moi`
+- Navbar/Footer/Hero : "Autocueillette" remplacé par "Mange Moi" → `/mange-moi`
+- `/admin/autocueillette` toujours accessible directement (données historiques) mais retiré de la sidebar
 
 ### Produits — catégorie libre
 - Champ `season` = sous-catégorie libre (TEXT) depuis migration 004
