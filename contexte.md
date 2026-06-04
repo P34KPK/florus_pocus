@@ -405,9 +405,9 @@ Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_setti
 ## 9. Identifiants admin
 
 - **Email :** info@floruspocus.com
-- **Mot de passe :** FlorusPocus2026!
+- **Mot de passe :** ⚠️ NE PAS écrire ici — repo PUBLIC. Stocké hors repo (gestionnaire de mots de passe). Réinitialisable via Supabase → Authentication → Users, ou `scripts/reset-admin.mjs` (mot de passe passé en argument/variable d'env, jamais en dur).
 - **URL admin :** http://localhost:3000/admin (dev) / https://www.floruspocus.com/admin (prod)
-- **Code fleuristes :** `fleuriste2026` (changeable dans Admin → Contenu)
+- **Code fleuristes :** voir Admin → Contenu → « Accès fleuristes » (ne pas écrire la valeur ici)
 
 ---
 

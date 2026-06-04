@@ -1,5 +1,7 @@
-// Usage: node scripts/reset-admin.mjs
-// Vérifie et recrée le compte admin dans Supabase Auth + table users
+// Usage: node scripts/reset-admin.mjs "<NOUVEAU_MOT_DE_PASSE>"
+//   ou : ADMIN_PASSWORD="<...>" node scripts/reset-admin.mjs
+// Vérifie et recrée le compte admin dans Supabase Auth + table users.
+// Le mot de passe N'EST JAMAIS écrit en dur (repo public).
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
@@ -28,7 +30,14 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 const EMAIL = "info@floruspocus.com";
-const PASSWORD = "FlorusPocus2026!";
+const PASSWORD = process.argv[2] || process.env.ADMIN_PASSWORD;
+
+if (!PASSWORD || PASSWORD.length < 8) {
+  console.error("❌  Mot de passe requis (min 8 car.) :");
+  console.error('    node scripts/reset-admin.mjs "MonNouveauMotDePasse"');
+  console.error('    ou  ADMIN_PASSWORD="..." node scripts/reset-admin.mjs');
+  process.exit(1);
+}
 
 console.log("🔍  Recherche du compte admin...");
 
@@ -48,7 +57,7 @@ if (existing) {
     email_confirm: true,
   });
   if (pwError) { console.error("❌  Erreur reset password:", pwError.message); process.exit(1); }
-  console.log("🔑  Mot de passe réinitialisé → FlorusPocus2026!");
+  console.log("🔑  Mot de passe réinitialisé.");
 
   // Vérifier is_admin dans la table users
   const { data: profile, error: profileError } = await admin
@@ -83,5 +92,5 @@ if (existing) {
 
 console.log("\n🎉  Prêt — connecte-toi avec :");
 console.log(`   Email    : ${EMAIL}`);
-console.log(`   Password : ${PASSWORD}`);
+console.log("   Password : (celui que tu viens de définir)");
 console.log("   URL      : http://localhost:3000/admin/login");
