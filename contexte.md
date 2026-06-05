@@ -17,12 +17,13 @@
 ## 2. État d'avancement — CE QUI EST FAIT ✅
 
 ### Site public
-- [x] Homepage allégée : Hero + WhyLocal + BlogPreview (3 sections, 2 queries Supabase)
+- [x] Homepage allégée : Hero + WhyLocal + BlogPreview (WhyLocal affiche l'image uploadée « why-local »)
+- [x] Section abonnements : jauge animée par format (Petit ~⅓ / Moyen ~⅔ / Grand-XL plein)
 - [x] Page `/abonnements` — section Subscriptions complète
 - [x] Page `/boutique` — Fleuristes + BranchDivider + TransformedProducts
 - [x] Page `/mange-moi` — catalogue vitrine comestibles (photo + description, sans achat)
 - [x] `/autocueillette` SUPPRIMÉE — redirection 301 → `/mange-moi` (next.config.ts)
-- [x] Page `/la-ferme` — histoire + stats + CTA → /contact
+- [x] Page `/la-ferme` — histoire + stats éditables (CMS) + image uploadée + CTA → /contact
 - [x] Page `/contact` — formulaire + infos
 - [x] Page `/fleuristes` — espace professionnel protégé par code (cookie 30j)
 - [x] Page `/politique-confidentialite` — page légale complète
@@ -322,6 +323,20 @@ brancher sur site_settings — ne jamais coder en dur.
 `Modal.tsx` : clic sur le fond ne ferme pas ; Échap/X demandent confirmation seulement si du
 contenu a été saisi (détection `dirty` via onInput/onChange). Sauvegarde réussie ferme sans
 friction (onSuccess appelle onClose directement).
+
+### Images de section — uploadée vs statique
+Les grandes sections affichent `page.featured_image_url` (uploadée via Admin → Pages) avec
+repli sur l'image statique `/images/*.webp` :
+- WhyLocal (accueil) → image de la page `why-local`
+- Farm (/la-ferme) → image de la page `farm`
+- Hero & Contact : PAS d'emplacement photo simple (Hero = composition décorative, Contact = pas de photo) — leur uploader dans /admin/pages n'a pas d'effet visible.
+⚠️ La page doit être **publiée** (getPublishedPages ne retourne que published=true) sinon repli statique.
+Toute section affichant une image éditable doit lire featured_image_url, jamais coder en dur.
+
+### Stats « La Ferme » + jauge abonnements (CMS / animation)
+- Stats ferme : 8 réglages site_settings (groupe `ferme`), passés en props à Farm depuis la page.
+- Abonnements : `FormatGauge` (arc framer-motion) se remplit selon `FORMAT_FILL` (Petit 0.34 /
+  Moyen 0.67 / Grand 1 / XL 1). Remplace l'ancienne `BouquetGauge` basée sur les tiges.
 
 ### revalidateTag — Next.js 16
 ```ts
