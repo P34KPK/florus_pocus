@@ -193,7 +193,7 @@ Dark Sub:    #0a1504  (Vert nuit — section abonnements)
 
 ### Logo & Favicon
 - Logo : `/public/florus_pocus_logo.svg` — couleur SVG `#2F4F3E`, dimensions 160×36px dans Navbar
-- Favicon : `src/app/icon.svg` — fleur 6 pétales terracotta sur fond vert `#2D5016`
+- Favicon : `src/app/icon.svg` UNIQUEMENT — fleur 6 pétales terracotta sur fond vert `#2D5016`. ⚠️ NE PAS ré-ajouter `src/app/favicon.ico` : le `.ico` par défaut de Next.js prenait le dessus sur la fleur (supprimé). App Router auto-détecte `icon.svg`. (Favicons très cachés par le navigateur → forcer Cmd+Shift+R pour voir le changement.)
 - Navbar : `filter: none` (fond clair) ou `brightness(0) invert(1)` (Hero sombre)
 
 ### Z-index hierarchy
