@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-04 (session 4 — audit approfondi)
+**Dernière session :** 2026-06-04 (session 5 — clés Vercel, storage, CMS coordonnées, UX modals)
 
 ---
 
@@ -47,14 +47,16 @@
 - [x] `/admin/abonnements` — CRUD abonnements + points de chute (modèle prix/bouquet + format)
 - [x] `/admin/mange-moi` — CRUD catalogue Mange Moi (nom, description, photo, ordre, statut)
 - [x] `/admin/pages` — édition contenu homepage (4 sections)
-- [x] `/admin/contenu` — CMS global : adresse, téléphone, email, réseaux sociaux, footer, WhyLocal (4 cartes), abonnements, code fleuristes
+- [x] `/admin/contenu` — CMS global : adresse, téléphone, email, **heures d'ouverture**, réseaux sociaux, footer, WhyLocal (4 cartes), abonnements, code fleuristes
 - [x] `/admin/blog` — CRUD articles + éditeur riche TipTap (H2/H3, gras, italique, listes, liens, citations, alignement…)
 - [x] `/admin/commandes` — VRAIES commandes : filtres par statut, détail (client/articles/note), changement de statut, export CSV
 - [x] `/admin/messages` — lecture messages contact : marquer lu, répondre (mailto), supprimer
 - [x] `/admin/stats` — statistiques + exports
 - [x] `/admin/parametres` — configuration générale
 - [x] `/admin/autocueillette` SUPPRIMÉE (fonctionnalité retirée)
-- [x] Upload d'images : Sharp → WebP automatique, max 10 MB, rate limiting (20/h)
+- [x] Upload d'images : Sharp → WebP automatique, max 10 MB, rate limiting (20/h) — bucket Storage `floruspocus` créé via API service_role
+- [x] Toutes les pages admin de liste lisent via `createAdminClient` (voient les éléments inactifs/brouillons) — corrige le toggle on/off
+- [x] Modals admin protégés contre fermeture accidentelle (pas de clic-fond, confirmation si saisie en cours)
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -295,6 +297,31 @@ Les clés sur Vercel étaient corrompues (collées avec retours à la ligne → 
 // createPublicClient() n'a PAS de cookies → compatible avec unstable_cache
 // createClient() a des cookies → NE PAS utiliser dans unstable_cache
 ```
+
+### Pages admin — TOUJOURS createAdminClient pour les listes
+Les policies RLS ne montrent que `active=true` / `published=true`. Une page admin qui lit
+via `createClient()` (RLS) ne verra donc PAS les produits inactifs / brouillons → le toggle
+on/off semble "cassé" (l'élément disparaît). Toutes les pages admin de liste utilisent
+`createAdminClient()` (bypass RLS) — sûr car le layout `(protected)` vérifie déjà `is_admin`.
+L'affichage public reste filtré via getActiveProducts / getPublishedBlogPosts.
+
+### Storage — bucket créé via API, pas par SQL
+Le bucket `floruspocus` ne peut pas être créé de façon fiable par `002_storage.sql` (les
+CREATE POLICY storage.objects échouent dans l'éditeur SQL → rollback). Créé via
+`sb.storage.createBucket("floruspocus", { public:true, fileSizeLimit:10485760, allowedMimeTypes:[...] })`.
+Symptôme si absent : upload échoue avec "Bucket not found".
+
+### CMS coordonnées — tout doit lire site_settings
+Adresse / téléphone / courriel / heures / réseaux : Footer, section Contact, pages légales
+et FloristGate lisent TOUS depuis `getSiteSettings()`. Composants client (Contact, FloristGate)
+reçoivent les valeurs en props depuis leur page Server Component (ils ne peuvent pas appeler
+getSiteSettings directement). Si tu ajoutes un nouvel endroit affichant une coordonnée, le
+brancher sur site_settings — ne jamais coder en dur.
+
+### Modal admin — protection anti-perte
+`Modal.tsx` : clic sur le fond ne ferme pas ; Échap/X demandent confirmation seulement si du
+contenu a été saisi (détection `dirty` via onInput/onChange). Sauvegarde réussie ferme sans
+friction (onSuccess appelle onClose directement).
 
 ### revalidateTag — Next.js 16
 ```ts
