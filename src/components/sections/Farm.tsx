@@ -7,18 +7,22 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import GrowingStem from "@/components/GrowingStem";
 import type { Page } from "@/types";
 
+interface FarmStat { value?: string; label?: string }
+
 interface FarmProps {
   page?: Page | null;
+  stats?: FarmStat[];
 }
 
-const FARM_STATS = [
+const DEFAULT_FARM_STATS: FarmStat[] = [
   { value: "5+",  label: "Années de passion" },
   { value: "80+", label: "Variétés cultivées" },
   { value: "200", label: "Familles abonnées" },
   { value: "0",   label: "Pesticide utilisé" },
 ];
 
-export default function Farm({ page }: FarmProps) {
+export default function Farm({ page, stats }: FarmProps) {
+  const FARM_STATS = (stats && stats.length > 0) ? stats : DEFAULT_FARM_STATS;
   const ref        = useRef<HTMLElement>(null);
   const title      = page?.title       ?? "La Ferme";
   const content    = page?.description ?? "Nichée au cœur du Québec, Florus Pocus est née d'une passion pour les fleurs et d'un désir de reconnecter les gens avec la nature. Nous cultivons plus de 80 variétés de fleurs sans pesticides, en harmonie avec les saisons et l'environnement.\n\nChaque bouquet que vous recevez a été semé, cultivé et cueilli à la main par notre équipe. Nous croyons que les fleurs ne sont pas qu'un produit — elles sont une invitation à ralentir, à apprécier la beauté du moment présent.";
@@ -52,7 +56,7 @@ export default function Farm({ page }: FarmProps) {
           transition={{ duration: 0.7 }}
         >
           {FARM_STATS.map((s, i) => (
-            <motion.div key={s.label} className="text-center"
+            <motion.div key={i} className="text-center"
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}

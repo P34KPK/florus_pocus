@@ -39,4 +39,14 @@ INSERT INTO site_settings (key, label, grp, value) VALUES
 
   -- Section abonnements
   ('abonnements_title',    'Section abonnements — Titre',      'abonnements', 'Des fleurs de saison, chaque mois'),
-  ('abonnements_subtitle', 'Section abonnements — Sous-titre', 'abonnements', 'Choisissez votre abonnement, votre fréquence de livraison et votre point de chute préféré.');
+  ('abonnements_subtitle', 'Section abonnements — Sous-titre', 'abonnements', 'Choisissez votre abonnement, votre fréquence de livraison et votre point de chute préféré.'),
+
+  -- Section « La Ferme » — barre de statistiques (4 stats : chiffre + texte)
+  ('farm_stat1_value', 'Stat 1 — Chiffre', 'ferme', '5+'),
+  ('farm_stat1_label', 'Stat 1 — Texte',   'ferme', 'Années de passion'),
+  ('farm_stat2_value', 'Stat 2 — Chiffre', 'ferme', '80+'),
+  ('farm_stat2_label', 'Stat 2 — Texte',   'ferme', 'Variétés cultivées'),
+  ('farm_stat3_value', 'Stat 3 — Chiffre', 'ferme', '200'),
+  ('farm_stat3_label', 'Stat 3 — Texte',   'ferme', 'Familles abonnées'),
+  ('farm_stat4_value', 'Stat 4 — Chiffre', 'ferme', '0'),
+  ('farm_stat4_label', 'Stat 4 — Texte',   'ferme', 'Pesticide utilisé');
