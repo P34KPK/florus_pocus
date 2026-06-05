@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import type { BlogPost } from "@/types";
@@ -60,7 +61,15 @@ function FeaturedCard({ post }: { post: BlogPost }) {
     >
       <Link href={`/blog/${post.slug}`} className="group block h-full">
         <article className="bg-white rounded-3xl border border-border shadow-sm overflow-hidden h-full flex flex-col hover:shadow-xl transition-shadow">
-          <ImagePlaceholderFeatured />
+          {post.featured_image_url ? (
+            <div className="aspect-[16/10] overflow-hidden relative" style={{ backgroundColor: "#1a3009" }}>
+              <Image src={post.featured_image_url} alt={post.title} fill
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-500" />
+            </div>
+          ) : (
+            <ImagePlaceholderFeatured />
+          )}
 
           <div className="p-8 flex flex-col flex-1">
             {post.tags.length > 0 && (
@@ -113,7 +122,13 @@ function SmallCard({ post, index }: { post: BlogPost; index: number }) {
       whileHover={{ x: 4, transition: { duration: 0.2 } }}
     >
       <Link href={`/blog/${post.slug}`} className="group flex gap-4 items-start">
-        <ImagePlaceholderSmall />
+        {post.featured_image_url ? (
+          <div className="w-20 h-20 flex-shrink-0 rounded-2xl overflow-hidden relative" style={{ backgroundColor: "#E8F0E0" }}>
+            <Image src={post.featured_image_url} alt={post.title} fill sizes="80px" className="object-cover" />
+          </div>
+        ) : (
+          <ImagePlaceholderSmall />
+        )}
 
         <div className="flex-1 min-w-0">
           {post.tags[0] && (
