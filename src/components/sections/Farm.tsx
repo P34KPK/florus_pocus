@@ -78,7 +78,7 @@ export default function Farm({ page, stats }: FarmProps) {
             <motion.div style={{ y: imgY }}>
               <div className="w-full aspect-square rounded-3xl overflow-hidden relative">
                 <Image
-                  src="/images/farm.webp"
+                  src={page?.featured_image_url || "/images/farm.webp"}
                   alt="La ferme Florus Pocus"
                   fill
                   className="object-cover"

@@ -142,7 +142,7 @@ export default function WhyLocal({ page, reasons }: WhyLocalProps) {
             <motion.div style={{ y: imgY }}>
               <div className="w-full aspect-[4/5] rounded-3xl overflow-hidden relative">
                 <Image
-                  src="/images/whylocal.webp"
+                  src={page?.featured_image_url || "/images/whylocal.webp"}
                   alt="Ferme florale Florus Pocus"
                   fill
                   className="object-cover"
