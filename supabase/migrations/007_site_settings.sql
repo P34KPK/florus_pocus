@@ -14,9 +14,10 @@ CREATE POLICY "Public read" ON site_settings FOR SELECT USING (true);
 -- Seed — valeurs initiales
 INSERT INTO site_settings (key, label, grp, value) VALUES
   -- Contact
-  ('contact_address',  'Adresse',    'contact', '123 Chemin de la Ferme, Pont-Rouge, QC G3H 1A1'),
-  ('contact_phone',    'Téléphone',  'contact', '+1 (418) 555-1234'),
-  ('contact_email',    'Courriel',   'contact', 'info@floruspocus.com'),
+  ('contact_address',  'Adresse',           'contact', '123 Chemin de la Ferme, Pont-Rouge, QC G3H 1A1'),
+  ('contact_phone',    'Téléphone',         'contact', '+1 (418) 555-1234'),
+  ('contact_email',    'Courriel',          'contact', 'info@floruspocus.com'),
+  ('contact_hours',    'Heures d''ouverture','contact', 'Lun-Ven 9h-17h · Sam 9h-14h'),
 
   -- Réseaux sociaux
   ('social_instagram', 'Instagram (URL)', 'reseaux_sociaux', 'https://www.instagram.com/florus_pocus'),

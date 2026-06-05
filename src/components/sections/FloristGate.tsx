@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { verifyFloristCode, type FloristState } from "@/lib/actions/florist";
 import { Lock } from "lucide-react";
 
-export default function FloristGate() {
+export default function FloristGate({ email = "info@floruspocus.com" }: { email?: string }) {
   const [state, formAction, pending] = useActionState<FloristState, FormData>(verifyFloristCode, {});
 
   return (
@@ -62,7 +62,7 @@ export default function FloristGate() {
 
         <p className="text-center text-xs mt-6" style={{ color: "#bbb" }}>
           Vous n&apos;avez pas de code ? Contactez-nous à{" "}
-          <a href="mailto:info@floruspocus.com" style={{ color: "#2D5016" }}>info@floruspocus.com</a>
+          <a href={`mailto:${email}`} style={{ color: "#2D5016" }}>{email}</a>
         </p>
       </div>
     </main>

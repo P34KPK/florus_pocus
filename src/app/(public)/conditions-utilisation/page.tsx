@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getSiteSettings } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "Conditions d'utilisation — Florus Pocus",
   description: "Conditions générales d'utilisation et de vente de Florus Pocus.",
 };
 
-export default function ConditionsUtilisationPage() {
+export default async function ConditionsUtilisationPage() {
+  const settings = await getSiteSettings();
+  const email = settings["contact_email"] || "info@floruspocus.com";
   return (
     <main className="min-h-screen pt-24 pb-24" style={{ backgroundColor: "#FAFAF8" }}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,7 +71,7 @@ export default function ConditionsUtilisationPage() {
               la commande confirmée et le paiement traité, sauf en cas d&apos;erreur de notre part. Si vous
               recevez un produit endommagé ou non conforme, contactez-nous dans les 24 heures suivant la
               réception à{" "}
-              <a href="mailto:info@floruspocus.com" style={{ color: "#2D5016" }}>info@floruspocus.com</a>.
+              <a href={`mailto:${email}`} style={{ color: "#2D5016" }}>{email}</a>.
             </p>
           </section>
 

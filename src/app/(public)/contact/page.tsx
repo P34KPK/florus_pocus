@@ -1,4 +1,4 @@
-import { getPublishedPage } from "@/lib/supabase-server";
+import { getPublishedPage, getSiteSettings } from "@/lib/supabase-server";
 import Contact          from "@/components/sections/Contact";
 
 export const metadata = {
@@ -8,11 +8,20 @@ export const metadata = {
 };
 
 export default async function ContactPage() {
-  const page = await getPublishedPage("contact");
+  const [page, settings] = await Promise.all([
+    getPublishedPage("contact"),
+    getSiteSettings(),
+  ]);
 
   return (
     <main className="pt-16">
-      <Contact page={page} />
+      <Contact
+        page={page}
+        address={settings["contact_address"]}
+        phone={settings["contact_phone"]}
+        email={settings["contact_email"]}
+        hours={settings["contact_hours"]}
+      />
     </main>
   );
 }

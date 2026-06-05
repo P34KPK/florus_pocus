@@ -8,20 +8,24 @@ import type { Page } from "@/types";
 
 interface ContactProps {
   page?: Page | null;
+  address?: string;
+  phone?: string;
+  email?: string;
+  hours?: string;
 }
-
-const INFOS = [
-  { icon: MapPin, label: "Adresse",   value: "123 Chemin de la Ferme, Pont-Rouge, QC G3H 1A1" },
-  { icon: Phone,  label: "Téléphone", value: "+1 (418) 555-1234" },
-  { icon: Mail,   label: "Courriel",  value: "info@floruspocus.com" },
-  { icon: Clock,  label: "Heures",    value: "Lun-Ven 9h-17h · Sam 9h-14h" },
-];
 
 const inputClass = "w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-white/25 text-white";
 const inputStyle = { backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", "--tw-ring-color": "#D4A574" } as React.CSSProperties;
 
-export default function Contact({ page }: ContactProps) {
+export default function Contact({ page, address, phone, email, hours }: ContactProps) {
   const [state, formAction, pending] = useActionState(sendContactMessage, {});
+
+  const INFOS = [
+    { icon: MapPin, label: "Adresse",   value: address || "123 Chemin de la Ferme, Pont-Rouge, QC G3H 1A1" },
+    { icon: Phone,  label: "Téléphone", value: phone   || "+1 (418) 555-1234" },
+    { icon: Mail,   label: "Courriel",  value: email   || "info@floruspocus.com" },
+    { icon: Clock,  label: "Heures",    value: hours   || "Lun-Ven 9h-17h · Sam 9h-14h" },
+  ];
 
   return (
     <section id="contact" className="section-padding relative overflow-hidden"
