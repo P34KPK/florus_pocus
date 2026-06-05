@@ -17,7 +17,7 @@
 ## 2. État d'avancement — CE QUI EST FAIT ✅
 
 ### Site public
-- [x] Homepage allégée : Hero + WhyLocal + BlogPreview (WhyLocal affiche l'image uploadée « why-local »)
+- [x] Homepage allégée : Hero + WhyLocal + BlogPreview (WhyLocal + BlogPreview affichent les images uploadées)
 - [x] Section abonnements : jauge animée par format (Petit ~⅓ / Moyen ~⅔ / Grand-XL plein)
 - [x] Page `/abonnements` — section Subscriptions complète
 - [x] Page `/boutique` — Fleuristes + BranchDivider + TransformedProducts
@@ -329,6 +329,7 @@ Les grandes sections affichent `page.featured_image_url` (uploadée via Admin �
 repli sur l'image statique `/images/*.webp` :
 - WhyLocal (accueil) → image de la page `why-local`
 - Farm (/la-ferme) → image de la page `farm`
+- BlogPreview (accueil, « Histoires de la ferme ») → image uploadée de chaque article (était placeholder SVG figé)
 - Hero & Contact : PAS d'emplacement photo simple (Hero = composition décorative, Contact = pas de photo) — leur uploader dans /admin/pages n'a pas d'effet visible.
 ⚠️ La page doit être **publiée** (getPublishedPages ne retourne que published=true) sinon repli statique.
 Toute section affichant une image éditable doit lire featured_image_url, jamais coder en dur.
