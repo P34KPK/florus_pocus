@@ -40,21 +40,57 @@ const FREQ_LABELS: Record<SubscriptionFrequency, string> = {
   "4x_month": "4× par mois (hebdomadaire)",
 };
 
-function FormatBadge({ format, isPopular }: { format: string; isPopular: boolean }) {
+// Niveau de remplissage de la jauge selon le format (0 → 1)
+const FORMAT_FILL: Record<string, number> = {
+  "Petit": 0.34,
+  "Moyen": 0.67,
+  "Grand": 1,
+  "XL":    1,
+};
+
+function FormatGauge({ format, isPopular, index }: { format: string; isPopular: boolean; index: number }) {
+  const R         = 44;
+  const CX        = 60;
+  const CY        = 60;
+  const CIRC      = 2 * Math.PI * R;
+  const GAUGE_ARC = (270 / 360) * CIRC;          // arc de 270°
+
+  const fillRatio = FORMAT_FILL[format] ?? 0.67;
+  const fillArc   = fillRatio * GAUGE_ARC;
+
+  const fillColor  = isPopular ? "#2D5016" : "#D4A574";
+  const trackColor = isPopular ? "rgba(45,80,22,0.15)" : "rgba(255,255,255,0.1)";
+  const textColor  = isPopular ? "#1a2e0a" : "#ffffff";
+  const subColor   = isPopular ? "rgba(45,80,22,0.50)" : "rgba(255,255,255,0.40)";
+
   return (
     <div className="flex justify-center mb-5">
-      <div className="flex flex-col items-center justify-center rounded-2xl px-8 py-4"
-        style={isPopular
-          ? { backgroundColor: "rgba(45,80,22,0.1)", border: "1.5px solid rgba(45,80,22,0.2)" }
-          : { backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }
-        }
-      >
-        <span className="font-display font-bold leading-none" style={{ fontSize: "1.8rem", color: isPopular ? "#1a2e0a" : "#ffffff" }}>
-          {format}
-        </span>
-        <span className="text-[10px] font-semibold uppercase tracking-widest mt-1" style={{ color: isPopular ? "rgba(45,80,22,0.5)" : "rgba(255,255,255,0.4)" }}>
-          format
-        </span>
+      <div className="relative" style={{ width: 108, height: 108 }}>
+        <svg viewBox="0 0 120 120" width="108" height="108">
+          {/* rotate(135) place l'ouverture de l'arc en bas */}
+          <g transform={`rotate(135, ${CX}, ${CY})`}>
+            <circle cx={CX} cy={CY} r={R} fill="none" stroke={trackColor}
+              strokeWidth="7" strokeLinecap="round"
+              strokeDasharray={`${GAUGE_ARC} ${CIRC - GAUGE_ARC}`}
+            />
+            <motion.circle cx={CX} cy={CY} r={R} fill="none" stroke={fillColor}
+              strokeWidth="7" strokeLinecap="round"
+              strokeDasharray={`${GAUGE_ARC} ${CIRC - GAUGE_ARC}`}
+              initial={{ strokeDashoffset: GAUGE_ARC }}
+              whileInView={{ strokeDashoffset: GAUGE_ARC - fillArc }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1], delay: 0.2 + index * 0.15 }}
+            />
+          </g>
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-display font-bold leading-none" style={{ fontSize: "1.35rem", color: textColor }}>
+            {format}
+          </span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest mt-0.5" style={{ color: subColor }}>
+            format
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -98,7 +134,7 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
       )}
 
       <div className="p-8 flex flex-col">
-        <FormatBadge format={sub.format} isPopular={isPopular} />
+        <FormatGauge format={sub.format} isPopular={isPopular} index={index} />
 
         <h3 className={`font-heading font-bold text-xl mb-1 ${isPopular ? "text-[#1a2e0a]" : "text-white"}`}>
           {sub.name}
