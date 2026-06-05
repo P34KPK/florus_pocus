@@ -85,16 +85,7 @@ export default async function ConditionsUtilisationPage() {
           </section>
 
           <section>
-            <h2 className="font-heading font-bold text-xl mb-3" style={{ color: "#1A1A1A" }}>7. Auto-cueillette</h2>
-            <p className="leading-relaxed">
-              Les billets d&apos;auto-cueillette sont non remboursables mais transférables. En cas de conditions
-              météorologiques extrêmes rendant l&apos;activité impossible, Florus Pocus offrira un report de
-              la date ou un crédit.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-heading font-bold text-xl mb-3" style={{ color: "#1A1A1A" }}>8. Limitation de responsabilité</h2>
+            <h2 className="font-heading font-bold text-xl mb-3" style={{ color: "#1A1A1A" }}>7. Limitation de responsabilité</h2>
             <p className="leading-relaxed">
               Florus Pocus ne peut être tenue responsable des dommages indirects résultant de l&apos;utilisation
               de ses produits. Notre responsabilité est limitée au montant de la commande concernée.
@@ -102,7 +93,7 @@ export default async function ConditionsUtilisationPage() {
           </section>
 
           <section>
-            <h2 className="font-heading font-bold text-xl mb-3" style={{ color: "#1A1A1A" }}>9. Droit applicable</h2>
+            <h2 className="font-heading font-bold text-xl mb-3" style={{ color: "#1A1A1A" }}>8. Droit applicable</h2>
             <p className="leading-relaxed">
               Ces conditions sont régies par les lois de la province de Québec et du Canada.
             </p>
