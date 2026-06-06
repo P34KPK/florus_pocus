@@ -70,7 +70,7 @@ export default function BlogPostForm({ action, post, onSuccess }: Props) {
 
       <div>
         <label className={label}>Auteur *</label>
-        <input name="author" defaultValue={post?.author ?? "admin"} required className={field} />
+        <input name="author" defaultValue={post?.author ?? "Florus Pocus"} required className={field} />
       </div>
 
       <div>
