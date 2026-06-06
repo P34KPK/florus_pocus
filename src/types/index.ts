@@ -21,6 +21,7 @@ export interface Product {
   category: ProductCategory;
   price: number;
   florist_price: number | null;
+  florist_only: boolean;
   stock: number | null;
   image_url: string | null;
   season: string | null;

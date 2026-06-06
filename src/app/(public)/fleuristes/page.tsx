@@ -18,7 +18,7 @@ export default async function FleuristesPage() {
   }
 
   const products = (await getActiveProducts()) as Product[];
-  const fleurs = products.filter((p) => p.category === "fleur");
+  const floristProducts = products.filter((p) => p.florist_only);
 
-  return <FloristCatalog products={fleurs} />;
+  return <FloristCatalog products={floristProducts} />;
 }

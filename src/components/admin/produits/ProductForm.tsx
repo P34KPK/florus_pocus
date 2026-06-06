@@ -105,6 +105,25 @@ export default function ProductForm({ action, product, onSuccess }: Props) {
             <option value="false">Inactif</option>
           </select>
         </div>
+
+        <div className="col-span-2 flex items-start gap-3 p-4 rounded-xl border border-[#D4A574] bg-[#FFF8F0]">
+          <input
+            type="checkbox"
+            name="florist_only"
+            id="florist_only"
+            value="true"
+            defaultChecked={product?.florist_only === true}
+            className="mt-0.5 w-4 h-4 accent-[#2D5016] flex-shrink-0"
+          />
+          <div>
+            <label htmlFor="florist_only" className="block text-sm font-semibold" style={{ color: "#2D5016" }}>
+              Réservé aux fleuristes membres
+            </label>
+            <p className="text-xs mt-0.5" style={{ color: "#888" }}>
+              Ce produit ne sera PAS visible dans la boutique grand public — uniquement dans l&apos;espace fleuristes.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">

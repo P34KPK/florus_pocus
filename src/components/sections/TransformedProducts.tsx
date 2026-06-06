@@ -21,11 +21,11 @@ interface TransformedProductsProps {
 }
 
 const PLACEHOLDER_TRANSFORMES: Product[] = [
-  { id: "t1", name: "Gelée de Roses",       description: "Gelée artisanale aux pétales de roses fraîches. Parfaite sur toast ou fromage.", category: "transforme", price: 12, florist_price: null, stock: 24, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t2", name: "Sirop de Lavande",     description: "Sirop naturel de lavande québécoise. Idéal pour cocktails, limonades et desserts.", category: "transforme", price: 14, florist_price: null, stock: 18, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t3", name: "Bouquet Séché Naturel",description: "Bouquet de fleurs séchées naturellement, pour une décoration durable.", category: "transforme", price: 28, florist_price: null, stock: 10, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t4", name: "Vinaigre de Fleurs",   description: "Vinaigre de cidre infusé aux fleurs sauvages. Pour salades et marinades.", category: "transforme", price: 11, florist_price: null, stock: 20, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t5", name: "Tisane de la Ferme",   description: "Mélange de plantes séchées de notre jardin pour une tisane apaisante.", category: "transforme", price: 9, florist_price: null, stock: 30, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t1", name: "Gelée de Roses",       description: "Gelée artisanale aux pétales de roses fraîches. Parfaite sur toast ou fromage.", category: "transforme", price: 12, florist_price: null, florist_only: false, stock: 24, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t2", name: "Sirop de Lavande",     description: "Sirop naturel de lavande québécoise. Idéal pour cocktails, limonades et desserts.", category: "transforme", price: 14, florist_price: null, florist_only: false, stock: 18, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t3", name: "Bouquet Séché Naturel",description: "Bouquet de fleurs séchées naturellement, pour une décoration durable.", category: "transforme", price: 28, florist_price: null, florist_only: false, stock: 10, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t4", name: "Vinaigre de Fleurs",   description: "Vinaigre de cidre infusé aux fleurs sauvages. Pour salades et marinades.", category: "transforme", price: 11, florist_price: null, florist_only: false, stock: 20, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t5", name: "Tisane de la Ferme",   description: "Mélange de plantes séchées de notre jardin pour une tisane apaisante.", category: "transforme", price: 9, florist_price: null, florist_only: false, stock: 30, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
 ];
 
 function TransformedCard({ product }: { product: Product }) {

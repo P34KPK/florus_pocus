@@ -13,13 +13,18 @@ export const metadata = {
 export default async function BoutiquePage() {
   const products = (await getActiveProducts()) as Product[];
 
-  const fleurs      = products.filter((p) => p.category === "fleur");
-  const transformes = products.filter((p) => p.category === "transforme");
+  const public_products = products.filter((p) => !p.florist_only);
+  const fleurs          = public_products.filter((p) => p.category === "fleur");
+  const transformes     = public_products.filter((p) => p.category === "transforme");
 
   return (
     <main className="pt-16">
-      <Fleuristes          products={fleurs.length      > 0 ? fleurs      : undefined} />
-      <BranchDivider />
+      {fleurs.length > 0 && (
+        <>
+          <Fleuristes products={fleurs} />
+          <BranchDivider />
+        </>
+      )}
       <TransformedProducts products={transformes.length > 0 ? transformes : undefined} />
     </main>
   );
