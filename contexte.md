@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-04 (session 5 — clés Vercel, storage, CMS coordonnées, UX modals)
+**Dernière session :** 2026-06-06 (session 6 — produits fleuristes exclusifs, admin/paramètres, footer adresse, abonnements format)
 
 ---
 
@@ -58,6 +58,9 @@
 - [x] Upload d'images : Sharp → WebP automatique, max 10 MB, rate limiting (20/h) — bucket Storage `floruspocus` créé via API service_role
 - [x] Toutes les pages admin de liste lisent via `createAdminClient` (voient les éléments inactifs/brouillons) — corrige le toggle on/off
 - [x] Modals admin protégés contre fermeture accidentelle (pas de clic-fond, confirmation si saisie en cours)
+- [x] `/admin/parametres` — page fonctionnelle : changement mot de passe admin, status services (Square/Resend/Upstash/Supabase), liens rapides dashboards externes
+- [x] `/admin/contenu` — note contextuelle dans "Pied de page" → pointe vers "Coordonnées" pour adresse/tél/courriel
+- [x] Produits fleuristes exclusifs : colonne `florist_only BOOLEAN DEFAULT false` (migration 010) — boutique grand public exclut ces produits, espace fleuristes les affiche uniquement — toggle admin dans ProductForm
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -101,6 +104,8 @@
 - [x] Migration `007_site_settings.sql` — table site_settings (CMS global, RLS public read)
 - [x] Migration `008_florist_price.sql` — florist_price sur products + code accès fleuristes
 - [x] Migration `009_mange_moi.sql` — table mange_moi_items (name, description, image_url, sort_order, active)
+- [x] Migration `010_florist_only.sql` — colonne florist_only BOOLEAN sur products
+- [x] Migration `006_subscriptions_format.sql` — exécutée en prod (price_monthly→price, stems_count→format TEXT)
 
 ---
 
