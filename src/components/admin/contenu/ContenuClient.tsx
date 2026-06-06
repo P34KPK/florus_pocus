@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import { updateSiteSettings, type SettingsState } from "@/lib/actions/settings";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Info } from "lucide-react";
 
 interface Row { key: string; value: string; label: string; grp: string }
 
@@ -44,6 +44,15 @@ export default function ContenuClient({ grouped, groupLabels }: Props) {
           </div>
 
           <div className="px-6 py-5 space-y-4 bg-white">
+            {grp === "footer" && (
+              <div className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: "#F0F5EC", color: "#2D5016" }}>
+                <Info size={15} className="flex-shrink-0 mt-0.5" />
+                <span>
+                  L&apos;adresse, le téléphone et le courriel affichés dans le pied de page
+                  sont gérés dans la section <strong>« Coordonnées »</strong> plus haut.
+                </span>
+              </div>
+            )}
             {rows.map((row) => (
               <div key={row.key}>
                 <label className={labelC}>{row.label}</label>
