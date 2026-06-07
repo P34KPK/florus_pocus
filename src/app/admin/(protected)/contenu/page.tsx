@@ -12,6 +12,7 @@ const GROUP_LABELS: Record<string, string> = {
   abonnements:    "Section abonnements",
   ferme:          "Section « La Ferme » (statistiques)",
   fleuristes:     "Accès fleuristes",
+  boutique:       "Boutique & Caisse",
 };
 
 export default async function AdminContenuPage() {
