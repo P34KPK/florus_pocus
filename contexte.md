@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-06 (session 6 — produits fleuristes exclusifs, admin/paramètres, footer adresse, abonnements format)
+**Dernière session :** 2026-06-06 (session 7 — abonnements packs saisonniers, produits sur devis, page détail produit)
 
 ---
 
@@ -61,6 +61,10 @@
 - [x] `/admin/parametres` — page fonctionnelle : changement mot de passe admin, status services (Square/Resend/Upstash/Supabase), liens rapides dashboards externes
 - [x] `/admin/contenu` — note contextuelle dans "Pied de page" → pointe vers "Coordonnées" pour adresse/tél/courriel
 - [x] Produits fleuristes exclusifs : colonne `florist_only BOOLEAN DEFAULT false` (migration 010) — boutique grand public exclut ces produits, espace fleuristes les affiche uniquement — toggle admin dans ProductForm
+- [x] Abonnements — modèle packs saisonniers (migration 012) : prix global saison + `bouquets_count`, plus de fréquences (1x/2x/4x retiré). Cartes affichent "X$ / saison / Y bouquets inclus". "Annulation facile" retiré.
+- [x] Produits sur devis (migration 013) : colonne `price_type TEXT ('fixed'|'devis')`. Produits "devis" affichent badge "Sur devis" + bouton "Obtenir un prix" → `/contact?produit=NOM`. Le champ prix masqué dans l'admin en mode devis.
+- [x] Page détail produit `/boutique/[id]` — grande photo, description complète, prix ou bouton devis, produits suggérés. Cartes boutique entièrement cliquables (pattern overlay link — bouton panier reste fonctionnel).
+- [x] Page Mange Moi — header éditable depuis admin (migration 011, slug `mange-moi` dans pages)
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -105,7 +109,9 @@
 - [x] Migration `008_florist_price.sql` — florist_price sur products + code accès fleuristes
 - [x] Migration `009_mange_moi.sql` — table mange_moi_items (name, description, image_url, sort_order, active)
 - [x] Migration `010_florist_only.sql` — colonne florist_only BOOLEAN sur products
-- [x] Migration `006_subscriptions_format.sql` — exécutée en prod (price_monthly→price, stems_count→format TEXT)
+- [x] Migration `011_mange_moi_page.sql` — slug `mange-moi` ajouté au CHECK constraint de pages
+- [x] Migration `012_subscriptions_bouquets_count.sql` — colonne bouquets_count INTEGER sur subscriptions
+- [x] Migration `013_product_price_type.sql` — colonne price_type TEXT ('fixed'|'devis') sur products
 
 ---
 
@@ -226,7 +232,11 @@ FlorusPocus/
 │   ├── 006_subscriptions_format.sql
 │   ├── 007_site_settings.sql
 │   ├── 008_florist_price.sql
-│   └── 009_mange_moi.sql
+│   ├── 009_mange_moi.sql
+│   ├── 010_florist_only.sql
+│   ├── 011_mange_moi_page.sql
+│   ├── 012_subscriptions_bouquets_count.sql
+│   └── 013_product_price_type.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -238,6 +248,8 @@ FlorusPocus/
     │   ├── (public)/page.tsx    ← homepage (charge site_settings pour WhyLocal)
     │   ├── (public)/fleuristes/page.tsx  ← vérifie cookie fp_florist, affiche Gate ou Catalog
     │   ├── (public)/mange-moi/page.tsx   ← catalogue vitrine comestibles (sans achat)
+    │   ├── (public)/boutique/[id]/page.tsx       ← fiche produit (SSR, generateMetadata)
+    │   ├── (public)/boutique/[id]/AddToCartButton.tsx ← client component bouton panier
     │   ├── (public)/politique-confidentialite/page.tsx
     │   ├── (public)/conditions-utilisation/page.tsx
     │   ├── checkout/page.tsx    ← Client Component, Square Web Payments SDK
@@ -381,10 +393,25 @@ Utiliser `100svh` plutôt que `100vh`.
 ### Upload images
 Sharp converti tout en WebP (qualité 80, max 1920px). Limite : 10 MB avant compression. Formats acceptés : JPG, PNG, WebP, GIF, AVIF.
 
-### Abonnements — modèle de prix (migration 006)
-- `price` (pas `price_monthly`) = prix par bouquet
-- `format` (TEXT, pas `stems_count`) = Petit / Moyen / Grand / XL
-- `isPopular` basé sur `format === "Moyen"` dans Subscriptions.tsx
+### Abonnements — modèle packs saisonniers (migration 012)
+- `price` = prix global pour la saison (ex: 450$)
+- `bouquets_count` = nombre de bouquets inclus dans le pack
+- `format` (TEXT) = Petit / Moyen / Grand / XL (détermine `isPopular` si `"Moyen"`)
+- Plus de `frequencies` — le modèle 1x/2x/4x mois est entièrement retiré
+- "Annulation facile" retiré des features affichées sur les cartes
+
+### Produits — type de prix (migration 013)
+- `price_type TEXT ('fixed'|'devis')` — défaut `'fixed'`
+- Mode `'devis'` : prix masqué, badge "Sur devis", bouton "Obtenir un prix" → `/contact?produit=NOM`
+- Admin : sélecteur "Type de prix" dans ProductForm, cache le champ prix en mode devis
+- Prix mis à 0 automatiquement côté serveur quand `price_type === 'devis'`
+
+### Boutique — page détail produit
+- Route `/boutique/[id]` — SSR, `generateMetadata` pour SEO
+- Cartes boutique (Fleuristes + TransformedProducts) cliquables via overlay Link (`z-0`)
+- Bouton "Ajouter" garde son `z-10` et reste indépendant du lien de carte
+- `AddToCartButton.tsx` = Client Component séparé (nécessaire car page produit est Server Component)
+- Section "Vous aimerez aussi" : 4 produits publics non-florist au bas de chaque fiche
 
 ### CMS — site_settings
 - Table `site_settings` (key, value, label, grp)
