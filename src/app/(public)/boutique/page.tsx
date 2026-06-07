@@ -1,4 +1,4 @@
-import { getActiveProducts }    from "@/lib/supabase-server";
+import { getActiveProducts, getSiteSettings } from "@/lib/supabase-server";
 import BranchDivider        from "@/components/BranchDivider";
 import Fleuristes           from "@/components/sections/Fleuristes";
 import TransformedProducts  from "@/components/sections/TransformedProducts";
@@ -12,7 +12,11 @@ export const metadata = {
 };
 
 export default async function BoutiquePage() {
-  const products = (await getActiveProducts()) as Product[];
+  const [products, settings] = await Promise.all([
+    getActiveProducts(),
+    getSiteSettings(),
+  ]);
+  const boutiqueSubtitle = settings["boutique_subtitle"];
 
   const public_products = products.filter((p) => !p.florist_only);
   const fleurs          = public_products.filter((p) => p.category === "fleur");
@@ -27,7 +31,7 @@ export default async function BoutiquePage() {
           <BranchDivider />
         </>
       )}
-      <TransformedProducts products={transformes.length > 0 ? transformes : undefined} />
+      <TransformedProducts products={transformes.length > 0 ? transformes : undefined} subtitle={boutiqueSubtitle} />
     </main>
   );
 }

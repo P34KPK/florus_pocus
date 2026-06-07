@@ -19,6 +19,7 @@ function catLabel(season: string): string {
 
 interface TransformedProductsProps {
   products?: Product[];
+  subtitle?: string;
 }
 
 const PLACEHOLDER_TRANSFORMES: Product[] = [
@@ -98,7 +99,7 @@ function TransformedCard({ product }: { product: Product }) {
   );
 }
 
-export default function TransformedProducts({ products }: TransformedProductsProps) {
+export default function TransformedProducts({ products, subtitle }: TransformedProductsProps) {
   const items = (products && products.length > 0) ? products : PLACEHOLDER_TRANSFORMES;
   const [category, setCategory] = useState<string>("all");
 
@@ -120,7 +121,7 @@ export default function TransformedProducts({ products }: TransformedProductsPro
               Nos créations
             </h2>
             <p className="mt-4 max-w-xl text-base opacity-65">
-              De la fleur au produit fini — gelées, sirops, bouquets séchés et plus encore, faits à la main sur la ferme.
+              {subtitle || "De la fleur au produit fini — gelées, sirops, bouquets séchés et plus encore, faits à la main sur la ferme."}
             </p>
           </div>
 
