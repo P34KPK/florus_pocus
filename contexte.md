@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-07 (session 8 — popup infolettre boutique, case infolettre + téléphone contact, bandeau cookies, carte Google Maps, fix lien blog)
+**Dernière session :** 2026-06-07 (session 8 — popup infolettre boutique, case infolettre + téléphone contact, bandeau cookies, carte Google Maps, fix lien blog, round-up pour la cause à la caisse)
 
 ---
 
@@ -113,11 +113,15 @@
 - [x] Migration `012_subscriptions_bouquets_count.sql` — colonne bouquets_count INTEGER sur subscriptions
 - [x] Migration `013_product_price_type.sql` — colonne price_type TEXT ('fixed'|'devis') sur products
 - [x] Migration `014_newsletter_contact_phone.sql` — table newsletter_subscribers + colonne telephone sur contact_messages
+- [x] Migration `015_orders_round_up.sql` — colonne round_up_amount NUMERIC(10,2) sur orders
+- [x] Migration `016_round_up_cause_setting.sql` — setting `round_up_cause_name` dans site_settings (groupe boutique)
 - [x] Popup infolettre boutique — apparaît 2.5s après visite (localStorage `fp_newsletter_shown`), code promo BIENVENUE10
 - [x] Formulaire contact — champ téléphone optionnel + case "s'inscrire à l'infolettre"
 - [x] Bandeau cookie consent (Loi 25 Québec) — toutes les pages publiques, localStorage `fp_cookie_consent`
 - [x] Carte Google Maps interactive dans la section Contact (remplace le placeholder "à venir")
 - [x] Lien blog "Découvrir nos fleurs" → /boutique (était /)
+- [x] Round-up pour la cause à la caisse — toggle optionnel arrondi au dollar sup., montant sauvegardé sur commande
+- [x] Nom de la cause configurable : Admin → Contenu → Boutique & Caisse (setting `round_up_cause_name`)
 
 ---
 
@@ -243,7 +247,9 @@ FlorusPocus/
 │   ├── 011_mange_moi_page.sql
 │   ├── 012_subscriptions_bouquets_count.sql
 │   ├── 013_product_price_type.sql
-│   └── 014_newsletter_contact_phone.sql
+│   ├── 014_newsletter_contact_phone.sql
+│   ├── 015_orders_round_up.sql
+│   └── 016_round_up_cause_setting.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -449,6 +455,31 @@ Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_setti
 - `getMangeMoiItems()` → caché avec tag `mange_moi`
 - Navbar/Footer/Hero : "Autocueillette" remplacé par "Mange Moi" → `/mange-moi`
 - Autocueillette entièrement retirée (session 4) : pages, admin, action, API supprimés ; redirection 301 `/autocueillette` → `/mange-moi`. Table `autocueillette_events` conservée en DB (données historiques, plus utilisée par le code).
+
+### Round-up pour la cause (caisse)
+- Toggle optionnel : arrondi au dollar supérieur (ex: 48,73 $ → +0,27 $ → 49,00 $)
+- N'apparaît pas si le total est déjà un dollar rond
+- `round_up_amount` sauvegardé sur la commande, inclus dans `total_amount`
+- Nom de la cause : setting `round_up_cause_name` (groupe `boutique`) dans site_settings
+- Modifiable sans déploiement : Admin → Contenu → Boutique & Caisse
+- Checkout refactorisé : `page.tsx` (Server, lit setting) + `CheckoutClient.tsx` (Client)
+
+### Infolettre
+- Table `newsletter_subscribers` (id, email UNIQUE, source, created_at)
+- Sources possibles : `'contact'` (case cochée dans formulaire contact) | `'popup'` (popup boutique)
+- Popup boutique : localStorage `fp_newsletter_shown`, délai 2.5s, code promo `BIENVENUE10`
+- Action : `src/lib/actions/newsletter.ts` → `subscribeNewsletter` (FormData) + `subscribeNewsletterEmail` (programmatique)
+- Doublons ignorés silencieusement (code Postgres `23505`)
+
+### Cookie consent (Loi 25 Québec)
+- Composant `CookieConsent.tsx` dans le layout public (toutes les pages)
+- localStorage `fp_cookie_consent` = `'accepted'` | `'declined'`
+- Liens vers `/politique-confidentialite`
+
+### Carte Google Maps (Contact)
+- iframe `https://www.google.com/maps?q=ADRESSE_ENCODÉE&output=embed`
+- Adresse dynamique depuis `site_settings.contact_address`
+- CSP mise à jour : `frame-src` + `connect-src` incluent `*.google.com` et `maps.googleapis.com`
 
 ### Produits — catégorie libre
 - Champ `season` = sous-catégorie libre (TEXT) depuis migration 004
