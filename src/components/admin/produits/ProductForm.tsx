@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import type { Product } from "@/types";
 import type { ProductFormState } from "@/lib/actions/products";
 import ImageUploader from "@/components/admin/ImageUploader";
@@ -25,6 +25,7 @@ const CATEGORY_SUGGESTIONS = [
 
 export default function ProductForm({ action, product, onSuccess }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [priceType, setPriceType] = useState<"fixed" | "devis">(product?.price_type ?? "fixed");
 
   useEffect(() => {
     if (state.success) onSuccess();
@@ -70,9 +71,28 @@ export default function ProductForm({ action, product, onSuccess }: Props) {
         </div>
 
         <div>
-          <label className={label}>Prix public ($) *</label>
-          <input name="price" type="number" step="0.01" min="0" defaultValue={product?.price} required className={field} placeholder="0.00" />
+          <label className={label}>Type de prix *</label>
+          <select
+            name="price_type"
+            value={priceType}
+            onChange={(e) => setPriceType(e.target.value as "fixed" | "devis")}
+            className={field}
+          >
+            <option value="fixed">Prix fixe</option>
+            <option value="devis">Sur devis / soumission</option>
+          </select>
         </div>
+
+        {priceType === "fixed" ? (
+          <div>
+            <label className={label}>Prix public ($) *</label>
+            <input name="price" type="number" step="0.01" min="0" defaultValue={product?.price} required className={field} placeholder="0.00" />
+          </div>
+        ) : (
+          <div className="flex items-center px-3 py-2 rounded-xl text-sm border border-[#E0D5C8] bg-[#FAFAF8] opacity-60">
+            Prix affiché sur devis — pas de montant requis
+          </div>
+        )}
 
         <div>
           <label className={label}>Prix fleuriste ($)</label>

@@ -9,7 +9,8 @@ const ProductSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().min(1),
   category: z.enum(["fleur", "transforme"]),
-  price: z.coerce.number().positive(),
+  price: z.coerce.number().nonnegative(),
+  price_type: z.enum(["fixed", "devis"]),
   florist_price: z.coerce.number().positive().nullable(),
   florist_only: z.boolean(),
   stock: z.coerce.number().int().min(0).nullable(),
@@ -32,11 +33,13 @@ export async function createProduct(_prev: ProductFormState, formData: FormData)
   const authErr = await assertAdmin();
   if (authErr) return authErr;
 
+  const priceType = formData.get("price_type") as string;
   const raw = {
     name: formData.get("name"),
     description: formData.get("description"),
     category: formData.get("category"),
-    price: formData.get("price"),
+    price: priceType === "devis" ? "0" : formData.get("price"),
+    price_type: priceType,
     florist_price: formData.get("florist_price") || null,
     florist_only: formData.get("florist_only") === "true",
     stock: formData.get("stock") || null,
@@ -65,11 +68,13 @@ export async function updateProduct(_prev: ProductFormState, formData: FormData)
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
+  const priceType = formData.get("price_type") as string;
   const raw = {
     name: formData.get("name"),
     description: formData.get("description"),
     category: formData.get("category"),
-    price: formData.get("price"),
+    price: priceType === "devis" ? "0" : formData.get("price"),
+    price_type: priceType,
     florist_price: formData.get("florist_price") || null,
     florist_only: formData.get("florist_only") === "true",
     stock: formData.get("stock") || null,

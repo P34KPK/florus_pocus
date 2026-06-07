@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import { ShoppingBag, Mail } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
 
@@ -21,11 +22,11 @@ interface TransformedProductsProps {
 }
 
 const PLACEHOLDER_TRANSFORMES: Product[] = [
-  { id: "t1", name: "Gelée de Roses",       description: "Gelée artisanale aux pétales de roses fraîches. Parfaite sur toast ou fromage.", category: "transforme", price: 12, florist_price: null, florist_only: false, stock: 24, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t2", name: "Sirop de Lavande",     description: "Sirop naturel de lavande québécoise. Idéal pour cocktails, limonades et desserts.", category: "transforme", price: 14, florist_price: null, florist_only: false, stock: 18, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t3", name: "Bouquet Séché Naturel",description: "Bouquet de fleurs séchées naturellement, pour une décoration durable.", category: "transforme", price: 28, florist_price: null, florist_only: false, stock: 10, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t4", name: "Vinaigre de Fleurs",   description: "Vinaigre de cidre infusé aux fleurs sauvages. Pour salades et marinades.", category: "transforme", price: 11, florist_price: null, florist_only: false, stock: 20, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t5", name: "Tisane de la Ferme",   description: "Mélange de plantes séchées de notre jardin pour une tisane apaisante.", category: "transforme", price: 9, florist_price: null, florist_only: false, stock: 30, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t1", name: "Gelée de Roses",       description: "Gelée artisanale aux pétales de roses fraîches. Parfaite sur toast ou fromage.", category: "transforme", price: 12, price_type: "fixed", florist_price: null, florist_only: false, stock: 24, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t2", name: "Sirop de Lavande",     description: "Sirop naturel de lavande québécoise. Idéal pour cocktails, limonades et desserts.", category: "transforme", price: 14, price_type: "fixed", florist_price: null, florist_only: false, stock: 18, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t3", name: "Bouquet Séché Naturel",description: "Bouquet de fleurs séchées naturellement, pour une décoration durable.", category: "transforme", price: 28, price_type: "fixed", florist_price: null, florist_only: false, stock: 10, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t4", name: "Vinaigre de Fleurs",   description: "Vinaigre de cidre infusé aux fleurs sauvages. Pour salades et marinades.", category: "transforme", price: 11, price_type: "fixed", florist_price: null, florist_only: false, stock: 20, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t5", name: "Tisane de la Ferme",   description: "Mélange de plantes séchées de notre jardin pour une tisane apaisante.", category: "transforme", price: 9, price_type: "fixed", florist_price: null, florist_only: false, stock: 30, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
 ];
 
 function TransformedCard({ product }: { product: Product }) {
@@ -62,16 +63,29 @@ function TransformedCard({ product }: { product: Product }) {
         <h4 className="font-heading font-bold text-lg mb-2">{product.name}</h4>
         <p className="text-sm opacity-60 leading-relaxed mb-4">{product.description}</p>
         <div className="flex items-center justify-between">
-          <p className="font-heading font-bold text-2xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
-          {product.stock === 0
-            ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
-            : <button onClick={handleAdd}
-                className="flex items-center gap-2 font-heading font-semibold px-5 py-2.5 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"
+          {product.price_type === "devis" ? (
+            <div className="flex items-center justify-between w-full gap-3">
+              <span className="text-sm font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>Sur devis</span>
+              <Link href={`/contact?produit=${encodeURIComponent(product.name)}`}
+                className="flex items-center gap-2 font-heading font-semibold px-5 py-2.5 rounded-xl text-sm transition-all hover:opacity-90 hover:scale-105"
                 style={{ backgroundColor: "#D4A574", color: "#1A1A1A" }}>
-                <ShoppingBag size={14} />
-                {added ? "Ajouté !" : "Ajouter"}
-              </button>
-          }
+                <Mail size={14} /> Obtenir un prix
+              </Link>
+            </div>
+          ) : (
+            <>
+              <p className="font-heading font-bold text-2xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
+              {product.stock === 0
+                ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
+                : <button onClick={handleAdd}
+                    className="flex items-center gap-2 font-heading font-semibold px-5 py-2.5 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"
+                    style={{ backgroundColor: "#D4A574", color: "#1A1A1A" }}>
+                    <ShoppingBag size={14} />
+                    {added ? "Ajouté !" : "Ajouter"}
+                  </button>
+              }
+            </>
+          )}
         </div>
         {product.stock && product.stock < 10 && product.stock > 0 && (
           <p className="text-xs mt-2 font-medium" style={{ color: "#D4A574" }}>

@@ -20,6 +20,7 @@ export interface Product {
   description: string;
   category: ProductCategory;
   price: number;
+  price_type: "fixed" | "devis";
   florist_price: number | null;
   florist_only: boolean;
   stock: number | null;
