@@ -3,7 +3,7 @@ import Farm             from "@/components/sections/Farm";
 
 export const metadata = {
   title: "La Ferme",
-  description: "Découvrez l'histoire de Florus Pocus, notre floriculture écoresponsable au cœur du Québec.",
+  description: "Florus Pocus est une entreprise horticole qui cultive la reconnexion avec la nature, la culture alimentaire et la beauté des jardins. Découvrez notre histoire au Québec.",
   alternates: { canonical: "/la-ferme" },
 };
 

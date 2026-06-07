@@ -4,7 +4,7 @@ import type { Subscription } from "@/types";
 
 export const metadata = {
   title: "Abonnements floraux",
-  description: "Recevez des bouquets frais de la ferme chaque semaine ou chaque mois. Choisissez votre formule et votre point de chute.",
+  description: "Abonnez-vous à des fleurs coupées de saison, directement de la production Florus Pocus. Choisissez votre formule, votre fréquence et votre point de chute au Québec.",
   alternates: { canonical: "/abonnements" },
 };
 

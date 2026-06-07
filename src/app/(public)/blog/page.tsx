@@ -5,8 +5,8 @@ import { getPublishedBlogPosts } from "@/lib/supabase-server";
 import type { BlogPost } from "@/types";
 
 export const metadata = {
-  title: "Blogue — Histoires de la ferme",
-  description: "Conseils, actualités et histoires de notre floriculture écoresponsable au Québec.",
+  title: "Blogue — L'univers horticole",
+  description: "Ressources, découvertes et conseils de l'univers horticole par Florus Pocus. Nature, culture alimentaire, jardins et fleurs au Québec.",
   alternates: { canonical: "/blog" },
 };
 

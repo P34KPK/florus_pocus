@@ -6,7 +6,7 @@ import type { MangeMoiItem } from "@/types";
 
 export const metadata = {
   title: "Mange Moi",
-  description: "Découvrez nos créations comestibles et produits de la ferme Florus Pocus.",
+  description: "Créations comestibles et approvisionnement local par Florus Pocus. Mise en relation avec un réseau de producteurs pour projets culinaires et alimentaires au Québec.",
   alternates: { canonical: "/mange-moi" },
 };
 

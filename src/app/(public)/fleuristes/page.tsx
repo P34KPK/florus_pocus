@@ -6,7 +6,7 @@ import type { Product } from "@/types";
 
 export const metadata = {
   title: "Espace fleuristes — Florus Pocus",
-  description: "Espace professionnel réservé aux fleuristes partenaires de Florus Pocus.",
+  description: "Espace professionnel Florus Pocus — fleurs coupées distinctives pour fleuristes et événements. Production locale, approvisionnement et réseau de producteurs au Québec.",
 };
 
 export default async function FleuristesPage() {

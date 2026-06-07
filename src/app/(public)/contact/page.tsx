@@ -3,7 +3,7 @@ import Contact          from "@/components/sections/Contact";
 
 export const metadata = {
   title: "Contact",
-  description: "Contactez l'équipe Florus Pocus. Nous sommes à Pont-Rouge, Québec.",
+  description: "Contactez Florus Pocus pour vos projets horticoles, floraux ou alimentaires. Accompagnement, approvisionnement et fleurs coupées — Pont-Rouge, Québec.",
   alternates: { canonical: "/contact" },
 };
 

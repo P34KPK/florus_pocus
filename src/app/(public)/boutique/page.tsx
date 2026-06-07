@@ -6,7 +6,7 @@ import type { Product }     from "@/types";
 
 export const metadata = {
   title: "Boutique",
-  description: "Fleurs fraîches de saison et produits transformés artisanaux de la ferme Florus Pocus.",
+  description: "Fleurs coupées distinctives et produits transformés artisanaux. Production horticole locale de Florus Pocus, directement de la ferme au Québec.",
   alternates: { canonical: "/boutique" },
 };
 

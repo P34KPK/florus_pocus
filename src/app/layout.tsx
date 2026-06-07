@@ -29,12 +29,12 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Florus Pocus — Fleurs de la ferme au Québec",
+    default: "Florus Pocus — Horticulture & Fleurs au Québec",
     template: "%s | Florus Pocus",
   },
   description:
-    "Cultiver la Vie! Fleurs fraîches cultivées à la ferme : abonnements de bouquets, créations comestibles et produits transformés. Floriculture écoresponsable, livraison locale au Québec.",
-  keywords: ["fleurs", "ferme florale", "abonnement floral", "bouquets", "fleurs comestibles", "fleuriste", "Québec", "Pont-Rouge", "écoresponsable"],
+    "Entreprise horticole au Québec. Fleurs coupées pour fleuristes et événements, approvisionnement local auprès de producteurs et accompagnement horticole. En équilibre entre la nature, la table et le quotidien.",
+  keywords: ["fleurs", "horticulture", "fleurs coupées", "approvisionnement local", "accompagnement horticole", "fleuriste", "producteurs locaux", "comestibles", "Québec", "Pont-Rouge"],
   alternates: {
     canonical: "/",
   },
@@ -43,14 +43,14 @@ export const metadata: Metadata = {
     locale: "fr_CA",
     siteName: "Florus Pocus",
     url: SITE_URL,
-    title: "Florus Pocus — Fleurs de la ferme au Québec",
+    title: "Florus Pocus — Horticulture & Fleurs au Québec",
     description:
-      "Fleurs fraîches cultivées à la ferme : abonnements de bouquets, créations comestibles et produits transformés. Livraison locale au Québec.",
+      "Fleurs coupées pour fleuristes, approvisionnement local et accompagnement horticole. Se reconnecter avec la nature, la culture alimentaire et la beauté des jardins.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Florus Pocus — Fleurs de la ferme au Québec",
-    description: "Floriculture écoresponsable au Québec — abonnements, bouquets et créations comestibles.",
+    title: "Florus Pocus — Horticulture & Fleurs au Québec",
+    description: "Entreprise horticole au Québec — fleurs coupées, approvisionnement local et accompagnement horticole.",
   },
   robots: {
     index: true,
