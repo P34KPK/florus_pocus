@@ -101,7 +101,13 @@ export default function WhyLocal({ page, reasons }: WhyLocalProps) {
               </h2>
             </FadeInView>
             <FadeInView delay={0.2}>
-              <p className="text-base leading-relaxed opacity-70 mb-8">{content}</p>
+              <div className="text-base leading-relaxed opacity-70 mb-8 space-y-3">
+                {content.split("\n\n").filter(Boolean).map((para, i) => (
+                  <p key={i}>{para.split("\n").map((line, j, arr) => (
+                    <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
+                  ))}</p>
+                ))}
+              </div>
             </FadeInView>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2">
@@ -118,7 +124,13 @@ export default function WhyLocal({ page, reasons }: WhyLocalProps) {
                       </div>
                       <div>
                         <p className="font-heading font-semibold text-sm mb-1" style={{ color: "#2D5016" }}>{r.title}</p>
-                        <p className="text-sm leading-relaxed opacity-65">{r.desc}</p>
+                        <div className="text-sm leading-relaxed opacity-65 space-y-1">
+                          {r.desc.split("\n\n").filter(Boolean).map((para, pi) => (
+                            <p key={pi}>{para.split("\n").map((line, li, arr) => (
+                              <span key={li}>{line}{li < arr.length - 1 && <br />}</span>
+                            ))}</p>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </FadeInView>

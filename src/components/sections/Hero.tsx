@@ -222,10 +222,14 @@ export default function Hero({ page }: HeroProps) {
           {title}
         </h1>
 
-        <p className="text-base sm:text-lg leading-relaxed max-w-xl mx-auto mb-10"
+        <div className="text-base sm:text-lg leading-relaxed max-w-xl mx-auto mb-10 space-y-3"
           style={{ color: "#F4D4B0", opacity: 0.72 }}>
-          {desc}
-        </p>
+          {desc.split("\n\n").filter(Boolean).map((para, i) => (
+            <p key={i}>{para.split("\n").map((line, j, arr) => (
+              <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
+            ))}</p>
+          ))}
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <motion.div
