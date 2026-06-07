@@ -6,12 +6,12 @@ import { createAdminClient } from "@/lib/supabase-server";
 import { assertAdmin } from "./auth-guard";
 
 const SubscriptionSchema = z.object({
-  name: z.string().min(1).max(200),
-  description: z.string().min(1),
-  price: z.coerce.number().positive(),
-  format: z.string().min(1).max(100),
-  frequencies: z.array(z.enum(["1x_month", "2x_month", "4x_month"])).min(1),
-  active: z.coerce.boolean(),
+  name:           z.string().min(1).max(200),
+  description:    z.string().min(1),
+  price:          z.coerce.number().positive(),
+  bouquets_count: z.coerce.number().int().min(1, "Le nombre de bouquets doit être au moins 1"),
+  format:         z.string().min(1).max(100),
+  active:         z.coerce.boolean(),
 });
 
 const DropoffSchema = z.object({
@@ -36,14 +36,13 @@ export async function createSubscription(_prev: SubFormState, formData: FormData
   const authErr = await assertAdmin();
   if (authErr) return authErr;
 
-  const frequencies = formData.getAll("frequencies") as string[];
   const raw = {
-    name: formData.get("name"),
-    description: formData.get("description"),
-    price: formData.get("price"),
-    format: formData.get("format"),
-    frequencies,
-    active: formData.get("active") === "true",
+    name:           formData.get("name"),
+    description:    formData.get("description"),
+    price:          formData.get("price"),
+    bouquets_count: formData.get("bouquets_count"),
+    format:         formData.get("format"),
+    active:         formData.get("active") === "true",
   };
 
   const parsed = SubscriptionSchema.safeParse(raw);
@@ -64,14 +63,13 @@ export async function updateSubscription(_prev: SubFormState, formData: FormData
   const id = formData.get("id") as string;
   if (!id) return { error: "ID manquant" };
 
-  const frequencies = formData.getAll("frequencies") as string[];
   const raw = {
-    name: formData.get("name"),
-    description: formData.get("description"),
-    price: formData.get("price"),
-    format: formData.get("format"),
-    frequencies,
-    active: formData.get("active") === "true",
+    name:           formData.get("name"),
+    description:    formData.get("description"),
+    price:          formData.get("price"),
+    bouquets_count: formData.get("bouquets_count"),
+    format:         formData.get("format"),
+    active:         formData.get("active") === "true",
   };
 
   const parsed = SubscriptionSchema.safeParse(raw);

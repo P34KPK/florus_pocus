@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { z } from "zod";
-import type { CartItem, CartState, ProductType, SubscriptionFrequency } from "@/types";
+import type { CartItem, CartState, ProductType } from "@/types";
 
 const CartItemSchema = z.object({
   cartId:      z.string().min(1).max(200),
@@ -93,7 +93,6 @@ interface CartContextValue {
     id: string;
     name: string;
     price: number;
-    frequency: SubscriptionFrequency;
     dropoff_point_id: string;
     dropoff_point_name: string;
   }) => void;
@@ -149,19 +148,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function addSubscription(sub: {
     id: string; name: string; price: number;
-    frequency: SubscriptionFrequency; dropoff_point_id: string; dropoff_point_name: string;
+    dropoff_point_id: string; dropoff_point_name: string;
   }) {
-    const cartId = makeCartId("subscription", sub.id, `${sub.frequency}_${sub.dropoff_point_id}`);
-    const freqLabel: Record<SubscriptionFrequency, string> = {
-      "1x_month": "1×/mois", "2x_month": "2×/mois", "4x_month": "4×/mois",
-    };
+    const cartId = makeCartId("subscription", sub.id, sub.dropoff_point_id);
     dispatch({
       type: "ADD_ITEM",
       payload: {
         cartId, type: "subscription", referenceId: sub.id,
-        name: `${sub.name} — ${freqLabel[sub.frequency]}`,
+        name: sub.name,
         price: sub.price, quantity: 1,
-        metadata: { frequency: sub.frequency, dropoff_point_id: sub.dropoff_point_id, dropoff_point_name: sub.dropoff_point_name },
+        metadata: { dropoff_point_id: sub.dropoff_point_id, dropoff_point_name: sub.dropoff_point_name },
       },
     });
   }

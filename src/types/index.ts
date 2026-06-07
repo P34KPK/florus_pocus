@@ -37,8 +37,9 @@ export interface Subscription {
   name: string;
   description: string;
   price: number;
+  bouquets_count: number;
   format: string;
-  frequencies: SubscriptionFrequency[];
+  frequencies?: SubscriptionFrequency[];
   active: boolean;
   dropoff_points?: DropoffPoint[];
   created_at: string;

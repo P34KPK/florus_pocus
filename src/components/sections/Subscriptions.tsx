@@ -5,7 +5,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import ParallaxPetals from "@/components/ParallaxPetals";
-import type { Subscription, SubscriptionFrequency, DropoffPoint } from "@/types";
+import type { Subscription, DropoffPoint } from "@/types";
 
 interface SubscriptionsProps {
   subscriptions?: Subscription[];
@@ -14,31 +14,25 @@ interface SubscriptionsProps {
 }
 
 const PLACEHOLDER_SUBS: Subscription[] = [
-  { id: "sub-1", name: "Petit Bouquet", description: "Un bouquet délicat de fleurs de saison pour égayer votre espace.", price: 39, format: "Petit", frequencies: ["1x_month", "2x_month"], active: true, created_at: "", updated_at: "",
+  { id: "sub-1", name: "Pack Découverte", description: "Un bouquet délicat de fleurs de saison pour égayer votre espace.", price: 299, bouquets_count: 8, format: "Petit", active: true, created_at: "", updated_at: "",
     dropoff_points: [
       { id: "dp-1", subscription_id: "sub-1", name: "Pont-Rouge", address: "123 Rue Principale, Pont-Rouge", days_available: [1,3,5], hours_start: "09:00", hours_end: "17:00", created_at: "", updated_at: "" },
       { id: "dp-2", subscription_id: "sub-1", name: "Québec — Saint-Roch", address: "456 Rue Saint-Joseph, Québec", days_available: [2,4], hours_start: "10:00", hours_end: "18:00", created_at: "", updated_at: "" },
     ],
   },
-  { id: "sub-2", name: "Bouquet Moyen", description: "Un généreux bouquet qui transforme chaque pièce en jardin fleuri.", price: 65, format: "Moyen", frequencies: ["1x_month", "2x_month", "4x_month"], active: true, created_at: "", updated_at: "",
+  { id: "sub-2", name: "Pack Saison", description: "Un généreux bouquet qui transforme chaque pièce en jardin fleuri.", price: 499, bouquets_count: 14, format: "Moyen", active: true, created_at: "", updated_at: "",
     dropoff_points: [
       { id: "dp-3", subscription_id: "sub-2", name: "Pont-Rouge", address: "123 Rue Principale, Pont-Rouge", days_available: [1,3,5], hours_start: "09:00", hours_end: "17:00", created_at: "", updated_at: "" },
       { id: "dp-4", subscription_id: "sub-2", name: "Québec — Saint-Roch", address: "456 Rue Saint-Joseph, Québec", days_available: [2,4], hours_start: "10:00", hours_end: "18:00", created_at: "", updated_at: "" },
     ],
   },
-  { id: "sub-3", name: "Bouquet Complet", description: "L'expérience florale ultime — un bouquet spectaculaire chaque livraison.", price: 95, format: "Grand", frequencies: ["1x_month", "2x_month", "4x_month"], active: true, created_at: "", updated_at: "",
+  { id: "sub-3", name: "Pack Abondance", description: "L'expérience florale ultime — un bouquet spectaculaire chaque livraison.", price: 749, bouquets_count: 22, format: "Grand", active: true, created_at: "", updated_at: "",
     dropoff_points: [
       { id: "dp-5", subscription_id: "sub-3", name: "Pont-Rouge", address: "123 Rue Principale, Pont-Rouge", days_available: [1,3,5], hours_start: "09:00", hours_end: "17:00", created_at: "", updated_at: "" },
       { id: "dp-6", subscription_id: "sub-3", name: "Québec — Saint-Roch", address: "456 Rue Saint-Joseph, Québec", days_available: [2,4], hours_start: "10:00", hours_end: "18:00", created_at: "", updated_at: "" },
     ],
   },
 ];
-
-const FREQ_LABELS: Record<SubscriptionFrequency, string> = {
-  "1x_month": "1× par mois",
-  "2x_month": "2× par mois",
-  "4x_month": "4× par mois (hebdomadaire)",
-};
 
 // Niveau de remplissage de la jauge selon le format (0 → 1)
 const FORMAT_FILL: Record<string, number> = {
@@ -98,14 +92,13 @@ function FormatGauge({ format, isPopular, index }: { format: string; isPopular: 
 
 function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) {
   const { addSubscription } = useCart();
-  const [freq,    setFreq]    = useState<SubscriptionFrequency>(sub.frequencies[0]);
   const [dropoff, setDropoff] = useState<DropoffPoint | null>(sub.dropoff_points?.[0] ?? null);
   const [added,   setAdded]   = useState(false);
   const isPopular = sub.format === "Moyen";
 
   function handleAdd() {
     if (!dropoff) return;
-    addSubscription({ id: sub.id, name: sub.name, price: sub.price, frequency: freq, dropoff_point_id: dropoff.id, dropoff_point_name: dropoff.name });
+    addSubscription({ id: sub.id, name: sub.name, price: sub.price, dropoff_point_id: dropoff.id, dropoff_point_name: dropoff.name });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }
@@ -150,10 +143,10 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
           >
             {sub.price}$
           </span>
-          <span className={`text-sm ml-1 ${isPopular ? "text-[#2D5016]/60" : "text-white/40"}`}>/bouquet</span>
+          <span className={`text-sm ml-1 ${isPopular ? "text-[#2D5016]/60" : "text-white/40"}`}>/ saison</span>
         </div>
         <p className={`text-xs mb-6 ${isPopular ? "text-[#2D5016]/50" : "text-white/40"}`}>
-          Fleurs fraîches de saison — format {sub.format.toLowerCase()}
+          {sub.bouquets_count} bouquets inclus — format {sub.format.toLowerCase()}
         </p>
 
         <ul className="space-y-2 mb-6">
@@ -164,28 +157,6 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
             </li>
           ))}
         </ul>
-
-        <div className="mb-3">
-          <label className={`block text-xs font-semibold uppercase tracking-[0.08em] mb-1.5 ${isPopular ? "text-[#2D5016]/60" : "text-white/40"}`}>
-            Fréquence
-          </label>
-          <div className="relative">
-            <select
-              value={freq}
-              onChange={(e) => setFreq(e.target.value as SubscriptionFrequency)}
-              className="w-full appearance-none rounded-xl px-4 py-2.5 text-sm border pr-8 focus:outline-none"
-              style={isPopular
-                ? { backgroundColor: "rgba(45,80,22,0.08)", borderColor: "rgba(45,80,22,0.2)", color: "#1a2e0a" }
-                : { backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.15)", color: "#fff" }
-              }
-            >
-              {sub.frequencies.map((f) => (
-                <option key={f} value={f} style={{ color: "#1A1A1A", backgroundColor: "#FAFAF8" }}>{FREQ_LABELS[f]}</option>
-              ))}
-            </select>
-            <ChevronDown size={14} className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${isPopular ? "opacity-40" : "opacity-30 text-white"}`} />
-          </div>
-        </div>
 
         {sub.dropoff_points && sub.dropoff_points.length > 0 && (
           <div className="mb-6">
@@ -269,7 +240,7 @@ export default function Subscriptions({ subscriptions, sectionTitle, sectionSubt
             ))}
           </h2>
           <p className="mt-4 max-w-xl mx-auto text-base text-white/50">
-            {sectionSubtitle ?? "Choisissez votre abonnement, votre fréquence de livraison et votre point de chute préféré."}
+            {sectionSubtitle ?? "Choisissez votre pack de saison et votre point de chute préféré — fleurs fraîches incluses."}
           </p>
         </motion.div>
 

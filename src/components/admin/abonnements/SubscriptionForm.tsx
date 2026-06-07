@@ -10,12 +10,6 @@ interface Props {
   onSuccess: () => void;
 }
 
-const FREQS = [
-  { value: "1x_month", label: "1×/mois" },
-  { value: "2x_month", label: "2×/mois" },
-  { value: "4x_month", label: "4×/mois" },
-];
-
 export default function SubscriptionForm({ action, subscription, onSuccess }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -35,8 +29,8 @@ export default function SubscriptionForm({ action, subscription, onSuccess }: Pr
       )}
 
       <div>
-        <label className={label}>Nom de la formule *</label>
-        <input name="name" defaultValue={subscription?.name} required className={field} placeholder="Ex: Petit Bouquet" />
+        <label className={label}>Nom du pack *</label>
+        <input name="name" defaultValue={subscription?.name} required className={field} placeholder="Ex: Pack Découverte" />
       </div>
 
       <div>
@@ -46,36 +40,23 @@ export default function SubscriptionForm({ action, subscription, onSuccess }: Pr
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={label}>Prix par bouquet ($) *</label>
-          <input name="price" type="number" step="0.01" min="0" defaultValue={subscription?.price} required className={field} placeholder="Ex: 45.00" />
+          <label className={label}>Prix global saison ($) *</label>
+          <input name="price" type="number" step="0.01" min="0" defaultValue={subscription?.price} required className={field} placeholder="Ex: 450.00" />
         </div>
         <div>
-          <label className={label}>Format *</label>
-          <select name="format" defaultValue={subscription?.format ?? "Moyen"} required className={field}>
-            <option value="Petit">Petit</option>
-            <option value="Moyen">Moyen</option>
-            <option value="Grand">Grand</option>
-            <option value="XL">XL</option>
-          </select>
+          <label className={label}>Nombre de bouquets *</label>
+          <input name="bouquets_count" type="number" min="1" step="1" defaultValue={subscription?.bouquets_count || ""} required className={field} placeholder="Ex: 12" />
         </div>
       </div>
 
       <div>
-        <label className={label}>Fréquences disponibles *</label>
-        <div className="flex gap-3 mt-1 flex-wrap">
-          {FREQS.map((f) => (
-            <label key={f.value} className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                name="frequencies"
-                value={f.value}
-                defaultChecked={subscription?.frequencies?.includes(f.value as never) ?? false}
-                className="w-4 h-4 rounded accent-[#2D5016]"
-              />
-              {f.label}
-            </label>
-          ))}
-        </div>
+        <label className={label}>Format *</label>
+        <select name="format" defaultValue={subscription?.format ?? "Moyen"} required className={field}>
+          <option value="Petit">Petit</option>
+          <option value="Moyen">Moyen</option>
+          <option value="Grand">Grand</option>
+          <option value="XL">XL</option>
+        </select>
       </div>
 
       <div className="flex items-center gap-3">
@@ -92,7 +73,7 @@ export default function SubscriptionForm({ action, subscription, onSuccess }: Pr
         className="w-full font-heading font-semibold py-2.5 rounded-xl text-sm text-white transition-all hover:opacity-90 disabled:opacity-50"
         style={{ backgroundColor: "#2D5016" }}
       >
-        {pending ? "Enregistrement…" : subscription ? "Mettre à jour" : "Créer la formule"}
+        {pending ? "Enregistrement…" : subscription ? "Mettre à jour" : "Créer le pack"}
       </button>
     </form>
   );
