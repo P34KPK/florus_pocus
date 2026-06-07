@@ -6,7 +6,7 @@ import CommandesClient from "@/components/admin/commandes/CommandesClient";
 export const metadata: Metadata = { title: "Commandes" };
 
 export default async function AdminCommandesPage() {
-  const supabase = await createAdminClient();
+  const supabase = createAdminClient();
 
   const { data: orders } = await supabase
     .from("orders")

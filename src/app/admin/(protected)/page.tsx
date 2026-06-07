@@ -1,4 +1,4 @@
-import { DollarSign, ShoppingCart, Users, Package, MessageSquare, Eye } from "lucide-react";
+import { DollarSign, Users, Package, MessageSquare, Eye, Mail } from "lucide-react";
 import Link from "next/link";
 import DashboardCard from "@/components/admin/DashboardCard";
 import { createAdminClient } from "@/lib/supabase-server";
@@ -24,26 +24,26 @@ export default async function AdminDashboard() {
 
   const [
     { data: ordersMonth },
-    { data: subscriptions },
     { data: products },
     { data: recentOrders },
     { data: messages },
+    resNewsletter,
   ] = await Promise.all([
-    supabase.from("orders").select("total_amount, status").gte("created_at", firstDay),
-    supabase.from("subscriptions").select("id").eq("active", true),
+    supabase.from("orders").select("total_amount, round_up_amount, status").gte("created_at", firstDay),
     supabase.from("products").select("id, stock").eq("active", true),
     supabase.from("orders").select("id, customer_name, total_amount, status, created_at")
       .order("created_at", { ascending: false }).limit(5),
     supabase.from("contact_messages").select("id").eq("read", false),
+    supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true }),
   ]);
 
   const revenueMonth  = (ordersMonth ?? [])
     .filter((o) => o.status !== "cancelled")
-    .reduce((acc, o) => acc + (o.total_amount ?? 0), 0);
-  const ordersCount   = (ordersMonth ?? []).filter((o) => o.status !== "cancelled").length;
-  const activeSubsCount = (subscriptions ?? []).length;
+    .reduce((acc, o) => acc + (o.total_amount ?? 0) - (o.round_up_amount ?? 0), 0);
+  const ordersCount     = (ordersMonth ?? []).filter((o) => o.status !== "cancelled").length;
   const productsInStock = (products ?? []).filter((p) => p.stock === null || p.stock > 0).length;
   const unreadMessages  = (messages ?? []).length;
+  const newsletterCount = resNewsletter.count ?? 0;
 
   return (
     <div className="p-8">
@@ -59,15 +59,15 @@ export default async function AdminDashboard() {
         <DashboardCard
           title="Revenus ce mois"
           value={`${revenueMonth.toFixed(2)} $`}
-          subtitle={`${ordersCount} commande${ordersCount !== 1 ? "s" : ""}`}
+          subtitle={`${ordersCount} commande${ordersCount !== 1 ? "s" : ""} (hors dons)`}
           icon={DollarSign}
           color="green"
         />
         <DashboardCard
-          title="Abonnements actifs"
-          value={activeSubsCount}
-          subtitle="Formules actives"
-          icon={Users}
+          title="Abonnés infolettre"
+          value={newsletterCount}
+          subtitle="Inscrits au total"
+          icon={Mail}
           color="blue"
         />
         <DashboardCard
