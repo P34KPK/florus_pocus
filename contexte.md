@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-07 (session 8 — popup infolettre boutique, case infolettre + téléphone contact, bandeau cookies, carte Google Maps, fix lien blog, round-up pour la cause à la caisse)
+**Dernière session :** 2026-06-07 (session 8 — popup infolettre boutique, case infolettre + téléphone contact, bandeau cookies, carte Google Maps, fix lien blog, round-up pour la cause, audit éditabilité + revalidation)
 
 ---
 
@@ -122,6 +122,13 @@
 - [x] Lien blog "Découvrir nos fleurs" → /boutique (était /)
 - [x] Round-up pour la cause à la caisse — toggle optionnel arrondi au dollar sup., montant sauvegardé sur commande
 - [x] Nom de la cause configurable : Admin → Contenu → Boutique & Caisse (setting `round_up_cause_name`)
+- [x] Audit éditabilité : 5 titres de sections éditables via Admin → Contenu → Boutique & Caisse (migration 018)
+  - `blog_section_title` — "Histoires de la ferme" (accueil)
+  - `fleurs_titre` — "Fleurs coupées fraîches" (boutique)
+  - `produits_titre` — "Nos créations" (boutique)
+  - `produits_surtitle` — "Artisanat floral" (boutique)
+  - Contact h2 → lit `page.title` (Admin → Pages → Contact)
+- [x] Audit revalidation : settings.ts invalide maintenant /boutique /contact /la-ferme /fleuristes /mange-moi /checkout (changements CMS immédiats sur toutes les pages)
 
 ---
 
@@ -249,7 +256,9 @@ FlorusPocus/
 │   ├── 013_product_price_type.sql
 │   ├── 014_newsletter_contact_phone.sql
 │   ├── 015_orders_round_up.sql
-│   └── 016_round_up_cause_setting.sql
+│   ├── 016_round_up_cause_setting.sql
+│   ├── 017_boutique_subtitle.sql
+│   └── 018_section_titles.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -429,8 +438,10 @@ Sharp converti tout en WebP (qualité 80, max 1920px). Limite : 10 MB avant comp
 ### CMS — site_settings
 - Table `site_settings` (key, value, label, grp)
 - `getSiteSettings()` → retourne `Record<string, string>` — caché avec tag `site_settings`
-- Groupes : `contact`, `reseaux_sociaux`, `footer`, `pourquoi_local`, `abonnements`, `fleuristes`
+- Groupes : `contact`, `reseaux_sociaux`, `footer`, `pourquoi_local`, `abonnements`, `ferme`, `fleuristes`, `boutique`
 - Admin : `/admin/contenu`
+- Groupe `boutique` : `boutique_subtitle`, `round_up_cause_name`, `blog_section_title`, `fleurs_titre`, `produits_titre`, `produits_surtitle`
+- Revalidation (`settings.ts`) invalide : `/`, `/abonnements`, `/boutique`, `/contact`, `/la-ferme`, `/fleuristes`, `/mange-moi`, `/checkout` + tag `site_settings`
 
 ### Server Actions — protection
 Toutes les actions d'écriture passent par `assertAdmin()` (`src/lib/actions/auth-guard.ts`) :
