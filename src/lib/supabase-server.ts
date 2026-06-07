@@ -123,6 +123,20 @@ export const getActiveProducts = unstable_cache(
   { revalidate: 3600, tags: ["products"] }
 );
 
+export const getProduct = unstable_cache(
+  async (id: string) => {
+    const { data } = await createPublicClient()
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .eq("active", true)
+      .single();
+    return data ?? null;
+  },
+  ["product"],
+  { revalidate: 3600, tags: ["products"] }
+);
+
 export const getMangeMoiItems = unstable_cache(
   async () => {
     const { data } = await createPublicClient()

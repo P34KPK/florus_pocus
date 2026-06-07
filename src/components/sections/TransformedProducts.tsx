@@ -40,7 +40,8 @@ function TransformedCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-border shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <div className="relative bg-white rounded-3xl border border-border shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <Link href={`/boutique/${product.id}`} className="absolute inset-0 z-0 rounded-3xl" aria-label={product.name} />
       <div className="aspect-[4/3] relative overflow-hidden"
         style={{ background: "linear-gradient(135deg, #FDF5EC 0%, #F4D4B0 100%)" }}>
         {product.image_url
@@ -62,7 +63,7 @@ function TransformedCard({ product }: { product: Product }) {
       <div className="p-6">
         <h4 className="font-heading font-bold text-lg mb-2">{product.name}</h4>
         <p className="text-sm opacity-60 leading-relaxed mb-4">{product.description}</p>
-        <div className="flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between">
           {product.price_type === "devis" ? (
             <div className="flex items-center justify-between w-full gap-3">
               <span className="text-sm font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>Sur devis</span>
@@ -78,7 +79,7 @@ function TransformedCard({ product }: { product: Product }) {
               {product.stock === 0
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}
-                    className="flex items-center gap-2 font-heading font-semibold px-5 py-2.5 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"
+                    className="relative z-10 flex items-center gap-2 font-heading font-semibold px-5 py-2.5 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"
                     style={{ backgroundColor: "#D4A574", color: "#1A1A1A" }}>
                     <ShoppingBag size={14} />
                     {added ? "Ajouté !" : "Ajouter"}

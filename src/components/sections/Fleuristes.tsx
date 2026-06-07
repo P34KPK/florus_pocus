@@ -60,7 +60,8 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
 
   if (view === "list") {
     return (
-      <div className="flex items-center gap-4 bg-white rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="relative flex items-center gap-4 bg-white rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">
+        <Link href={`/boutique/${product.id}`} className="absolute inset-0 z-0 rounded-2xl" aria-label={product.name} />
         <div className="w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden relative"
           style={{ backgroundColor: "#F0F5EC" }}>
           {product.image_url
@@ -79,7 +80,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
           </div>
           <p className="text-sm opacity-55 truncate">{product.description}</p>
         </div>
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="relative z-10 flex items-center gap-4 flex-shrink-0">
           {product.price_type === "devis" ? (
             <>
               <span className="text-sm font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>Sur devis</span>
@@ -107,7 +108,8 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-border shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <div className="relative bg-white rounded-3xl border border-border shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <Link href={`/boutique/${product.id}`} className="absolute inset-0 z-0 rounded-3xl" aria-label={product.name} />
       <div className="aspect-square relative overflow-hidden" style={{ backgroundColor: "#F0F5EC" }}>
         {product.image_url
           ? <Image src={product.image_url} alt={product.name} fill
@@ -126,7 +128,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
           )}
         </div>
         <p className="text-sm opacity-55 mb-4 leading-relaxed line-clamp-2">{product.description}</p>
-        <div className="flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between">
           {product.price_type === "devis" ? (
             <div className="flex items-center justify-between w-full gap-3">
               <span className="text-sm font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>Sur devis</span>
