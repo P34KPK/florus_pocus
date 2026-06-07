@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-06 (session 7 — abonnements packs saisonniers, produits sur devis, page détail produit)
+**Dernière session :** 2026-06-07 (session 8 — popup infolettre boutique, case infolettre + téléphone contact, bandeau cookies, carte Google Maps, fix lien blog)
 
 ---
 
@@ -112,6 +112,12 @@
 - [x] Migration `011_mange_moi_page.sql` — slug `mange-moi` ajouté au CHECK constraint de pages
 - [x] Migration `012_subscriptions_bouquets_count.sql` — colonne bouquets_count INTEGER sur subscriptions
 - [x] Migration `013_product_price_type.sql` — colonne price_type TEXT ('fixed'|'devis') sur products
+- [x] Migration `014_newsletter_contact_phone.sql` — table newsletter_subscribers + colonne telephone sur contact_messages
+- [x] Popup infolettre boutique — apparaît 2.5s après visite (localStorage `fp_newsletter_shown`), code promo BIENVENUE10
+- [x] Formulaire contact — champ téléphone optionnel + case "s'inscrire à l'infolettre"
+- [x] Bandeau cookie consent (Loi 25 Québec) — toutes les pages publiques, localStorage `fp_cookie_consent`
+- [x] Carte Google Maps interactive dans la section Contact (remplace le placeholder "à venir")
+- [x] Lien blog "Découvrir nos fleurs" → /boutique (était /)
 
 ---
 
@@ -236,7 +242,8 @@ FlorusPocus/
 │   ├── 010_florist_only.sql
 │   ├── 011_mange_moi_page.sql
 │   ├── 012_subscriptions_bouquets_count.sql
-│   └── 013_product_price_type.sql
+│   ├── 013_product_price_type.sql
+│   └── 014_newsletter_contact_phone.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)

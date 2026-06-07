@@ -2,6 +2,7 @@ import { getActiveProducts }    from "@/lib/supabase-server";
 import BranchDivider        from "@/components/BranchDivider";
 import Fleuristes           from "@/components/sections/Fleuristes";
 import TransformedProducts  from "@/components/sections/TransformedProducts";
+import NewsletterPopup      from "@/components/NewsletterPopup";
 import type { Product }     from "@/types";
 
 export const metadata = {
@@ -19,6 +20,7 @@ export default async function BoutiquePage() {
 
   return (
     <main className="pt-16">
+      <NewsletterPopup />
       {fleurs.length > 0 && (
         <>
           <Fleuristes products={fleurs} />

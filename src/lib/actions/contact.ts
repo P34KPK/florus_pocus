@@ -5,9 +5,11 @@ import { createAdminClient } from "@/lib/supabase-server";
 import { getResend, FROM_EMAIL } from "@/lib/resend";
 
 const ContactSchema = z.object({
-  nom:     z.string().min(2, "Le nom est requis.").max(255),
-  email:   z.string().email("Adresse courriel invalide.").max(255),
-  message: z.string().min(10, "Le message doit faire au moins 10 caractères.").max(5000),
+  nom:       z.string().min(2, "Le nom est requis.").max(255),
+  email:     z.string().email("Adresse courriel invalide.").max(255),
+  telephone: z.string().max(50).optional(),
+  message:   z.string().min(10, "Le message doit faire au moins 10 caractères.").max(5000),
+  newsletter: z.enum(["on", "off"]).optional(),
 });
 
 export type ContactState = { success?: boolean; error?: string };
@@ -18,9 +20,11 @@ function escapeHtml(s: string): string {
 
 export async function sendContactMessage(_prev: ContactState, formData: FormData): Promise<ContactState> {
   const parsed = ContactSchema.safeParse({
-    nom:     formData.get("nom"),
-    email:   formData.get("email"),
-    message: formData.get("message"),
+    nom:       formData.get("nom"),
+    email:     formData.get("email"),
+    telephone: formData.get("telephone") || undefined,
+    message:   formData.get("message"),
+    newsletter: formData.get("newsletter") ?? "off",
   });
 
   if (!parsed.success) {
@@ -30,9 +34,10 @@ export async function sendContactMessage(_prev: ContactState, formData: FormData
 
   const supabase = createAdminClient();
   const { error } = await supabase.from("contact_messages").insert({
-    name:    parsed.data.nom,
-    email:   parsed.data.email,
-    message: parsed.data.message,
+    name:      parsed.data.nom,
+    email:     parsed.data.email,
+    telephone: parsed.data.telephone ?? null,
+    message:   parsed.data.message,
   });
 
   if (error) {
@@ -40,8 +45,17 @@ export async function sendContactMessage(_prev: ContactState, formData: FormData
     return { error: "Erreur d'envoi. Veuillez réessayer." };
   }
 
-  // Notification email à l'admin — non bloquant, ne doit jamais faire échouer
-  // l'enregistrement du message déjà sauvegardé en DB.
+  // Abonnement infolettre si coché
+  if (parsed.data.newsletter === "on") {
+    try {
+      await supabase.from("newsletter_subscribers").insert({
+        email:  parsed.data.email,
+        source: "contact",
+      });
+    } catch { /* ignore duplicate */ }
+  }
+
+  // Notification email à l'admin — non bloquant
   try {
     const { data: setting } = await supabase
       .from("site_settings")
@@ -50,19 +64,28 @@ export async function sendContactMessage(_prev: ContactState, formData: FormData
       .single();
     const adminEmail = setting?.value || "info@floruspocus.com";
 
+    const phoneHtml = parsed.data.telephone
+      ? `<p><strong>Téléphone :</strong> ${escapeHtml(parsed.data.telephone)}</p>`
+      : "";
+    const newsletterHtml = parsed.data.newsletter === "on"
+      ? `<p style="color:#2D5016;">✓ Inscrit(e) à l'infolettre</p>`
+      : "";
+
     await getResend().emails.send({
-      from:     FROM_EMAIL,
-      to:       adminEmail,
-      replyTo:  parsed.data.email,
-      subject:  `Nouveau message de ${parsed.data.nom} — Florus Pocus`,
+      from:    FROM_EMAIL,
+      to:      adminEmail,
+      replyTo: parsed.data.email,
+      subject: `Nouveau message de ${parsed.data.nom} — Florus Pocus`,
       html: `
         <h2 style="font-family:Georgia,serif;color:#2D5016;">Nouveau message du formulaire de contact</h2>
         <p><strong>Nom :</strong> ${escapeHtml(parsed.data.nom)}</p>
         <p><strong>Courriel :</strong> ${escapeHtml(parsed.data.email)}</p>
+        ${phoneHtml}
+        ${newsletterHtml}
         <p><strong>Message :</strong></p>
         <p style="white-space:pre-wrap;background:#FAFAF8;padding:16px;border-radius:8px;border:1px solid #E0D5C8;">${escapeHtml(parsed.data.message)}</p>
       `,
-      text: `Nouveau message de ${parsed.data.nom} (${parsed.data.email})\n\n${parsed.data.message}`,
+      text: `Nouveau message de ${parsed.data.nom} (${parsed.data.email})${parsed.data.telephone ? ` — Tél: ${parsed.data.telephone}` : ""}\n\n${parsed.data.message}`,
     });
   } catch (err) {
     console.error("[contact] notification email failed:", err);

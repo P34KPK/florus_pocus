@@ -20,12 +20,16 @@ const inputStyle = { backgroundColor: "rgba(255,255,255,0.07)", border: "1px sol
 export default function Contact({ page, address, phone, email, hours }: ContactProps) {
   const [state, formAction, pending] = useActionState(sendContactMessage, {});
 
+  const resolvedAddress = address || "123 Chemin de la Ferme, Pont-Rouge, QC G3H 1A1";
+
   const INFOS = [
-    { icon: MapPin, label: "Adresse",   value: address || "123 Chemin de la Ferme, Pont-Rouge, QC G3H 1A1" },
+    { icon: MapPin, label: "Adresse",   value: resolvedAddress },
     { icon: Phone,  label: "Téléphone", value: phone   || "+1 (418) 555-1234" },
     { icon: Mail,   label: "Courriel",  value: email   || "info@floruspocus.com" },
     { icon: Clock,  label: "Heures",    value: hours   || "Lun-Ven 9h-17h · Sam 9h-14h" },
   ];
+
+  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(resolvedAddress)}&output=embed`;
 
   return (
     <section id="contact" className="section-padding relative overflow-hidden"
@@ -91,13 +95,31 @@ export default function Contact({ page, address, phone, email, hours }: ContactP
                     placeholder="marie@exemple.com" className={inputClass} style={inputStyle} />
                 </div>
                 <div>
+                  <label htmlFor="telephone" className="block text-xs font-semibold uppercase tracking-[0.08em] mb-1.5 text-white/40">
+                    Téléphone <span className="normal-case font-normal">(optionnel)</span>
+                  </label>
+                  <input id="telephone" name="telephone" type="tel"
+                    placeholder="+1 (418) 555-1234" className={inputClass} style={inputStyle} />
+                </div>
+                <div>
                   <label htmlFor="message" className="block text-xs font-semibold uppercase tracking-[0.08em] mb-1.5 text-white/40">
                     Message *
                   </label>
-                  <textarea id="message" name="message" required rows={5}
+                  <textarea id="message" name="message" required rows={4}
                     placeholder="Bonjour, j'aimerais…"
                     className={`${inputClass} resize-none`} style={inputStyle} />
                 </div>
+
+                {/* Case infolettre */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input type="checkbox" name="newsletter" value="on"
+                    className="mt-0.5 w-4 h-4 rounded accent-[#D4A574] flex-shrink-0 cursor-pointer" />
+                  <span className="text-xs text-white/50 group-hover:text-white/70 transition-colors leading-relaxed">
+                    Je souhaite m&apos;inscrire à l&apos;infolettre et recevoir les nouvelles de la ferme,
+                    les arrivages de fleurs et les offres exclusives.
+                  </span>
+                </label>
+
                 <motion.button type="submit" disabled={pending}
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   className="w-full font-heading font-semibold py-3.5 rounded-xl text-sm transition-all disabled:opacity-50"
@@ -108,7 +130,7 @@ export default function Contact({ page, address, phone, email, hours }: ContactP
             )}
           </motion.div>
 
-          {/* Infos */}
+          {/* Infos + carte */}
           <motion.div className="flex flex-col gap-4"
             initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.1 }}>
@@ -128,13 +150,19 @@ export default function Contact({ page, address, phone, email, hours }: ContactP
               </motion.div>
             ))}
 
-            <div className="flex-1 rounded-3xl min-h-[160px] flex flex-col items-center justify-center gap-3"
-              style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: "rgba(212,165,116,0.15)" }}>
-                <MapPin size={20} style={{ color: "#D4A574" }} />
-              </div>
-              <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>Carte interactive à venir</p>
+            {/* Carte Google Maps */}
+            <div className="flex-1 rounded-3xl overflow-hidden min-h-[220px]"
+              style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+              <iframe
+                title="Localisation Florus Pocus"
+                src={mapSrc}
+                width="100%"
+                height="100%"
+                style={{ minHeight: "220px", border: 0, filter: "grayscale(20%) invert(5%)" }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           </motion.div>
         </div>

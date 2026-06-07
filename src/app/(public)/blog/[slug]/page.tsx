@@ -152,7 +152,7 @@ export default async function BlogPostPage({ params }: Props) {
               style={{ color: "#2D5016" }}>
               <ArrowLeft size={15} /> Tous les articles
             </Link>
-            <Link href="/"
+            <Link href="/boutique"
               className="inline-flex items-center gap-2 font-heading font-semibold text-sm px-5 py-2.5 rounded-full text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: "#2D5016" }}>
               Découvrir nos fleurs
