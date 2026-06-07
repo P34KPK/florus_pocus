@@ -25,7 +25,7 @@ export default async function HomePage() {
     <main>
       <Hero      page={pageMap["hero"]      ?? null} />
       <WhyLocal  page={pageMap["why-local"] ?? null} reasons={reasons} />
-      <BlogPreview posts={posts ?? undefined} />
+      <BlogPreview posts={posts ?? undefined} sectionTitle={settings["blog_section_title"]} />
     </main>
   );
 }

@@ -9,6 +9,7 @@ import type { Product } from "@/types";
 
 interface FleuristesProps {
   products?: Product[];
+  title?: string;
 }
 
 const PLACEHOLDER_FLEURS: Product[] = [
@@ -158,7 +159,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
   );
 }
 
-export default function Fleuristes({ products }: FleuristesProps) {
+export default function Fleuristes({ products, title }: FleuristesProps) {
   const fleurs = (products && products.length > 0) ? products : PLACEHOLDER_FLEURS;
   const [view,     setView]     = useState<"grid" | "list">("grid");
   const [category, setCategory] = useState<string>("all");
@@ -177,7 +178,7 @@ export default function Fleuristes({ products }: FleuristesProps) {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] mb-3" style={{ color: "#D4A574" }}>Boutique</p>
             <h2 className="font-heading font-bold text-4xl sm:text-5xl leading-tight" style={{ color: "#2D5016" }}>
-              Fleurs coupées<br />fraîches
+              {title || "Fleurs coupées fraîches"}
             </h2>
           </div>
 

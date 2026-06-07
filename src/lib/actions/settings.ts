@@ -25,6 +25,12 @@ export async function updateSiteSettings(_prev: SettingsState, formData: FormDat
   revalidateTag("site_settings", "max");
   revalidatePath("/");
   revalidatePath("/abonnements");
+  revalidatePath("/boutique");
+  revalidatePath("/contact");
+  revalidatePath("/la-ferme");
+  revalidatePath("/fleuristes");
+  revalidatePath("/mange-moi");
+  revalidatePath("/checkout");
   revalidatePath("/admin/contenu");
   return { success: true };
 }

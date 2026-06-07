@@ -8,6 +8,7 @@ import type { BlogPost } from "@/types";
 
 interface BlogPreviewProps {
   posts?: BlogPost[];
+  sectionTitle?: string;
 }
 
 const PLACEHOLDER_POSTS: BlogPost[] = [
@@ -145,7 +146,7 @@ function SmallCard({ post, index }: { post: BlogPost; index: number }) {
   );
 }
 
-export default function BlogPreview({ posts }: BlogPreviewProps) {
+export default function BlogPreview({ posts, sectionTitle }: BlogPreviewProps) {
   const articles = (posts && posts.length > 0) ? posts.slice(0, 4) : PLACEHOLDER_POSTS;
   const [featured, ...rest] = articles;
 
@@ -164,7 +165,7 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
               style={{ color: "#D4A574" }}>Actualités</p>
             <h2 className="font-display font-bold leading-tight"
               style={{ fontSize: "clamp(2.4rem, 5vw, 4rem)", color: "#2D5016" }}>
-              Histoires<br />de la ferme
+              {sectionTitle || "Histoires de la ferme"}
             </h2>
           </motion.div>
 

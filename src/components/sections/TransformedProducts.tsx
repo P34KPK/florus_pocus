@@ -20,6 +20,8 @@ function catLabel(season: string): string {
 interface TransformedProductsProps {
   products?: Product[];
   subtitle?: string;
+  title?: string;
+  surtitle?: string;
 }
 
 const PLACEHOLDER_TRANSFORMES: Product[] = [
@@ -99,7 +101,7 @@ function TransformedCard({ product }: { product: Product }) {
   );
 }
 
-export default function TransformedProducts({ products, subtitle }: TransformedProductsProps) {
+export default function TransformedProducts({ products, subtitle, title, surtitle }: TransformedProductsProps) {
   const items = (products && products.length > 0) ? products : PLACEHOLDER_TRANSFORMES;
   const [category, setCategory] = useState<string>("all");
 
@@ -115,10 +117,10 @@ export default function TransformedProducts({ products, subtitle }: TransformedP
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-14">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] mb-3" style={{ color: "#2D5016" }}>
-              Artisanat floral
+              {surtitle || "Artisanat floral"}
             </p>
             <h2 className="font-heading font-bold text-4xl sm:text-5xl leading-tight" style={{ color: "#2D5016" }}>
-              Nos créations
+              {title || "Nos créations"}
             </h2>
             <p className="mt-4 max-w-xl text-base opacity-65">
               {subtitle || "De la fleur au produit fini — gelées, sirops, bouquets séchés et plus encore, faits à la main sur la ferme."}

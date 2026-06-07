@@ -48,7 +48,7 @@ export default function Contact({ page, address, phone, email, hours }: ContactP
           </p>
           <h2 className="font-display font-bold leading-tight text-white"
             style={{ fontSize: "clamp(2.8rem, 6vw, 5rem)" }}>
-            On serait ravis<br />de vous entendre
+            {page?.title ?? "On serait ravis de vous entendre"}
           </h2>
         </motion.div>
 

@@ -16,9 +16,7 @@ export default async function BoutiquePage() {
     getActiveProducts(),
     getSiteSettings(),
   ]);
-  const boutiqueSubtitle = settings["boutique_subtitle"];
-
-  const public_products = products.filter((p) => !p.florist_only);
+  const public_products = (products as import("@/types").Product[]).filter((p) => !p.florist_only);
   const fleurs          = public_products.filter((p) => p.category === "fleur");
   const transformes     = public_products.filter((p) => p.category === "transforme");
 
@@ -27,11 +25,19 @@ export default async function BoutiquePage() {
       <NewsletterPopup />
       {fleurs.length > 0 && (
         <>
-          <Fleuristes products={fleurs} />
+          <Fleuristes
+            products={fleurs}
+            title={settings["fleurs_titre"]}
+          />
           <BranchDivider />
         </>
       )}
-      <TransformedProducts products={transformes.length > 0 ? transformes : undefined} subtitle={boutiqueSubtitle} />
+      <TransformedProducts
+        products={transformes.length > 0 ? transformes : undefined}
+        subtitle={settings["boutique_subtitle"]}
+        title={settings["produits_titre"]}
+        surtitle={settings["produits_surtitle"]}
+      />
     </main>
   );
 }
