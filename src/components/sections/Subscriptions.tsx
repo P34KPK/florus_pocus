@@ -150,7 +150,7 @@ function SubscriptionCard({ sub, index }: { sub: Subscription; index: number }) 
         </p>
 
         <ul className="space-y-2 mb-6">
-          {["Fleurs fraîches de la ferme", "Sélection saisonnière", "Livraison au point de chute", "Annulation facile"].map((f) => (
+          {["Fleurs fraîches de la ferme", "Sélection saisonnière", "Livraison au point de chute"].map((f) => (
             <li key={f} className={`flex items-center gap-2 text-sm ${isPopular ? "text-[#1a2e0a]" : "text-white/80"}`}>
               <Check size={14} className="flex-shrink-0" style={{ color: isPopular ? "#2D5016" : "#D4A574" }} />
               {f}
