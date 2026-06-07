@@ -58,9 +58,35 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Florus Pocus",
+  url: SITE_URL,
+  logo: `${SITE_URL}/florus_pocus_logo.svg`,
+  description: "Entreprise horticole au Québec. Fleurs coupées pour fleuristes et événements, approvisionnement local et accompagnement horticole.",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Pont-Rouge",
+    addressRegion: "QC",
+    addressCountry: "CA",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    email: "info@floruspocus.com",
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${dmSans.variable} ${inter.variable} ${cormorant.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col" style={{ backgroundColor: "#FAFAF8" }}>
         <CartProvider>
           {children}
