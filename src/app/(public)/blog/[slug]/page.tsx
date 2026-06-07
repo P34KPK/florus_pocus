@@ -133,26 +133,17 @@ export default async function BlogPostPage({ params }: Props) {
             )}
           </div>
 
-          {/* Corps du texte */}
-          <div className="prose-farm" style={{ color: "#333" }}>
-            {post.content ? (
-              /* Le contenu vient de TipTap (HTML admin uniquement) */
-              <div
-                className="prose prose-lg max-w-none leading-relaxed"
-                style={{
-                  fontSize: "1.0625rem",
-                  lineHeight: "1.85",
-                  color: "#333",
-                }}
-                // Le contenu est exclusivement créé par les administrateurs authentifiés
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content, ALLOWED_HTML) }}
-              />
-            ) : (
-              <p className="text-base leading-relaxed" style={{ color: "#666" }}>
-                {post.excerpt}
-              </p>
-            )}
-          </div>
+          {/* Corps du texte — HTML généré par TipTap (admin authentifiés uniquement) */}
+          {post.content ? (
+            <div
+              className="prose-farm"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content, ALLOWED_HTML) }}
+            />
+          ) : (
+            <p className="text-base leading-relaxed" style={{ color: "#666" }}>
+              {post.excerpt}
+            </p>
+          )}
 
           {/* CTA retour */}
           <div className="mt-16 pt-8 border-t border-[#E0D5C8] flex items-center justify-between flex-wrap gap-4">
