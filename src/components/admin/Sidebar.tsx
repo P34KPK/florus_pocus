@@ -4,21 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, UtensilsCrossed, FileText,
-  BookOpen, ShoppingCart, BarChart3, Settings, LogOut, Repeat2, PenLine, MessageSquare,
+  BookOpen, ShoppingCart, BarChart3, Settings, LogOut, Repeat2, PenLine, MessageSquare, Mail,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/admin",            label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/admin/produits",   label: "Produits",   icon: Package },
-  { href: "/admin/abonnements",label: "Abonnements",icon: Repeat2 },
-  { href: "/admin/mange-moi",  label: "Mange Moi",  icon: UtensilsCrossed },
-  { href: "/admin/pages",      label: "Pages",      icon: FileText },
-  { href: "/admin/contenu",    label: "Contenu",    icon: PenLine },
-  { href: "/admin/blog",       label: "Blog",       icon: BookOpen },
-  { href: "/admin/commandes",  label: "Commandes",  icon: ShoppingCart },
-  { href: "/admin/messages",   label: "Messages",   icon: MessageSquare },
-  { href: "/admin/stats",      label: "Stats",      icon: BarChart3 },
-  { href: "/admin/parametres", label: "Paramètres", icon: Settings },
+  { href: "/admin",             label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/admin/produits",    label: "Produits",   icon: Package },
+  { href: "/admin/abonnements", label: "Abonnements",icon: Repeat2 },
+  { href: "/admin/mange-moi",   label: "Mange Moi",  icon: UtensilsCrossed },
+  { href: "/admin/pages",       label: "Pages",      icon: FileText },
+  { href: "/admin/contenu",     label: "Contenu",    icon: PenLine },
+  { href: "/admin/blog",        label: "Blog",       icon: BookOpen },
+  { href: "/admin/commandes",   label: "Commandes",  icon: ShoppingCart },
+  { href: "/admin/messages",    label: "Messages",   icon: MessageSquare },
+  { href: "/admin/infolettre",  label: "Infolettre", icon: Mail },
+  { href: "/admin/stats",       label: "Stats",      icon: BarChart3 },
+  { href: "/admin/parametres",  label: "Paramètres", icon: Settings },
 ];
 
 interface SidebarProps {
