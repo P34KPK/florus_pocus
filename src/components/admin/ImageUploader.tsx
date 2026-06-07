@@ -8,9 +8,10 @@ interface Props {
   folder: string;        // "products" | "blog" | "pages"
   currentUrl?: string | null;
   label?: string;
+  onUploadedUrl?: (url: string) => void; // callback optionnel — bypasse le champ caché
 }
 
-export default function ImageUploader({ name, folder, currentUrl, label = "Image" }: Props) {
+export default function ImageUploader({ name, folder, currentUrl, label = "Image", onUploadedUrl }: Props) {
   const [url, setUrl] = useState<string>(currentUrl ?? "");
   const [preview, setPreview] = useState<string>(currentUrl ?? "");
   const [uploading, setUploading] = useState(false);
@@ -51,6 +52,7 @@ export default function ImageUploader({ name, folder, currentUrl, label = "Image
       } else {
         setUrl(json.url);
         setPreview(json.url);
+        onUploadedUrl?.(json.url);
       }
     } catch {
       setError("Impossible de contacter le serveur.");

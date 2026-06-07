@@ -127,9 +127,10 @@ export const getProduct = unstable_cache(
   async (id: string) => {
     const { data } = await createPublicClient()
       .from("products")
-      .select("*")
+      .select("*, images:product_images(image_url, sort_order)")
       .eq("id", id)
       .eq("active", true)
+      .order("sort_order", { referencedTable: "product_images", ascending: true })
       .single();
     return data ?? null;
   },

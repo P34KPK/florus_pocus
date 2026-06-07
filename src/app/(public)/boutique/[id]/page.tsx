@@ -6,6 +6,7 @@ import { ArrowLeft, Mail } from "lucide-react";
 import { getProduct, getActiveProducts } from "@/lib/supabase-server";
 import type { Metadata } from "next";
 import AddToCartButton from "./AddToCartButton";
+import ProductGallery from "./ProductGallery";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -65,31 +66,35 @@ export default async function ProductPage({ params }: Props) {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-start">
 
-          {/* Image */}
-          <div className="rounded-3xl overflow-hidden aspect-square relative"
-            style={{ backgroundColor: "#F0F5EC" }}>
-            {product.image_url ? (
-              <Image
-                src={product.image_url}
-                alt={product.name}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden>
-                  {[0, 72, 144, 216, 288].map((deg) => (
-                    <ellipse key={deg} cx="60" cy="60" rx="14" ry="32"
-                      fill="#D4A574" opacity="0.4"
-                      transform={`rotate(${deg} 60 60)`} />
-                  ))}
-                  <circle cx="60" cy="60" r="14" fill="#F4D4B0" opacity="0.7" />
-                </svg>
-              </div>
-            )}
-          </div>
+          {/* Galerie */}
+          {product.images && product.images.length > 0 ? (
+            <ProductGallery images={product.images} productName={product.name} />
+          ) : (
+            <div className="rounded-3xl overflow-hidden aspect-square relative"
+              style={{ backgroundColor: "#F0F5EC" }}>
+              {product.image_url ? (
+                <Image
+                  src={product.image_url}
+                  alt={product.name}
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden>
+                    {[0, 72, 144, 216, 288].map((deg) => (
+                      <ellipse key={deg} cx="60" cy="60" rx="14" ry="32"
+                        fill="#D4A574" opacity="0.4"
+                        transform={`rotate(${deg} 60 60)`} />
+                    ))}
+                    <circle cx="60" cy="60" r="14" fill="#F4D4B0" opacity="0.7" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Détails */}
           <div className="py-4">

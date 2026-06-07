@@ -29,6 +29,7 @@ export interface Product {
   active: boolean;
   created_at: string;
   updated_at: string;
+  images?: { image_url: string; sort_order: number }[];
 }
 
 export type SubscriptionFrequency = "1x_month" | "2x_month" | "4x_month";
