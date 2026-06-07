@@ -11,6 +11,15 @@ const SLUG_LABELS: Record<string, string> = {
   "why-local": "Pourquoi local",
   "farm":      "La Ferme",
   "contact":   "Contact",
+  "mange-moi": "Mange Moi",
+};
+
+const SLUG_PREVIEW_URLS: Record<string, string> = {
+  "hero":      "/#hero",
+  "why-local": "/#why-local",
+  "farm":      "/la-ferme",
+  "contact":   "/contact",
+  "mange-moi": "/mange-moi",
 };
 
 interface Props { pages: Page[] }
@@ -56,7 +65,7 @@ export default function PagesClient({ pages }: Props) {
                       <Pencil size={12} /> Modifier
                     </button>
                     <a
-                      href={`/#${p.slug}`}
+                      href={SLUG_PREVIEW_URLS[p.slug] ?? `/#${p.slug}`}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#E0D5C8] hover:bg-[#F0F5EC] transition-all"

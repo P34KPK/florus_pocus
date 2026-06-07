@@ -2,7 +2,7 @@
 
 export interface Page {
   id: string;
-  slug: "hero" | "why-local" | "farm" | "contact";
+  slug: "hero" | "why-local" | "farm" | "contact" | "mange-moi";
   title: string;
   description: string;
   featured_image_url: string | null;

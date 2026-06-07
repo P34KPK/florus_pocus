@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getMangeMoiItems } from "@/lib/supabase-server";
+import { getMangeMoiItems, getPublishedPage } from "@/lib/supabase-server";
 import type { MangeMoiItem } from "@/types";
 
 export const metadata = {
@@ -50,7 +50,13 @@ function ItemCard({ item }: { item: MangeMoiItem }) {
 }
 
 export default async function MangeMoiPage() {
-  const items = (await getMangeMoiItems()) as MangeMoiItem[];
+  const [items, page] = await Promise.all([
+    getMangeMoiItems() as Promise<MangeMoiItem[]>,
+    getPublishedPage("mange-moi"),
+  ]);
+
+  const pageTitle = page?.title ?? "Mange Moi";
+  const pageDesc  = page?.description ?? "Nos créations comestibles, faites à la main sur la ferme avec les fleurs et plantes de saison.";
 
   return (
     <main className="min-h-svh pt-24 pb-24" style={{ backgroundColor: "#FAFAF8" }}>
@@ -65,14 +71,26 @@ export default async function MangeMoiPage() {
         </Link>
 
         <div className="mb-14">
+          {page?.featured_image_url && (
+            <div className="relative w-full h-56 sm:h-72 rounded-3xl overflow-hidden mb-10">
+              <Image
+                src={page.featured_image_url}
+                alt={pageTitle}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1280px) 100vw, 1280px"
+                priority
+              />
+            </div>
+          )}
           <p className="text-xs font-semibold uppercase tracking-[0.15em] mb-3" style={{ color: "#D4A574" }}>
             De la ferme à votre assiette
           </p>
           <h1 className="font-display font-bold mb-4" style={{ fontSize: "clamp(2.8rem, 7vw, 6rem)", color: "#2D5016" }}>
-            Mange Moi
+            {pageTitle}
           </h1>
           <p className="text-base max-w-xl leading-relaxed" style={{ color: "#666" }}>
-            Nos créations comestibles, faites à la main sur la ferme avec les fleurs et plantes de saison.
+            {pageDesc}
           </p>
         </div>
 
