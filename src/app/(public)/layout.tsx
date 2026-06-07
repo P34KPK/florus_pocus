@@ -3,6 +3,7 @@ import Footer            from "@/components/Footer";
 import BotanicalLayers   from "@/components/BotanicalLayers";
 import ClientCartDrawer  from "@/components/ClientCartDrawer";
 import CookieConsent     from "@/components/CookieConsent";
+import Analytics         from "@/components/Analytics";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <Footer />
       <ClientCartDrawer />
       <CookieConsent />
+      <Analytics />
     </>
   );
 }

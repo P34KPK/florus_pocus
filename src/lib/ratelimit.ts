@@ -17,3 +17,6 @@ export const loginRatelimit = createRatelimiter(5, "15 m");
 
 // 20 uploads / 1 heure par IP
 export const uploadRatelimit = createRatelimiter(20, "1 h");
+
+// 120 pages vues / minute par IP — anti-spam analytics
+export const trackRatelimit = createRatelimiter(120, "1 m");
