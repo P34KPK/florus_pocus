@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ShoppingBag, CheckCircle, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, ShoppingBag, CheckCircle, Loader2, Lock, Heart } from "lucide-react";
+
+// Nom de la cause affiché à la caisse — à mettre à jour selon l'organisme choisi
+const ROUND_UP_CAUSE = "la cause";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { createOrder } from "@/lib/actions/checkout";
@@ -37,6 +40,11 @@ export default function CheckoutPage() {
   const [error,    setError]    = useState<string | null>(null);
   const [pending,  setPending]  = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
+  const [roundUp,  setRoundUp]  = useState(false);
+
+  // Cents manquants pour atteindre le prochain dollar entier
+  const roundUpAmount = total % 1 === 0 ? 0 : Math.round((Math.ceil(total) - total) * 100) / 100;
+  const finalTotal    = Math.round((total + (roundUp ? roundUpAmount : 0)) * 100) / 100;
 
   const cardRef     = useRef<SquareCard | null>(null);
   const formRef     = useRef<HTMLFormElement>(null);
@@ -127,6 +135,7 @@ export default function CheckoutPage() {
         metadata:    i.metadata,
       }))
     ));
+    fd.set("round_up_amount", roundUp ? String(roundUpAmount) : "0");
 
     const orderResult = await createOrder({}, fd);
     if (!orderResult.success || !orderResult.orderId) {
@@ -142,7 +151,7 @@ export default function CheckoutPage() {
       body:    JSON.stringify({
         sourceId,
         orderId:   orderResult.orderId,
-        amountCAD: total,
+        amountCAD: finalTotal,
       }),
     });
 
@@ -290,6 +299,33 @@ export default function CheckoutPage() {
                   </p>
                 </div>
 
+                {/* Arrondi pour la cause */}
+                {roundUpAmount > 0 && (
+                  <label className="flex items-start gap-3 cursor-pointer rounded-2xl p-4 transition-colors"
+                    style={{
+                      backgroundColor: roundUp ? "rgba(45,80,22,0.06)" : "transparent",
+                      border: `1px solid ${roundUp ? "rgba(45,80,22,0.2)" : "#E0D5C8"}`,
+                    }}>
+                    <input
+                      type="checkbox"
+                      checked={roundUp}
+                      onChange={(e) => setRoundUp(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded flex-shrink-0 cursor-pointer accent-[#2D5016]"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <Heart size={13} style={{ color: "#D4A574" }} />
+                        <span className="text-sm font-heading font-semibold" style={{ color: "#1A1A1A" }}>
+                          Arrondir à {Math.ceil(total).toFixed(2)} $ pour {ROUND_UP_CAUSE}
+                        </span>
+                      </div>
+                      <p className="text-xs opacity-50">
+                        Ajouter {roundUpAmount.toFixed(2)} $ à votre total pour contribuer à la cause.
+                      </p>
+                    </div>
+                  </label>
+                )}
+
                 <button
                   type="submit"
                   disabled={pending || !sdkReady || items.length === 0}
@@ -298,7 +334,7 @@ export default function CheckoutPage() {
                 >
                   {pending
                     ? <><Loader2 size={16} className="animate-spin" /> Traitement…</>
-                    : <><Lock size={14} /> Payer {total.toFixed(2)} $</>
+                    : <><Lock size={14} /> Payer {finalTotal.toFixed(2)} $</>
                   }
                 </button>
               </form>
@@ -326,11 +362,20 @@ export default function CheckoutPage() {
                     </li>
                   ))}
                 </ul>
+                {roundUp && roundUpAmount > 0 && (
+                  <div className="px-5 py-3 border-t border-[#E0D5C8] flex justify-between items-center text-sm">
+                    <span className="flex items-center gap-1.5 opacity-60">
+                      <Heart size={12} style={{ color: "#D4A574" }} />
+                      Arrondi pour {ROUND_UP_CAUSE}
+                    </span>
+                    <span className="opacity-60">+{roundUpAmount.toFixed(2)} $</span>
+                  </div>
+                )}
                 <div className="px-5 py-4 border-t border-[#E0D5C8] flex justify-between items-center"
                   style={{ backgroundColor: "#F0F5EC" }}>
                   <span className="font-heading font-bold">Total</span>
                   <span className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>
-                    {total.toFixed(2)} $
+                    {finalTotal.toFixed(2)} $
                   </span>
                 </div>
               </div>

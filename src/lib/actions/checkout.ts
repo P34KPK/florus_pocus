@@ -4,22 +4,24 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
 
 const CustomerSchema = z.object({
-  name:    z.string().min(2, "Le nom est requis.").max(255),
-  email:   z.string().email("Adresse courriel invalide.").max(255),
-  phone:   z.string().regex(/^\+?[\d\s\-().]{7,20}$/, "Numéro de téléphone invalide.").optional(),
-  address: z.string().min(5, "L'adresse est requise.").max(500),
-  notes:   z.string().max(1000).optional(),
+  name:           z.string().min(2, "Le nom est requis.").max(255),
+  email:          z.string().email("Adresse courriel invalide.").max(255),
+  phone:          z.string().regex(/^\+?[\d\s\-().]{7,20}$/, "Numéro de téléphone invalide.").optional(),
+  address:        z.string().min(5, "L'adresse est requise.").max(500),
+  notes:          z.string().max(1000).optional(),
+  round_up_amount: z.coerce.number().min(0).max(1).optional(),
 });
 
 export type CheckoutState = { success?: boolean; orderId?: string; error?: string };
 
 export async function createOrder(_prev: CheckoutState, formData: FormData): Promise<CheckoutState> {
   const parsed = CustomerSchema.safeParse({
-    name:    formData.get("name"),
-    email:   formData.get("email"),
-    phone:   formData.get("phone") || undefined,
-    address: formData.get("address"),
-    notes:   formData.get("notes") || undefined,
+    name:            formData.get("name"),
+    email:           formData.get("email"),
+    phone:           formData.get("phone") || undefined,
+    address:         formData.get("address"),
+    notes:           formData.get("notes") || undefined,
+    round_up_amount: formData.get("round_up_amount") || 0,
   });
 
   if (!parsed.success) {
@@ -40,7 +42,9 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
 
   if (!items.length) return { error: "Votre panier est vide." };
 
-  const total = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const itemsTotal  = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const roundUp     = parsed.data.round_up_amount ?? 0;
+  const totalAmount = Math.round((itemsTotal + roundUp) * 100) / 100;
 
   const supabase = createAdminClient();
 
@@ -51,7 +55,8 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
       customer_email:   parsed.data.email,
       customer_phone:   parsed.data.phone ?? null,
       customer_address: parsed.data.address,
-      total_amount:     total,
+      total_amount:     totalAmount,
+      round_up_amount:  roundUp,
       notes:            parsed.data.notes ?? null,
       status:           "pending",
       payment_status:   "pending",
@@ -71,7 +76,7 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
     quantity:       item.quantity,
     price_per_unit: item.price,
     metadata:       {
-      product_name:       item.name,
+      product_name: item.name,
       ...item.metadata,
     },
   }));
