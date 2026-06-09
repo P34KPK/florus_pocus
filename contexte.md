@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-07 (session 8 — popup infolettre boutique, case infolettre + téléphone contact, bandeau cookies, carte Google Maps, fix lien blog, round-up pour la cause, audit éditabilité + revalidation)
+**Dernière session :** 2026-06-07 (session 9 — galerie multi-photos produits (max 5), analytics de visites temps réel, audit dashboard 4 réparations)
 
 ---
 
@@ -65,6 +65,9 @@
 - [x] Produits sur devis (migration 013) : colonne `price_type TEXT ('fixed'|'devis')`. Produits "devis" affichent badge "Sur devis" + bouton "Obtenir un prix" → `/contact?produit=NOM`. Le champ prix masqué dans l'admin en mode devis.
 - [x] Page détail produit `/boutique/[id]` — grande photo, description complète, prix ou bouton devis, produits suggérés. Cartes boutique entièrement cliquables (pattern overlay link — bouton panier reste fonctionnel).
 - [x] Page Mange Moi — header éditable depuis admin (migration 011, slug `mange-moi` dans pages)
+- [x] Galerie multi-photos par produit (max 5) — migration 019, `product_images` table, `ProductForm.tsx` reécrit, `ProductGallery.tsx` (client component, miniatures cliquables), fallback image unique pour anciens produits
+- [x] Analytics de visites temps réel — migration 020, table `page_views` (no PII, Loi 25 conforme), composant `Analytics.tsx` (sendBeacon), route `/api/track` (Zod + rate limit 120/min), stats page : sections ventes Phase 3 conservées EN HAUT + nouvelles sections visites réelles EN BAS (KPI today/7j/30j, graphique 14j CSS, top 10 pages)
+- [x] Audit dashboard 4 réparations : `await` inutile retiré (commandes), revenus excluent `round_up_amount`, carte "Abonnements actifs" → "Abonnés infolettre" (vrai count), stats page corrigée
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -115,6 +118,8 @@
 - [x] Migration `014_newsletter_contact_phone.sql` — table newsletter_subscribers + colonne telephone sur contact_messages
 - [x] Migration `015_orders_round_up.sql` — colonne round_up_amount NUMERIC(10,2) sur orders
 - [x] Migration `016_round_up_cause_setting.sql` — setting `round_up_cause_name` dans site_settings (groupe boutique)
+- [x] Migration `019_product_images.sql` — table `product_images` (id, product_id FK cascade, image_url, sort_order, created_at), RLS public read, écriture service_role
+- [x] Migration `020_page_views.sql` — table `page_views` (id BIGSERIAL, path, referrer, created_at), pas de PII, 2 index (created_at, path), RLS activé sans policy publique (service_role uniquement)
 - [x] Popup infolettre boutique — apparaît 2.5s après visite (localStorage `fp_newsletter_shown`), code promo BIENVENUE10
 - [x] Formulaire contact — champ téléphone optionnel + case "s'inscrire à l'infolettre"
 - [x] Bandeau cookie consent (Loi 25 Québec) — toutes les pages publiques, localStorage `fp_cookie_consent`
@@ -258,7 +263,9 @@ FlorusPocus/
 │   ├── 015_orders_round_up.sql
 │   ├── 016_round_up_cause_setting.sql
 │   ├── 017_boutique_subtitle.sql
-│   └── 018_section_titles.sql
+│   ├── 018_section_titles.sql
+│   ├── 019_product_images.sql
+│   └── 020_page_views.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -272,6 +279,7 @@ FlorusPocus/
     │   ├── (public)/mange-moi/page.tsx   ← catalogue vitrine comestibles (sans achat)
     │   ├── (public)/boutique/[id]/page.tsx       ← fiche produit (SSR, generateMetadata)
     │   ├── (public)/boutique/[id]/AddToCartButton.tsx ← client component bouton panier
+    │   ├── (public)/boutique/[id]/ProductGallery.tsx  ← galerie multi-photos (client, miniatures)
     │   ├── (public)/politique-confidentialite/page.tsx
     │   ├── (public)/conditions-utilisation/page.tsx
     │   ├── checkout/page.tsx    ← Client Component, Square Web Payments SDK
@@ -284,15 +292,19 @@ FlorusPocus/
     │   │   ├── subscriptions/route.ts
     │   │   ├── events/route.ts
     │   │   ├── blog/route.ts
-    │   │   └── pages/route.ts
+    │   │   ├── pages/route.ts
+    │   │   └── track/route.ts        ← POST analytics (Zod, rate limit 120/min, service_role)
     │   └── admin/
     │       └── (protected)/
     │           ├── contenu/page.tsx   ← CMS global (site_settings)
     │           ├── mange-moi/page.tsx ← CRUD catalogue Mange Moi
     │           └── ...autres pages admin
     ├── components/
+    │   ├── Analytics.tsx            ← Client Component silent, sendBeacon + fetch keepalive
     │   ├── admin/
     │   │   ├── blog/RichTextEditor.tsx       ← TipTap WYSIWYG
+    │   │   ├── produits/ProductForm.tsx      ← galerie multi-images (max 5, ImageUploader)
+    │   │   ├── ImageUploader.tsx             ← + prop onUploadedUrl (callback multi-images)
     │   │   ├── contenu/ContenuClient.tsx
     │   │   └── mange-moi/MangeMoiClient.tsx  ← CRUD catalogue
     │   └── sections/
@@ -453,6 +465,22 @@ Pattern de retour en cas d'échec : `{ error: "Non autorisé." }` ou `{ error: "
 ### Cache invalidation — pattern standard
 Chaque action utilise `revalidateTag(tag, "max")` + `revalidatePath()` via une fonction locale `invalidate()`.
 Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_settings`, `mange_moi`.
+
+### Produits — galerie multi-images (migration 019)
+- Table `product_images` (product_id FK cascade, image_url, sort_order SMALLINT)
+- `ProductForm.tsx` : state `images: string[]`, max 5, hidden `<input name="images_json" />`, 1re image = principale (badge vert), X sur hover, bouton "Ajouter une photo" masqué quand max atteint
+- `ImageUploader.tsx` : prop `onUploadedUrl?: (url: string) => void` ajoutée (backward compatible — tous les anciens usages intacts)
+- `ProductGallery.tsx` : Client Component — grande image + rangée miniatures 64px, opacité 55% sur inactif
+- Fallback : si `product.images` vide, page produit affiche l'ancien `image_url` (aucune migration de données nécessaire)
+- Admin produits : join `product_images` via `.select("*, images:product_images(image_url, sort_order)")`, ordonné par `sort_order`
+
+### Analytics de visites (migration 020)
+- Table `page_views` (id BIGSERIAL, path TEXT, referrer TEXT, created_at) — aucune donnée personnelle (pas d'IP, pas d'UA)
+- Conforme Loi 25 Québec : pas de consentement cookie requis
+- `Analytics.tsx` : usePathname + useEffect + ref `lastPath` pour éviter double-fire SPA ; sendBeacon (fallback fetch keepalive)
+- `/api/track` : Zod validation (path starts `/`, max 500), rate limit 120/min par IP, ignore `/admin/*`, insert via service_role
+- Stats page (`/admin/stats`) : 3 COUNT queries (today/7j/30j), graphique 14j CSS (barre verte = aujourd'hui), top 10 pages 30j
+- Rapports téléchargeables conservés mais `disabled` (Phase 3)
 
 ### Fleuristes — accès privé
 - Cookie `fp_florist=1`, HttpOnly, Secure(prod), SameSite=lax, 30 jours
