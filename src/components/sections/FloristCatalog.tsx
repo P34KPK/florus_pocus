@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Grid, List, ShoppingBag, Tag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
@@ -41,7 +42,8 @@ function ProductRow({ product }: { product: Product }) {
   }
 
   return (
-    <div className="flex items-center gap-4 bg-white rounded-2xl border border-[#E0D5C8] p-4 hover:shadow-md transition-shadow">
+    <div className="relative flex items-center gap-4 bg-white rounded-2xl border border-[#E0D5C8] p-4 hover:shadow-md transition-shadow">
+      <Link href={`/boutique/${product.id}`} className="absolute inset-0 z-0 rounded-2xl" aria-label={product.name} />
       <div className="w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden relative" style={{ backgroundColor: "#F0F5EC" }}>
         {product.image_url
           ? <Image src={product.image_url} alt={product.name} fill className="object-cover" sizes="64px" />
@@ -61,7 +63,7 @@ function ProductRow({ product }: { product: Product }) {
         <p className="text-sm truncate" style={{ color: "#666" }}>{product.description}</p>
       </div>
 
-      <div className="flex items-center gap-4 flex-shrink-0">
+      <div className="relative z-10 flex items-center gap-4 flex-shrink-0">
         <div className="text-right">
           <p className="font-heading font-bold text-lg" style={{ color: "#2D5016" }}>
             {displayPrice.toFixed(2)} $
@@ -98,7 +100,8 @@ function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-[#E0D5C8] shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <div className="relative bg-white rounded-3xl border border-[#E0D5C8] shadow-sm overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <Link href={`/boutique/${product.id}`} className="absolute inset-0 z-0 rounded-3xl" aria-label={product.name} />
       <div className="aspect-square relative overflow-hidden" style={{ backgroundColor: "#F0F5EC" }}>
         {product.image_url
           ? <Image src={product.image_url} alt={product.name} fill
@@ -117,7 +120,7 @@ function ProductCard({ product }: { product: Product }) {
       <div className="p-5">
         <h4 className="font-heading font-semibold leading-tight mb-1">{product.name}</h4>
         <p className="text-sm mb-4 line-clamp-2" style={{ color: "#666" }}>{product.description}</p>
-        <div className="flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between">
           <div>
             <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{displayPrice.toFixed(2)} $</p>
             {hasDiscount && (

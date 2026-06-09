@@ -18,7 +18,8 @@ export default async function FleuristesPage() {
   }
 
   const products = (await getActiveProducts()) as Product[];
-  const floristProducts = products.filter((p) => p.florist_only);
+  // Affiche les produits réservés aux fleuristes OU ceux ayant un prix de gros défini.
+  const floristProducts = products.filter((p) => p.florist_only || p.florist_price !== null);
 
   return <FloristCatalog products={floristProducts} />;
 }
