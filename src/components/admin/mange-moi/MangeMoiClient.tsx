@@ -25,7 +25,9 @@ export default function MangeMoiClient({ items }: Props) {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-heading font-bold text-2xl" style={{ color: "#2D5016" }}>Mange Moi</h1>
-          <p className="text-sm opacity-60 mt-1">Catalogue vitrine — photos et descriptions, sans option d&apos;achat.</p>
+          <p className="text-sm opacity-60 mt-1">
+            Gérez vos créations (photos et descriptions). Pour modifier le titre et le texte d&apos;intro de la page publique, allez dans <span className="font-semibold">Pages → Mange Moi</span>.
+          </p>
         </div>
         <button
           onClick={() => setOpen("create")}

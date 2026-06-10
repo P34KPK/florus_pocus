@@ -12,7 +12,8 @@ export const metadata = {
 
 function ItemCard({ item }: { item: MangeMoiItem }) {
   return (
-    <article className="bg-white rounded-3xl border border-[#E0D5C8] overflow-hidden group hover:shadow-xl transition-shadow duration-300">
+    <Link href={`/mange-moi/${item.id}`} className="block h-full">
+      <article className="bg-white rounded-3xl border border-[#E0D5C8] overflow-hidden group hover:shadow-xl transition-shadow duration-300 h-full">
       <div className="aspect-[4/3] relative overflow-hidden" style={{ backgroundColor: "#F0F5EC" }}>
         {item.image_url ? (
           <Image
@@ -40,12 +41,16 @@ function ItemCard({ item }: { item: MangeMoiItem }) {
           {item.name}
         </h3>
         {item.description && (
-          <p className="text-sm leading-relaxed" style={{ color: "#666" }}>
+          <p className="text-sm leading-relaxed line-clamp-3" style={{ color: "#666" }}>
             {item.description}
           </p>
         )}
+        <span className="inline-block mt-4 text-sm font-heading font-semibold group-hover:gap-2 transition-all" style={{ color: "#2D5016" }}>
+          Voir la création →
+        </span>
       </div>
-    </article>
+      </article>
+    </Link>
   );
 }
 
