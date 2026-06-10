@@ -10,7 +10,7 @@ export default async function AdminProduitsPage() {
   const { data } = await supabase
     .from("products")
     .select("*, images:product_images(image_url, sort_order)")
-    .order("created_at", { ascending: false })
+    .order("name", { ascending: true })
     .order("sort_order", { referencedTable: "product_images", ascending: true });
 
   const products: Product[] = data ?? [];

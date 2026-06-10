@@ -117,7 +117,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ── Rich text content (TipTap / blog) ─────────────────────── */
-.prose-farm { font-size: 1.0625rem; line-height: 1.85; color: #333; }
+.prose-farm {
+  font-size: 1.0625rem; line-height: 1.85; color: #333;
+  /* Empêche les longs mots / URLs de faire déborder la mise en page */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Contenus larges (tableaux, blocs de code collés) : scroll interne plutôt que débordement */
+.prose-farm pre   { max-width: 100%; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+.prose-farm table { display: block; max-width: 100%; overflow-x: auto; }
+.prose-farm img   { max-width: 100%; height: auto; }
 
 .prose-farm p         { margin-bottom: 1.25rem; }
 .prose-farm p:last-child { margin-bottom: 0; }

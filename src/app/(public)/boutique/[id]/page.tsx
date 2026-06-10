@@ -125,7 +125,7 @@ export default async function ProductPage({ params }: Props) {
               {product.name}
             </h1>
 
-            <p className="text-base leading-relaxed mb-8" style={{ color: "#555" }}>
+            <p className="text-base leading-relaxed mb-8 whitespace-pre-line break-words" style={{ color: "#555", overflowWrap: "anywhere" }}>
               {product.description}
             </p>
 
