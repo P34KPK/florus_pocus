@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mail, MailOpen, Trash2, CornerUpLeft } from "lucide-react";
+import { Mail, MailOpen, Trash2, CornerUpLeft, Phone } from "lucide-react";
 import { markMessageRead, deleteMessage } from "@/lib/actions/messages";
 import type { ContactMessage } from "@/app/admin/(protected)/messages/page";
 
@@ -69,9 +69,16 @@ export default function MessagesClient({ messages }: Props) {
                   {!m.read && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#2D5016" }} />}
                   <div className="min-w-0">
                     <p className="font-heading font-bold truncate">{m.name}</p>
-                    <a href={`mailto:${m.email}`} className="text-sm truncate hover:underline" style={{ color: "#2D5016" }}>
+                    <a href={`mailto:${m.email}`} className="text-sm truncate hover:underline block" style={{ color: "#2D5016" }}>
                       {m.email}
                     </a>
+                    {m.telephone && (
+                      <a href={`tel:${m.telephone.replace(/[^\d+]/g, "")}`}
+                        className="text-sm hover:underline inline-flex items-center gap-1 mt-0.5"
+                        style={{ color: "#2D5016" }}>
+                        <Phone size={12} /> {m.telephone}
+                      </a>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">

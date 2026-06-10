@@ -96,9 +96,9 @@ export default function Contact({ page, address, phone, email, hours }: ContactP
                 </div>
                 <div>
                   <label htmlFor="telephone" className="block text-xs font-semibold uppercase tracking-[0.08em] mb-1.5 text-white/40">
-                    Téléphone <span className="normal-case font-normal">(optionnel)</span>
+                    Téléphone *
                   </label>
-                  <input id="telephone" name="telephone" type="tel"
+                  <input id="telephone" name="telephone" type="tel" required
                     placeholder="+1 (418) 555-1234" className={inputClass} style={inputStyle} />
                 </div>
                 <div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -47,7 +48,12 @@ function Divider() {
 }
 
 export default function RichTextEditor({ name, defaultValue = "" }: Props) {
+  // TipTap v3 ne re-render plus React à chaque frappe : on garde le HTML dans
+  // un state mis à jour via onUpdate pour que le champ caché soit toujours à jour.
+  const [html, setHtml] = useState(defaultValue);
+
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3, 4] },
@@ -64,6 +70,7 @@ export default function RichTextEditor({ name, defaultValue = "" }: Props) {
       }),
     ],
     content: defaultValue,
+    onUpdate: ({ editor }) => setHtml(editor.getHTML()),
     editorProps: {
       attributes: {
         class: "min-h-[320px] px-4 py-3 outline-none prose-editor",
@@ -78,8 +85,6 @@ export default function RichTextEditor({ name, defaultValue = "" }: Props) {
     if (!url) return;
     editor!.chain().focus().setLink({ href: url }).run();
   }
-
-  const html = editor.getHTML();
 
   return (
     <div className="border border-[#E0D5C8] rounded-xl overflow-hidden">
