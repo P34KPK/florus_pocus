@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-07 (session 9 — galerie multi-photos produits (max 5), analytics de visites temps réel, audit dashboard 4 réparations)
+**Dernière session :** 2026-06-09 (session 11 — 10 correctifs clients + crédit P34K footer)
 
 ---
 
@@ -68,6 +68,18 @@
 - [x] Galerie multi-photos par produit (max 5) — migration 019, `product_images` table, `ProductForm.tsx` reécrit, `ProductGallery.tsx` (client component, miniatures cliquables), fallback image unique pour anciens produits
 - [x] Analytics de visites temps réel — migration 020, table `page_views` (no PII, Loi 25 conforme), composant `Analytics.tsx` (sendBeacon), route `/api/track` (Zod + rate limit 120/min), stats page : sections ventes Phase 3 conservées EN HAUT + nouvelles sections visites réelles EN BAS (KPI today/7j/30j, graphique 14j CSS, top 10 pages)
 - [x] Audit dashboard 4 réparations : `await` inutile retiré (commandes), revenus excluent `round_up_amount`, carte "Abonnements actifs" → "Abonnés infolettre" (vrai count), stats page corrigée
+- [x] Fix catalogue fleuristes (session 10) : `/fleuristes` affiche les produits `florist_only` **OU** ayant un `florist_price` (avant : `florist_only` seul → produits avec prix de gros invisibles). Cartes du catalogue (liste + grille) cliquables vers `/boutique/[id]` via overlay Link (galerie multi-photos + description complète). ⚠️ La fiche produit affiche le prix **public**, pas le prix de gros (page partagée — non résolu, en attente retour client)
+- [x] **Session 11 — 10 correctifs clients :**
+  - Blog : fix publication (TipTap v3 breaking change — `useEditor` ne re-render plus React sur frappe → `useState` + `onUpdate` pour tracker le HTML dans le hidden input)
+  - Téléphone obligatoire sur formulaire contact et caisse (regex `+?[\d\s\-().]{7,20}`, max 50)
+  - Adresse de livraison éclatée : Adresse / Ville / Province (select 13 provinces) / Code postal avec validation format canadien
+  - Choix Ramassage / Livraison locale à la caisse (migration 021) — toggle UI avec icônes, adresse ferme affichée en ramassage, disclaimer "fleurs fraîches ne se livrent pas par la poste"
+  - Mange Moi : texte hardcodé "Catalogue vitrine…" retiré de l'admin, items cliquables (page `/mange-moi/[id]` créée), intro éditable via Admin → Pages → Mange Moi
+  - Admin messages : numéro de téléphone affiché (lien `tel:`), interface `ContactMessage` mise à jour
+  - Resend : erreur loguée explicitement (SDK ne throw pas, retourne `{ error }` — maintenant capturé)
+  - Mise en page blog/boutique : `.prose-farm` corrigé (`overflow-wrap: anywhere`, `word-break`, `max-width: 100%`) + pages boutique/[id] idem
+  - Produits admin : tri alphabétique par `name` (était `created_at DESC`)
+  - Crédit P34K : footer, lien cliquable → p34k.com, logo SVG inliné couleur terracotta `#D4A574`, taille 19px
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -120,6 +132,7 @@
 - [x] Migration `016_round_up_cause_setting.sql` — setting `round_up_cause_name` dans site_settings (groupe boutique)
 - [x] Migration `019_product_images.sql` — table `product_images` (id, product_id FK cascade, image_url, sort_order, created_at), RLS public read, écriture service_role
 - [x] Migration `020_page_views.sql` — table `page_views` (id BIGSERIAL, path, referrer, created_at), pas de PII, 2 index (created_at, path), RLS activé sans policy publique (service_role uniquement)
+- [x] Migration `021_orders_delivery.sql` — 4 colonnes sur `orders` : `delivery_method TEXT NOT NULL DEFAULT 'delivery' CHECK (IN ('pickup','delivery'))`, `customer_city`, `customer_province`, `customer_postal_code`
 - [x] Popup infolettre boutique — apparaît 2.5s après visite (localStorage `fp_newsletter_shown`), code promo BIENVENUE10
 - [x] Formulaire contact — champ téléphone optionnel + case "s'inscrire à l'infolettre"
 - [x] Bandeau cookie consent (Loi 25 Québec) — toutes les pages publiques, localStorage `fp_cookie_consent`
@@ -265,7 +278,8 @@ FlorusPocus/
 │   ├── 017_boutique_subtitle.sql
 │   ├── 018_section_titles.sql
 │   ├── 019_product_images.sql
-│   └── 020_page_views.sql
+│   ├── 020_page_views.sql
+│   └── 021_orders_delivery.sql
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -276,7 +290,8 @@ FlorusPocus/
     │   ├── (public)/layout.tsx  ← BotanicalLayers + Navbar + Footer + ClientCartDrawer
     │   ├── (public)/page.tsx    ← homepage (charge site_settings pour WhyLocal)
     │   ├── (public)/fleuristes/page.tsx  ← vérifie cookie fp_florist, affiche Gate ou Catalog
-    │   ├── (public)/mange-moi/page.tsx   ← catalogue vitrine comestibles (sans achat)
+    │   ├── (public)/mange-moi/page.tsx         ← catalogue vitrine comestibles (sans achat)
+│   ├── (public)/mange-moi/[id]/page.tsx   ← fiche détail comestible (SSR, generateMetadata, CTA → /contact)
     │   ├── (public)/boutique/[id]/page.tsx       ← fiche produit (SSR, generateMetadata)
     │   ├── (public)/boutique/[id]/AddToCartButton.tsx ← client component bouton panier
     │   ├── (public)/boutique/[id]/ProductGallery.tsx  ← galerie multi-photos (client, miniatures)
@@ -329,7 +344,7 @@ FlorusPocus/
     │       ├── mangeMoi.ts      ← CRUD mange_moi_items
     │       ├── messages.ts      ← markMessageRead + deleteMessage
     │       └── orders.ts        ← updateOrderStatus (statuts enum stricts)
-    └── types/index.ts           ← Product.florist_price + MangeMoiItem + season: string | null
+    └── types/index.ts           ← Product.florist_price + MangeMoiItem + season: string | null + Order delivery fields
     (supprimés session 4 : actions/events.ts, api/events, sections/Autocueillette.tsx,
      admin/autocueillette, public/autocueillette, getUpcomingEvents, type AutocueilletteEvent)
 ```
@@ -487,6 +502,26 @@ Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_setti
 - Code stocké dans `site_settings.florist_access_code` (défaut: `fleuriste2026`)
 - Changer le code : Admin → Contenu → section "Accès fleuristes"
 - `florist_price` sur products : prix de gros affiché dans FloristCatalog (null = prix public)
+- **Visibilité catalogue** : `fleuristes/page.tsx` filtre `p.florist_only || p.florist_price !== null` — un produit apparaît s'il est réservé fleuristes OU s'il a un prix de gros défini (session 10)
+- **Fiches cliquables** : `FloristCatalog.tsx` — `ProductRow` (liste) et `ProductCard` (grille) ont un overlay `<Link href="/boutique/[id]" className="absolute inset-0 z-0">` ; le bouton "Ajouter" reste en `relative z-10` (même pattern que TransformedProducts)
+- ⚠️ **Limite connue** : la fiche `/boutique/[id]` est publique et montre `product.price`, jamais `florist_price`. Pour afficher le prix de gros sur la fiche aux fleuristes connectés, il faudrait y vérifier `isFloristAuthenticated()` (non fait)
+
+### TipTap v3 — breaking change publication blog
+Dans TipTap v2, l'éditeur déclenchait des re-renders React à chaque frappe → `editor.getHTML()` évalué au rendu retournait le contenu à jour.
+En v3, TipTap ne déclenche plus ces re-renders → `value={editor.getHTML()}` dans le hidden input évaluait **toujours la valeur du mount** (chaîne vide pour un nouveau billet).
+**Fix** : `useState(defaultValue)` + `onUpdate: ({ editor }) => setHtml(editor.getHTML())` + `immediatelyRender: false`. Le hidden input bind sur le state `html`, pas sur `editor.getHTML()` directement.
+
+### Resend — emails silencieux
+`resend.emails.send()` **ne throw jamais**. Il retourne `{ data, error }`. Avant le fix, l'erreur était ignorée — les emails échouaient en silence (aucune trace dans les logs Vercel).
+Fix : `const { error: mailError } = await ...` + `if (mailError) console.error(...)`.
+⚠️ Même pattern à appliquer partout où Resend est appelé.
+
+### Caisse — Ramassage vs Livraison (migration 021)
+- `delivery_method TEXT NOT NULL DEFAULT 'delivery' CHECK (IN ('pickup','delivery'))` sur `orders`
+- Validation Zod : `.superRefine()` rend address/city/province/postal_code **obligatoires uniquement** si `delivery_method === 'delivery'`
+- Code postal canadien : regex `/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/`
+- `pickupAddress` passé en prop de `checkout/page.tsx` (Server) → `CheckoutClient` (Client)
+- `fullAddress` en DB : soit "Ramassage à la ferme" soit l'adresse complète formatée
 
 ### Mange Moi — catalogue vitrine
 - Table `mange_moi_items` (id, name, description, image_url, active, sort_order)
