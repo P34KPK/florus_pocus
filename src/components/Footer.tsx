@@ -85,11 +85,43 @@ export default async function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs opacity-40">
-          <p>© {year} Florus Pocus. Tous droits réservés.</p>
-          <div className="flex gap-6">
-            <Link href="/politique-confidentialite" className="hover:opacity-100 transition-opacity">Confidentialité</Link>
-            <Link href="/conditions-utilisation" className="hover:opacity-100 transition-opacity">Conditions</Link>
+        <div className="mt-12 pt-8 border-t border-white/10 space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs opacity-40">
+            <p>© {year} Florus Pocus. Tous droits réservés.</p>
+            <div className="flex gap-6">
+              <Link href="/politique-confidentialite" className="hover:opacity-100 transition-opacity">Confidentialité</Link>
+              <Link href="/conditions-utilisation" className="hover:opacity-100 transition-opacity">Conditions</Link>
+            </div>
+          </div>
+
+          {/* Crédit P34K */}
+          <div className="flex justify-center">
+            <a
+              href="https://p34k.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Site conçu et développé par P34K — p34k.com"
+              className="group inline-flex items-center gap-2 transition-opacity"
+            >
+              <span className="text-[11px] uppercase tracking-wider text-white/35 group-hover:text-white/60 transition-colors">
+                Conçu &amp; développé par
+              </span>
+              <svg
+                viewBox="0 0 551.55 158.12"
+                height="15"
+                fill="currentColor"
+                role="img"
+                aria-hidden="true"
+                className="text-[#D4A574] opacity-70 group-hover:opacity-100 transition-opacity"
+              >
+                <path d="M31.32,0L0,126.8l126.8,31.32,31.32-126.8L31.32,0ZM79.06,125.61c-25.71,0-46.56-20.84-46.56-46.56s20.84-46.56,46.56-46.56,46.56,20.84,46.56,46.56-20.84,46.56-46.56,46.56Z" />
+                <path d="M112.22,68.49h-31.09c-5.7,0-10.32,4.62-10.32,10.32v.36c0,5.7,4.62,10.32,10.32,10.32h31.09c5.7,0,10.32-4.62,10.32-10.32v-.36c0-5.7-4.62-10.32-10.32-10.32ZM112,86.49h-8.34c-3.83,0-6.94-3.11-6.94-6.94v-.12c0-3.83,3.11-6.94,6.94-6.94h8.34c3.83,0,6.94,3.11,6.94,6.94v.12c0,3.83-3.11,6.94-6.94,6.94Z" />
+                <path d="M263.55,34.49v57h-50v33h-38V34.49h88ZM213.55,67.49h13v-8h-13v8Z" />
+                <path d="M359.55,34.49v37.47l-7.32,7.34,7.32,7.34v37.85h-88v-25h50v-8h-50v-24h50v-8h-50v-25h88Z" />
+                <path d="M401.55,34.49v48h13v-21h35v63h-35v-17h-48V34.49h35Z" />
+                <path d="M546.14,34.49l-29.68,45,29.68,45h-36.28l-14.3-21.65v21.65h-38V34.49h38v21.65l14.3-21.65h36.28Z" />
+              </svg>
+            </a>
           </div>
         </div>
       </div>
