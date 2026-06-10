@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Eye, Download, Mail, Phone, MapPin, Package } from "lucide-react";
+import { Eye, Download, Mail, Phone, MapPin, Package, Store, Truck } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { updateOrderStatus } from "@/lib/actions/orders";
 import Modal from "@/components/admin/Modal";
@@ -50,14 +50,15 @@ export default function CommandesClient({ orders }: { orders: Order[] }) {
   }
 
   function exportCSV() {
-    const headers = ["Référence", "Date", "Client", "Courriel", "Téléphone", "Adresse", "Total", "Statut", "Paiement"];
+    const headers = ["Référence", "Date", "Client", "Courriel", "Téléphone", "Mode", "Adresse", "Total", "Statut", "Paiement"];
     const rows = filtered.map((o) => [
       ref(o.id),
       new Date(o.created_at).toLocaleDateString("fr-CA"),
       o.customer_name,
       o.customer_email,
       o.customer_phone ?? "",
-      o.customer_address,
+      o.delivery_method === "pickup" ? "Ramassage" : "Livraison",
+      o.delivery_method === "pickup" ? "Ramassage à la ferme" : o.customer_address,
       o.total_amount.toFixed(2),
       STATUS_LABELS[o.status] ?? o.status,
       PAYMENT_LABELS[o.payment_status] ?? o.payment_status,
@@ -166,8 +167,15 @@ export default function CommandesClient({ orders }: { orders: Order[] }) {
               <div className="space-y-2 text-sm">
                 <p className="font-medium">{selected.customer_name}</p>
                 <p className="flex items-center gap-2"><Mail size={14} style={{ color: "#2D5016" }} /> <a href={`mailto:${selected.customer_email}`} className="hover:underline" style={{ color: "#2D5016" }}>{selected.customer_email}</a></p>
-                {selected.customer_phone && <p className="flex items-center gap-2"><Phone size={14} style={{ color: "#2D5016" }} /> {selected.customer_phone}</p>}
-                <p className="flex items-start gap-2"><MapPin size={14} style={{ color: "#2D5016", marginTop: 2 }} /> {selected.customer_address}</p>
+                {selected.customer_phone && <p className="flex items-center gap-2"><Phone size={14} style={{ color: "#2D5016" }} /> <a href={`tel:${selected.customer_phone.replace(/[^\d+]/g, "")}`} className="hover:underline" style={{ color: "#2D5016" }}>{selected.customer_phone}</a></p>}
+                <p className="flex items-center gap-2 font-medium">
+                  {selected.delivery_method === "pickup"
+                    ? <><Store size={14} style={{ color: "#2D5016" }} /> Ramassage à la ferme</>
+                    : <><Truck size={14} style={{ color: "#2D5016" }} /> Livraison locale</>}
+                </p>
+                {selected.delivery_method === "delivery" && (
+                  <p className="flex items-start gap-2"><MapPin size={14} style={{ color: "#2D5016", marginTop: 2 }} /> {selected.customer_address}</p>
+                )}
               </div>
             </div>
 

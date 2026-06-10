@@ -85,6 +85,10 @@ export interface Order {
   customer_name: string;
   customer_phone: string | null;
   customer_address: string;
+  delivery_method: "pickup" | "delivery";
+  customer_city: string | null;
+  customer_province: string | null;
+  customer_postal_code: string | null;
   total_amount: number;
   status: OrderStatus;
   payment_status: PaymentStatus;

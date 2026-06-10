@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ShoppingBag, CheckCircle, Loader2, Lock, Heart } from "lucide-react";
+import { ArrowLeft, ShoppingBag, CheckCircle, Loader2, Lock, Heart, Store, Truck, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { createOrder } from "@/lib/actions/checkout";
@@ -27,7 +27,23 @@ const label = "block text-xs font-semibold text-[#1A1A1A] opacity-60 mb-1.5 uppe
 const SQUARE_APP_ID   = process.env.NEXT_PUBLIC_SQUARE_APP_ID!;
 const SQUARE_LOCATION = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!;
 
-export default function CheckoutClient({ causeName }: { causeName: string }) {
+const PROVINCES = [
+  { code: "QC", name: "Québec" },
+  { code: "ON", name: "Ontario" },
+  { code: "NB", name: "Nouveau-Brunswick" },
+  { code: "NS", name: "Nouvelle-Écosse" },
+  { code: "PE", name: "Île-du-Prince-Édouard" },
+  { code: "NL", name: "Terre-Neuve-et-Labrador" },
+  { code: "MB", name: "Manitoba" },
+  { code: "SK", name: "Saskatchewan" },
+  { code: "AB", name: "Alberta" },
+  { code: "BC", name: "Colombie-Britannique" },
+  { code: "YT", name: "Yukon" },
+  { code: "NT", name: "Territoires du Nord-Ouest" },
+  { code: "NU", name: "Nunavut" },
+];
+
+export default function CheckoutClient({ causeName, pickupAddress }: { causeName: string; pickupAddress: string }) {
   const { items, total, clearCart } = useCart();
 
   const [success,  setSuccess]  = useState(false);
@@ -36,6 +52,7 @@ export default function CheckoutClient({ causeName }: { causeName: string }) {
   const [pending,  setPending]  = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
   const [roundUp,  setRoundUp]  = useState(false);
+  const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("delivery");
 
   const roundUpAmount = total % 1 === 0 ? 0 : Math.round((Math.ceil(total) - total) * 100) / 100;
   const finalTotal    = Math.round((total + (roundUp ? roundUpAmount : 0)) * 100) / 100;
@@ -215,8 +232,8 @@ export default function CheckoutClient({ causeName }: { causeName: string }) {
                   <input name="name" required className={field} placeholder="Marie Tremblay" />
                 </div>
                 <div>
-                  <label className={label}>Téléphone</label>
-                  <input name="phone" type="tel" className={field} placeholder="+1 (418) 555-0000" />
+                  <label className={label}>Téléphone *</label>
+                  <input name="phone" type="tel" required className={field} placeholder="+1 (418) 555-0000" />
                 </div>
               </div>
 
@@ -225,10 +242,63 @@ export default function CheckoutClient({ causeName }: { causeName: string }) {
                 <input name="email" type="email" required className={field} placeholder="marie@exemple.com" />
               </div>
 
+              {/* Mode de réception */}
               <div>
-                <label className={label}>Adresse de livraison *</label>
-                <input name="address" required className={field} placeholder="123 Rue Principale, Pont-Rouge, QC" />
+                <label className={label}>Mode de réception *</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {([["pickup", "Ramassage à la ferme", Store], ["delivery", "Livraison locale", Truck]] as const).map(([val, lbl, Icon]) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setDeliveryMethod(val)}
+                      className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-heading font-semibold transition-all border"
+                      style={deliveryMethod === val
+                        ? { backgroundColor: "rgba(45,80,22,0.06)", borderColor: "#2D5016", color: "#2D5016" }
+                        : { backgroundColor: "#fff", borderColor: "#E0D5C8", color: "#1A1A1A" }}
+                    >
+                      <Icon size={16} /> {lbl}
+                    </button>
+                  ))}
+                </div>
+                <input type="hidden" name="delivery_method" value={deliveryMethod} />
               </div>
+
+              {deliveryMethod === "delivery" ? (
+                <>
+                  <div>
+                    <label className={label}>Adresse *</label>
+                    <input name="address" required className={field} placeholder="123 Rue Principale" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={label}>Ville *</label>
+                      <input name="city" required className={field} placeholder="Pont-Rouge" />
+                    </div>
+                    <div>
+                      <label className={label}>Province *</label>
+                      <select name="province" required defaultValue="QC" className={field}>
+                        {PROVINCES.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={label}>Code postal *</label>
+                    <input name="postal_code" required className={field} placeholder="G3H 1A1" autoCapitalize="characters" />
+                  </div>
+                  <p className="text-xs opacity-50 flex items-center gap-1.5">
+                    <Truck size={12} /> Livraison locale seulement — les fleurs fraîches ne sont pas expédiées par la poste.
+                  </p>
+                </>
+              ) : (
+                <div className="rounded-2xl p-4 border border-[#E0D5C8] bg-white flex items-start gap-3">
+                  <MapPin size={16} style={{ color: "#2D5016", marginTop: 2 }} />
+                  <div>
+                    <p className="text-sm font-heading font-semibold" style={{ color: "#1A1A1A" }}>Ramassage à la ferme</p>
+                    <p className="text-xs opacity-60 mt-0.5">{pickupAddress}</p>
+                    <p className="text-xs opacity-50 mt-1">Vous serez avisé(e) par courriel ou téléphone lorsque votre commande sera prête.</p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className={label}>Notes (optionnel)</label>
