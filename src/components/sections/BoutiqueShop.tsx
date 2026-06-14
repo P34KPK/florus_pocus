@@ -104,12 +104,12 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
         <p className="text-sm opacity-55 mb-4 leading-relaxed line-clamp-2">{product.description}</p>
         <div className="relative z-10 flex items-center justify-between">
           {product.price_type === "devis" ? (
-            <div className="flex items-center justify-between w-full gap-3">
-              <span className="text-sm font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>Sur devis</span>
+            <div className="flex flex-col gap-2 w-full">
+              <span className="self-start text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>Sur devis</span>
               <Link href={`/contact?produit=${encodeURIComponent(product.name)}`}
-                className="flex items-center gap-1.5 font-heading font-semibold px-4 py-2 rounded-xl text-sm transition-all hover:opacity-90 hover:scale-105"
+                className="flex items-center justify-center gap-1.5 font-heading font-semibold px-3 py-2 rounded-xl text-xs sm:text-sm transition-all hover:opacity-90 whitespace-nowrap"
                 style={{ backgroundColor: "#2D5016", color: "#fff" }}>
-                <Mail size={13} /> Obtenir un prix
+                <Mail size={12} /> Obtenir un prix
               </Link>
             </div>
           ) : (
