@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-09 (session 11 — 10 correctifs clients + crédit P34K footer)
+**Dernière session :** 2026-06-14 (session 12 — refonte boutique sidebar + livraison)
 
 ---
 
@@ -80,6 +80,14 @@
   - Mise en page blog/boutique : `.prose-farm` corrigé (`overflow-wrap: anywhere`, `word-break`, `max-width: 100%`) + pages boutique/[id] idem
   - Produits admin : tri alphabétique par `name` (était `created_at DESC`)
   - Crédit P34K : footer, lien cliquable → p34k.com, logo SVG inliné couleur terracotta `#D4A574`, taille 19px
+- [x] **Session 12 — Refonte boutique + livraison :**
+  - Navbar : liens desktop grossis (`text-sm` → `text-[15px] font-semibold`)
+  - `BoutiqueShop.tsx` (nouveau composant) : remplace les deux sections séparées (Fleuristes + TransformedProducts) par un layout sidebar gauche + grille droite — un seul filtre vertical par catégorie (`season`), badge livraison dans le header
+  - `boutique/page.tsx` : simplifié — passe tous les produits publics (`!florist_only`) à `BoutiqueShop`, plus de `BranchDivider` ni de split fleurs/transformés
+  - `CartDrawer.tsx` : bannière livraison dynamique entre le total et le bouton commander (affiche "Gratuite ✓" dès 100$, "9,99 $" en dessous)
+  - Mobile boutique : barre filtres scrollable horizontale (une ligne, glissable au doigt), badge livraison compact, vue liste adaptée petit écran
+  - Fix mobile : badge "Sur devis" + bouton "Obtenir un prix" déformés sur cartes 2 colonnes → `flex-col` avec `self-start` + `whitespace-nowrap`
+  - `Fleuristes.tsx` et `TransformedProducts.tsx` conservés intacts (non utilisés sur boutique mais présents)
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -316,6 +324,7 @@ FlorusPocus/
     │           └── ...autres pages admin
     ├── components/
     │   ├── Analytics.tsx            ← Client Component silent, sendBeacon + fetch keepalive
+    │   ├── CartDrawer.tsx           ← panier + bannière livraison dynamique (9,99$/gratuit 100$)
     │   ├── admin/
     │   │   ├── blog/RichTextEditor.tsx       ← TipTap WYSIWYG
     │   │   ├── produits/ProductForm.tsx      ← galerie multi-images (max 5, ImageUploader)
@@ -323,6 +332,9 @@ FlorusPocus/
     │   │   ├── contenu/ContenuClient.tsx
     │   │   └── mange-moi/MangeMoiClient.tsx  ← CRUD catalogue
     │   └── sections/
+    │       ├── BoutiqueShop.tsx    ← boutique unifiée (sidebar catégories + grille) — session 12
+    │       ├── Fleuristes.tsx      ← conservé, non utilisé sur /boutique depuis session 12
+    │       ├── TransformedProducts.tsx ← conservé, non utilisé sur /boutique depuis session 12
     │       ├── FloristGate.tsx     ← formulaire code d'accès fleuristes
     │       ├── FloristCatalog.tsx  ← catalogue pro avec prix de gros
     │       └── (MangeMoi affiché directement dans /mange-moi/page.tsx)
@@ -559,7 +571,15 @@ Fix : `const { error: mailError } = await ...` + `if (mailError) console.error(.
 - Champ `season` = sous-catégorie libre (TEXT) depuis migration 004
 - Admin : champ texte libre avec datalist suggestions
 - Boutique : filtres générés dynamiquement depuis les valeurs réelles en DB
-- Rétrocompatibilité anciens slugs via `LEGACY_LABELS` dans Fleuristes.tsx et TransformedProducts.tsx
+- Rétrocompatibilité anciens slugs via `LEGACY_LABELS` dans Fleuristes.tsx, TransformedProducts.tsx et BoutiqueShop.tsx
+
+### Boutique — layout unifié (session 12)
+- `BoutiqueShop.tsx` reçoit **tous** les produits publics (`!florist_only`) — pas de split par `category`
+- Sidebar gauche (desktop, w-44) : toggle grille/liste + filtre vertical par `season` + disclaimer livraison
+- Mobile : barre scrollable horizontale (overflow-x-auto, whitespace-nowrap, scrollbarWidth none)
+- Badge livraison dans le header : "9,99 $" / "Gratuite dès 100 $" — aussi dans CartDrawer (dynamique selon total)
+- Produits "Sur devis" en grille mobile : `flex-col` (badge self-start + bouton pleine largeur) pour éviter déformation sur cartes étroites 2 colonnes
+- `Fleuristes.tsx` et `TransformedProducts.tsx` : conservés mais plus appelés depuis `/boutique/page.tsx`
 
 ---
 
