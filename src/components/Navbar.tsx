@@ -95,7 +95,7 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="relative text-sm font-medium transition-colors group flex items-center gap-1"
+                className="relative text-[15px] font-semibold transition-colors group flex items-center gap-1"
                 style={{ color: dark ? "#1A1A1A" : "#F4D4B0" }}
               >
                 {link.icon && <link.icon size={12} style={{ opacity: 0.6 }} />}

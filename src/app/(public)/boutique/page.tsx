@@ -1,9 +1,7 @@
 import { getActiveProducts, getSiteSettings } from "@/lib/supabase-server";
-import BranchDivider        from "@/components/BranchDivider";
-import Fleuristes           from "@/components/sections/Fleuristes";
-import TransformedProducts  from "@/components/sections/TransformedProducts";
-import NewsletterPopup      from "@/components/NewsletterPopup";
-import type { Product }     from "@/types";
+import BoutiqueShop    from "@/components/sections/BoutiqueShop";
+import NewsletterPopup from "@/components/NewsletterPopup";
+import type { Product } from "@/types";
 
 export const metadata = {
   title: "Boutique",
@@ -16,27 +14,16 @@ export default async function BoutiquePage() {
     getActiveProducts(),
     getSiteSettings(),
   ]);
-  const public_products = (products as import("@/types").Product[]).filter((p) => !p.florist_only);
-  const fleurs          = public_products.filter((p) => p.category === "fleur");
-  const transformes     = public_products.filter((p) => p.category === "transforme");
+  const public_products = (products as Product[]).filter((p) => !p.florist_only);
 
   return (
     <main className="pt-16">
       <NewsletterPopup />
-      {fleurs.length > 0 && (
-        <>
-          <Fleuristes
-            products={fleurs}
-            title={settings["fleurs_titre"]}
-          />
-          <BranchDivider />
-        </>
-      )}
-      <TransformedProducts
-        products={transformes.length > 0 ? transformes : undefined}
-        subtitle={settings["boutique_subtitle"]}
+      <BoutiqueShop
+        products={public_products}
         title={settings["produits_titre"]}
         surtitle={settings["produits_surtitle"]}
+        subtitle={settings["boutique_subtitle"]}
       />
     </main>
   );

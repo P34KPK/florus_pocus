@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Image from "next/image";
-import { X, Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { X, Trash2, Plus, Minus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export default function CartDrawer() {
@@ -129,6 +129,13 @@ export default function CartDrawer() {
               <span className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>
                 {total.toFixed(2)} $
               </span>
+            </div>
+            <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Truck size={12} />
+                Livraison locale
+              </span>
+              <span className="font-semibold">{total >= 100 ? "Gratuite ✓" : "9,99 $"}</span>
             </div>
             <a
               href="/checkout"
