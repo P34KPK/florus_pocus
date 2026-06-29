@@ -52,7 +52,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
     ],
-    formats: ["image/avif", "image/webp"],
+    // ZÉRO transformation Vercel = jamais de facturation Image Optimization.
+    // Les images sont déjà optimisées (WebP, 1920px, qualité 80) par Sharp à l'upload,
+    // donc Vercel les sert directement sans les re-transformer.
+    unoptimized: true,
   },
 };
 
