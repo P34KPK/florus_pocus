@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-14 (session 12 — refonte boutique sidebar + livraison)
+**Dernière session :** 2026-06-29 (session 13 — désactivation Image Optimization Vercel, zéro transformation facturable)
 
 ---
 
@@ -88,6 +88,12 @@
   - Mobile boutique : barre filtres scrollable horizontale (une ligne, glissable au doigt), badge livraison compact, vue liste adaptée petit écran
   - Fix mobile : badge "Sur devis" + bouton "Obtenir un prix" déformés sur cartes 2 colonnes → `flex-col` avec `self-start` + `whitespace-nowrap`
   - `Fleuristes.tsx` et `TransformedProducts.tsx` conservés intacts (non utilisés sur boutique mais présents)
+- [x] **Session 13 — Image Optimization Vercel désactivée :**
+  - Alerte Vercel : 75 % du free tier Image Optimization (5 000 transformations/mois) consommé
+  - `next.config.ts` → `images.unoptimized: true` — Vercel sert les images directement, **0 transformation facturable, pour toujours**
+  - Sans risque visuel : les images sont déjà optimisées à l'upload (Sharp → WebP, 1920px, qualité 80)
+  - Compromis mineur : mobile télécharge la pleine taille (1920px) au lieu d'une version redimensionnée
+  - Commit `c25a96a` poussé sur `main`
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -582,6 +588,19 @@ Fix : `const { error: mailError } = await ...` + `if (mailError) console.error(.
 - `Fleuristes.tsx` et `TransformedProducts.tsx` : conservés mais plus appelés depuis `/boutique/page.tsx`
 
 ---
+
+### Image Optimization Vercel — DÉSACTIVÉE (session 13)
+`next.config.ts` → `images.unoptimized: true`. Vercel ne fait **plus aucune transformation
+d'image** → ce poste reste à 0 (free tier = 5 000 transformations/mois, alerte reçue à 75 %).
+- Pourquoi sans risque : les images sont déjà optimisées à l'upload (`api/upload/route.ts`,
+  Sharp → WebP, max 1920px, qualité 80). Vercel les sert telles quelles depuis Supabase Storage.
+- Coût d'une transformation = combinaison unique (image × largeur × format × qualité) ; avant le
+  fix, `formats: ["avif","webp"]` (×2) + 8 `deviceSizes` multipliaient l'usage.
+- Compromis : sur mobile l'image est servie en pleine taille (1920px) au lieu d'être redimensionnée
+  (bande passante un peu plus élevée, LCP mobile légèrement moins bon) — négligeable ici.
+- ⚠️ Si on veut réactiver l'optimisation un jour (ex: passage plan payant) : retirer `unoptimized`
+  et remettre `formats: ["image/webp"]` + `minimumCacheTTL: 2678400` + `deviceSizes` réduits, pas
+  `["avif","webp"]` par défaut.
 
 ## 8. Déploiement — Vercel
 
