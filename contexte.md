@@ -10,7 +10,9 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-08-14 (session 14 — audit du tunnel de commande : notification admin, courriels fiabilisés, prix recalculés serveur)
+**Dernière session :** 2026-08-14 (session 14 — audit du tunnel de commande, taxes/livraison, suivi d'inventaire, cloche de notifications admin)
+**Migrations appliquées en prod :** jusqu'à `025` incluse
+**Derniers commits :** `e2580ae` (correctifs commande + inventaire) · `553d1a5` (taxes/livraison + notifications) — tous deux déployés et vérifiés en production
 
 ---
 
@@ -106,15 +108,22 @@
   - Bouton « Payer » muet corrigé : si le SDK Square n'est pas chargé, un message s'affiche au lieu d'un `return` silencieux.
   - Migration `022_orders_email_tracking.sql` + `scripts/verify-orders-pipeline.mjs` (vérificateur lecture seule).
   - **Suivi d'inventaire explicite (migration 023)** : enquête sur les 39 produits « Épuisé » → tous de catégorie `fleur`, tous créés le 2026-06-08, 38 sur 39 jamais rouverts depuis. Ce n'était pas un choix maintenu mais une saisie initiale périmée. Ajout de `track_inventory` + `src/lib/inventory.ts` (`isSoldOut` / `lowStockCount`) + interrupteur admin. Remplissage : les 39 repassent en « toujours disponible » et redeviennent commandables.
+  - **Taxes et livraison (migration 024)** : TPS 5 % + TVQ 9,975 % et frais de livraison sont désormais facturés. `src/lib/pricing.ts` est le module de calcul partagé serveur/client. Ventilation stockée sur chaque commande (`subtotal`, `delivery_fee`, `gst_amount`, `qst_amount`), affichée à la caisse, dans les deux courriels, dans le détail admin et l'export CSV (5 colonnes de plus). Réglages éditables via Admin → Contenu (groupe « Taxes et livraison »). Contrôle : 20 $ au ramassage → 23,00 $, exactement les montants du terminal Square.
   - **Cloche de notifications admin (migration 025)** : barre supérieure dans `admin/(protected)/layout.tsx`. Notifications **dérivées** des données existantes — aucune table de notifications, aucun déclencheur : une notification disparaît d'elle-même quand la situation est réglée. Deux natures : `action` (à faire, compte tant que non réglé) et `event` (activité, lu après ouverture). Sources : numéros TPS/TVQ manquants, courriels de commande en échec, commandes payées à préparer, messages non lus, nouvelles commandes, nouveaux abonnés.
-  - **Taxes et livraison (migration 024)** : TPS 5 % + TVQ 9,975 % et frais de livraison sont désormais facturés. `src/lib/pricing.ts` est le module de calcul partagé serveur/client. Ventilation stockée sur chaque commande (`subtotal`, `delivery_fee`, `gst_amount`, `qst_amount`), affichée à la caisse, dans les deux courriels, dans le détail admin et l'export CSV. Réglages éditables via Admin → Contenu (groupe « Taxes et livraison »).
+
+  **Vérifications faites en production (sans accès Vercel) :**
+  - Code serveur déployé : les fiches produits de fleurs à `stock = 0` renvoient le bouton d'ajout au lieu de « Épuisé ».
+  - Espace fleuristes : **60 / 60 produits commandables** (21 / 60 avant), fleurs coupées 50 / 50.
+  - Cloche simulée sur les données réelles : pastille à 7 — alerte numéros TPS/TVQ + 3 messages non lus + activité.
+  - ⚠️ **3 messages de contact jamais ouverts**, dont Marianne Pertuiset-Ferland (28 juin) qui demandait des fleurs pour son mariage du 6 septembre. La cloche les remonte désormais.
+  - ❗ Reste non vérifiable sans une vraie commande : l'envoi effectif des courriels (`RESEND_API_KEY` en prod, réponse de Resend). Diagnostic après le premier achat : `node scripts/verify-orders-pipeline.mjs`.
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
 - [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`
 - [x] `src/app/checkout/page.tsx` — Square Web Payments SDK
 - [x] `src/app/api/square/payment/route.ts` — charge carte, validation montant, idempotency key = orderId
-- [x] `src/app/api/square/webhook/route.ts` — HMAC SHA256, gère payment.updated/created/completed/failed + envoi email Resend
+- [x] `src/app/api/square/webhook/route.ts` — HMAC SHA256, gère payment.updated/created/completed/failed + appelle `sendOrderEmails()` (filet de secours idempotent)
 - [x] Credentials production configurés sur Vercel
 - [x] Webhook Square configuré : `https://www.floruspocus.com/api/square/webhook`
 - [x] Migration `005_square_payment_id.sql` exécutée
@@ -187,8 +196,14 @@
 - [x] ~~Clés Supabase corrompues~~ — RÉGLÉ : clés ANON + SERVICE recollées proprement dans Vercel, contournement `extractJwt` retiré du code
 - [x] ~~Sitemap + SEO~~ — FAIT : `app/sitemap.ts` (statiques + blog), `app/robots.ts`, metadataBase, openGraph/twitter, canonical par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
-- [ ] **Gestion stock** — sold out sur les produits (champ stock existe, affichage "Épuisé" existe, mais pas de logique automatique)
+- [x] ~~Taxes TPS/TVQ~~ — FAIT session 14 (migration 024, `src/lib/pricing.ts`)
+- [x] ~~Frais de livraison jamais facturés~~ — FAIT session 14 (mêmes réglages partout, plus rien en dur)
+- [x] ~~39 produits bloqués « Épuisé »~~ — FAIT session 14 (migration 023, `track_inventory`)
+- [ ] **Numéros de TPS et TVQ à saisir par le client** — Admin → Contenu → Taxes et livraison. La cloche le lui rappelle automatiquement, aucune relance à faire.
+- [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
+- [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
 - [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
+- [ ] Cosmétique : les prix s'affichent avec un point (`9.99 $`) et non une virgule. Cohérent dans tout le site, mais non conforme à la typographie française — un formateur unique réglerait le tout.
 
 ---
 
@@ -312,7 +327,14 @@ FlorusPocus/
 │   ├── 018_section_titles.sql
 │   ├── 019_product_images.sql
 │   ├── 020_page_views.sql
-│   └── 021_orders_delivery.sql
+│   ├── 021_orders_delivery.sql
+│   ├── 022_orders_email_tracking.sql
+│   ├── 023_product_track_inventory.sql
+│   ├── 024_orders_taxes_delivery.sql
+│   └── 025_admin_notifications.sql
+├── scripts/
+│   ├── reset-admin.mjs
+│   └── verify-orders-pipeline.mjs  ← vérificateur LECTURE SEULE de la chaîne de commande
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -351,6 +373,7 @@ FlorusPocus/
     │   ├── Analytics.tsx            ← Client Component silent, sendBeacon + fetch keepalive
     │   ├── CartDrawer.tsx           ← panier + bannière livraison dynamique (9,99$/gratuit 100$)
     │   ├── admin/
+    │   │   ├── NotificationBell.tsx          ← cloche + panneau (À faire / Activité récente)
     │   │   ├── blog/RichTextEditor.tsx       ← TipTap WYSIWYG
     │   │   ├── produits/ProductForm.tsx      ← galerie multi-images (max 5, ImageUploader)
     │   │   ├── ImageUploader.tsx             ← + prop onUploadedUrl (callback multi-images)
@@ -365,14 +388,21 @@ FlorusPocus/
     │       └── (MangeMoi affiché directement dans /mange-moi/page.tsx)
     ├── context/CartContext.tsx  ← Zod validation au rehydrate localStorage
     ├── lib/
+    │   ├── pricing.ts           ← computeTotals : taxes + livraison + arrondi (serveur ET caisse)
+    │   ├── inventory.ts         ← isSoldOut / lowStockCount (track_inventory)
+    │   ├── orderEmails.ts       ← sendOrderEmails : envoi idempotent des 2 courriels de commande
+    │   ├── notifications.ts     ← getAdminNotifications : notifications dérivées, sans table
+    │   ├── site.ts              ← SITE_URL canonique
     │   ├── supabase-server.ts   ← createClient + createPublicClient + createAdminClient + getSiteSettings + getMangeMoiItems
     │   ├── square.ts            ← SquareClient + SQUARE_LOCATION_ID
     │   ├── resend.ts            ← client Resend
     │   ├── ratelimit.ts         ← Upstash limiteurs
     │   ├── emails/
-    │   │   └── orderConfirmation.ts
+    │   │   ├── orderConfirmation.ts  ← confirmation client + ventilation fiscale (OrderBreakdown)
+    │   │   └── orderNotification.ts  ← notification admin (bon de travail, badge FLEURISTE)
     │   └── actions/
     │       ├── auth.ts          ← loginAdmin avec rate limiting
+    │       ├── notifications.ts ← markNotificationsSeen (horodatage de consultation)
     │       ├── checkout.ts      ← createOrder
     │       ├── contact.ts       ← sendContactMessage + notification email admin
     │       ├── settings.ts      ← updateSiteSettings (CMS)
@@ -473,6 +503,13 @@ Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 - `products.ts` force `stock = null` quand `track_inventory` est faux — pas de valeur fantôme qui ressurgit si on réactive le suivi.
 - La liste admin affiche `∞` (non suivi), la quantité, ou un badge rouge `0 · Épuisé` pour rendre un blocage de vente immédiatement visible.
 - Le stock n'est toujours **pas** décrémenté automatiquement à l'achat — c'est un compteur manuel.
+
+### Diagnostic sans accès Vercel
+Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. Ce qui reste vérifiable :
+- `node scripts/verify-orders-pipeline.mjs` — migrations, commandes récentes, état d'envoi des courriels, `email_error`. Lecture seule.
+- Supabase via `SUPABASE_SERVICE_ROLE_KEY` (lecture seule) pour l'état réel des données.
+- API Square en lecture : `GET /v2/payments` (un paiement issu du site a toujours un `reference_id` ; ceux du terminal n'en ont pas), `GET /v2/webhooks/subscriptions`, `GET /v2/locations`.
+- Déploiement confirmé en cherchant une chaîne neuve dans les bundles servis par la prod, et surtout via une page **rendue côté serveur** dont l'affichage dépend du nouveau code.
 
 ### Notifications admin — dérivées, jamais stockées
 `src/lib/notifications.ts` → `getAdminNotifications(userId)`. **Ne pas créer de table de notifications** : tout est recalculé à chaque chargement du layout admin depuis `orders`, `contact_messages`, `newsletter_subscribers` et `site_settings`. Conséquence voulue : rien à marquer comme résolu, rien à remplir a posteriori, aucune désynchronisation.
