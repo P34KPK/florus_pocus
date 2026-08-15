@@ -50,7 +50,7 @@ export default function CommandesClient({ orders }: { orders: Order[] }) {
   }
 
   function exportCSV() {
-    const headers = ["Référence", "Date", "Client", "Courriel", "Téléphone", "Mode", "Adresse", "Total", "Statut", "Paiement"];
+    const headers = ["Référence", "Date", "Client", "Courriel", "Téléphone", "Mode", "Adresse", "Sous-total", "Livraison", "TPS", "TVQ", "Arrondi", "Total", "Statut", "Paiement"];
     const rows = filtered.map((o) => [
       ref(o.id),
       new Date(o.created_at).toLocaleDateString("fr-CA"),
@@ -59,6 +59,11 @@ export default function CommandesClient({ orders }: { orders: Order[] }) {
       o.customer_phone ?? "",
       o.delivery_method === "pickup" ? "Ramassage" : "Livraison",
       o.delivery_method === "pickup" ? "Ramassage à la ferme" : o.customer_address,
+      Number(o.subtotal ?? 0).toFixed(2),
+      Number(o.delivery_fee ?? 0).toFixed(2),
+      Number(o.gst_amount ?? 0).toFixed(2),
+      Number(o.qst_amount ?? 0).toFixed(2),
+      Number(o.round_up_amount ?? 0).toFixed(2),
       o.total_amount.toFixed(2),
       STATUS_LABELS[o.status] ?? o.status,
       PAYMENT_LABELS[o.payment_status] ?? o.payment_status,
@@ -193,8 +198,41 @@ export default function CommandesClient({ orders }: { orders: Order[] }) {
                     <span className="font-semibold" style={{ color: "#2D5016" }}>{(it.price_per_unit * it.quantity).toFixed(2)} $</span>
                   </div>
                 ))}
-                <div className="flex items-center justify-between pt-2 font-bold">
-                  <span>Total</span>
+                {/* Ventilation — indispensable pour la comptabilité et les remises de taxes */}
+                <div className="pt-2 space-y-1 text-sm border-t border-[#E0D5C8]">
+                  <div className="flex items-center justify-between opacity-60">
+                    <span>Sous-total</span>
+                    <span>{Number(selected.subtotal ?? 0).toFixed(2)} $</span>
+                  </div>
+                  <div className="flex items-center justify-between opacity-60">
+                    <span>Livraison</span>
+                    <span>
+                      {Number(selected.delivery_fee ?? 0) > 0
+                        ? `${Number(selected.delivery_fee).toFixed(2)} $`
+                        : "Gratuite"}
+                    </span>
+                  </div>
+                  {Number(selected.gst_amount ?? 0) > 0 && (
+                    <div className="flex items-center justify-between opacity-60">
+                      <span>TPS</span>
+                      <span>{Number(selected.gst_amount).toFixed(2)} $</span>
+                    </div>
+                  )}
+                  {Number(selected.qst_amount ?? 0) > 0 && (
+                    <div className="flex items-center justify-between opacity-60">
+                      <span>TVQ</span>
+                      <span>{Number(selected.qst_amount).toFixed(2)} $</span>
+                    </div>
+                  )}
+                  {Number(selected.round_up_amount ?? 0) > 0 && (
+                    <div className="flex items-center justify-between opacity-60">
+                      <span>Arrondi pour la cause</span>
+                      <span>{Number(selected.round_up_amount).toFixed(2)} $</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between pt-2 font-bold border-t border-[#E0D5C8]">
+                  <span>Total encaissé</span>
                   <span style={{ color: "#2D5016" }}>{Number(selected.total_amount).toFixed(2)} $</span>
                 </div>
               </div>

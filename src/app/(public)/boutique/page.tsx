@@ -1,4 +1,5 @@
 import { getActiveProducts, getSiteSettings } from "@/lib/supabase-server";
+import { pricingFromSettings } from "@/lib/pricing";
 import BoutiqueShop    from "@/components/sections/BoutiqueShop";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import type { Product } from "@/types";
@@ -24,6 +25,7 @@ export default async function BoutiquePage() {
         title={settings["produits_titre"]}
         surtitle={settings["produits_surtitle"]}
         subtitle={settings["boutique_subtitle"]}
+        pricing={pricingFromSettings(settings)}
       />
     </main>
   );

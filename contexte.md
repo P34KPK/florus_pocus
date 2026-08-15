@@ -106,7 +106,8 @@
   - Bouton « Payer » muet corrigé : si le SDK Square n'est pas chargé, un message s'affiche au lieu d'un `return` silencieux.
   - Migration `022_orders_email_tracking.sql` + `scripts/verify-orders-pipeline.mjs` (vérificateur lecture seule).
   - **Suivi d'inventaire explicite (migration 023)** : enquête sur les 39 produits « Épuisé » → tous de catégorie `fleur`, tous créés le 2026-06-08, 38 sur 39 jamais rouverts depuis. Ce n'était pas un choix maintenu mais une saisie initiale périmée. Ajout de `track_inventory` + `src/lib/inventory.ts` (`isSoldOut` / `lowStockCount`) + interrupteur admin. Remplissage : les 39 repassent en « toujours disponible » et redeviennent commandables.
-  - ⚠️ **Non traité, décision d'affaires en attente** : aucune TPS/TVQ sur les commandes web (les ventes au terminal en facturent) ; frais de livraison annoncés 9,99 $ dans le panier mais jamais ajoutés au total ; 39 des 60 produits fleuristes sont à `stock = 0` donc affichés « Épuisé » et non commandables.
+  - **Cloche de notifications admin (migration 025)** : barre supérieure dans `admin/(protected)/layout.tsx`. Notifications **dérivées** des données existantes — aucune table de notifications, aucun déclencheur : une notification disparaît d'elle-même quand la situation est réglée. Deux natures : `action` (à faire, compte tant que non réglé) et `event` (activité, lu après ouverture). Sources : numéros TPS/TVQ manquants, courriels de commande en échec, commandes payées à préparer, messages non lus, nouvelles commandes, nouveaux abonnés.
+  - **Taxes et livraison (migration 024)** : TPS 5 % + TVQ 9,975 % et frais de livraison sont désormais facturés. `src/lib/pricing.ts` est le module de calcul partagé serveur/client. Ventilation stockée sur chaque commande (`subtotal`, `delivery_fee`, `gst_amount`, `qst_amount`), affichée à la caisse, dans les deux courriels, dans le détail admin et l'export CSV. Réglages éditables via Admin → Contenu (groupe « Taxes et livraison »).
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -160,6 +161,8 @@
 - [x] Migration `019_product_images.sql` — table `product_images` (id, product_id FK cascade, image_url, sort_order, created_at), RLS public read, écriture service_role
 - [x] Migration `020_page_views.sql` — table `page_views` (id BIGSERIAL, path, referrer, created_at), pas de PII, 2 index (created_at, path), RLS activé sans policy publique (service_role uniquement)
 - [x] Migration `021_orders_delivery.sql` — 4 colonnes sur `orders` : `delivery_method TEXT NOT NULL DEFAULT 'delivery' CHECK (IN ('pickup','delivery'))`, `customer_city`, `customer_province`, `customer_postal_code`
+- [x] Migration `025_admin_notifications.sql` — table `admin_notification_reads` (user_id PK, last_seen_at) — RLS activée, service_role uniquement
+- [x] Migration `024_orders_taxes_delivery.sql` — 4 colonnes sur `orders` (`subtotal`, `delivery_fee`, `gst_amount`, `qst_amount`) + 7 réglages `site_settings` (groupe `taxes_livraison`)
 - [x] Migration `023_product_track_inventory.sql` — colonne `track_inventory BOOLEAN NOT NULL DEFAULT false` sur `products` + remplissage (`true` si `stock > 0`, `false` si `stock` NULL ou 0)
 - [x] Migration `022_orders_email_tracking.sql` — 3 colonnes sur `orders` : `is_florist_order BOOLEAN NOT NULL DEFAULT false`, `emails_sent_at TIMESTAMPTZ` (verrou d'idempotence des courriels), `email_error TEXT` + index partiel `idx_orders_emails_pending`
 - [x] Popup infolettre boutique — apparaît 2.5s après visite (localStorage `fp_newsletter_shown`), code promo BIENVENUE10
@@ -185,8 +188,6 @@
 - [x] ~~Sitemap + SEO~~ — FAIT : `app/sitemap.ts` (statiques + blog), `app/robots.ts`, metadataBase, openGraph/twitter, canonical par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
 - [ ] **Gestion stock** — sold out sur les produits (champ stock existe, affichage "Épuisé" existe, mais pas de logique automatique)
-- [ ] **⚠️ Aucune TPS/TVQ sur les commandes web** — les ventes au terminal Square facturent les taxes (23,00 $ = 20 × 1,15), le site non. Décision d'affaires en attente.
-- [ ] **⚠️ Frais de livraison jamais facturés** — le panier annonce « 9,99 $ / gratuite dès 100 $ » mais `createOrder` ne les ajoute pas au total. Soit les ajouter, soit retirer la mention.
 - [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
 
 ---
@@ -472,6 +473,21 @@ Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 - `products.ts` force `stock = null` quand `track_inventory` est faux — pas de valeur fantôme qui ressurgit si on réactive le suivi.
 - La liste admin affiche `∞` (non suivi), la quantité, ou un badge rouge `0 · Épuisé` pour rendre un blocage de vente immédiatement visible.
 - Le stock n'est toujours **pas** décrémenté automatiquement à l'achat — c'est un compteur manuel.
+
+### Notifications admin — dérivées, jamais stockées
+`src/lib/notifications.ts` → `getAdminNotifications(userId)`. **Ne pas créer de table de notifications** : tout est recalculé à chaque chargement du layout admin depuis `orders`, `contact_messages`, `newsletter_subscribers` et `site_settings`. Conséquence voulue : rien à marquer comme résolu, rien à remplir a posteriori, aucune désynchronisation.
+- Seul l'état « déjà vu » est persisté (`admin_notification_reads.last_seen_at`, un horodatage par admin).
+- `kind: "action"` = à faire, compté dans la pastille tant que non réglé (numéros de taxes, courriels en échec, commandes à préparer, messages non lus). `kind: "event"` = activité, compté seulement si postérieur à `last_seen_at`.
+- Ajouter une source = ajouter un `items.push(...)` dans ce fichier, rien d'autre.
+- Le layout admin ne plante pas si la migration 025 manque : la requête échoue en silence et `lastSeenAt` vaut null.
+
+### ⚠️ Taxes et livraison — un seul module de calcul
+`src/lib/pricing.ts` : `computeTotals()` est appelé par `createOrder` (montant encaissé) **et** par `CheckoutClient` (affichage). **Ne jamais recalculer un total ailleurs** — sinon le montant affiché et le montant débité divergent.
+- Ordre : sous-total → + livraison → taxes sur la somme → + arrondi pour la cause. Le don n'est jamais taxé, il s'ajoute en dernier.
+- Livraison : gratuite au ramassage et dès le seuil (défaut 100 $), sinon `delivery_fee` (défaut 9,99 $).
+- Réglages dans `site_settings`, groupe `taxes_livraison` : `taxes_enabled`, `gst_rate`, `qst_rate` (en **pourcentage** : « 5 », « 9.975 »), `gst_number`, `qst_number`, `delivery_fee`, `free_delivery_threshold`. Modifiables sans déploiement via Admin → Contenu.
+- `CheckoutClient` envoie `round_up` (booléen) et non plus un montant : le serveur calcule l'arrondi lui-même, après taxes.
+- Contrôle : 20 $ au ramassage → 23,00 $, soit exactement les montants du terminal Square.
 
 ### ⚠️ Prix — recalculés côté serveur, jamais lus du panier
 `createOrder` (`src/lib/actions/checkout.ts`) ignore les prix envoyés par le navigateur : il recharge `products` / `subscriptions` depuis la base. Le panier ne sert qu'à savoir **quoi** a été commandé.

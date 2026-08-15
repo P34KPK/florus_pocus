@@ -91,6 +91,13 @@ export interface Order {
   customer_city: string | null;
   customer_province: string | null;
   customer_postal_code: string | null;
+  /** Ventilation (migration 024) — 0 sur les commandes antérieures. */
+  subtotal: number;
+  delivery_fee: number;
+  gst_amount: number;
+  qst_amount: number;
+  round_up_amount: number | null;
+  is_florist_order: boolean;
   total_amount: number;
   status: OrderStatus;
   payment_status: PaymentStatus;

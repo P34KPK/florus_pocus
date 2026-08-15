@@ -4,15 +4,21 @@ import BotanicalLayers   from "@/components/BotanicalLayers";
 import ClientCartDrawer  from "@/components/ClientCartDrawer";
 import CookieConsent     from "@/components/CookieConsent";
 import Analytics         from "@/components/Analytics";
+import { getSiteSettings } from "@/lib/supabase-server";
+import { pricingFromSettings } from "@/lib/pricing";
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  // Le panier annonce les frais de livraison : ils doivent venir des mêmes
+  // réglages que ceux appliqués à la caisse, jamais d'une valeur en dur.
+  const pricing = pricingFromSettings(await getSiteSettings());
+
   return (
     <>
       <BotanicalLayers />
       <Navbar />
       {children}
       <Footer />
-      <ClientCartDrawer />
+      <ClientCartDrawer pricing={pricing} />
       <CookieConsent />
       <Analytics />
     </>

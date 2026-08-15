@@ -4,8 +4,9 @@ import { useEffect } from "react";
 import Image from "next/image";
 import { X, Trash2, Plus, Minus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import type { PricingConfig } from "@/lib/pricing";
 
-export default function CartDrawer() {
+export default function CartDrawer({ pricing }: { pricing: PricingConfig }) {
   const { items, isOpen, closeCart, removeItem, updateQuantity, total } = useCart();
 
   // Prevent body scroll when open
@@ -125,7 +126,7 @@ export default function CartDrawer() {
         {items.length > 0 && (
           <div className="border-t border-border px-6 py-5 space-y-4">
             <div className="flex justify-between items-center">
-              <span className="font-heading font-semibold">Total</span>
+              <span className="font-heading font-semibold">Sous-total</span>
               <span className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>
                 {total.toFixed(2)} $
               </span>
@@ -135,8 +136,15 @@ export default function CartDrawer() {
                 <Truck size={12} />
                 Livraison locale
               </span>
-              <span className="font-semibold">{total >= 100 ? "Gratuite ✓" : "9,99 $"}</span>
+              <span className="font-semibold">
+                {total >= pricing.freeDeliveryThreshold
+                  ? "Gratuite ✓"
+                  : `${pricing.deliveryFee.toFixed(2)} $`}
+              </span>
             </div>
+            <p className="text-center text-xs opacity-40">
+              {pricing.taxesEnabled ? "Taxes et livraison calculées à la caisse" : "Livraison calculée à la caisse"}
+            </p>
             <a
               href="/checkout"
               className="block w-full text-center font-heading font-semibold py-3.5 px-6 rounded-xl text-white transition-all hover:opacity-90 hover:scale-[1.01]"

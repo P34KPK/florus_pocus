@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase-server";
 import { getResend, FROM_EMAIL } from "@/lib/resend";
-import { orderConfirmationHtml, orderConfirmationText } from "@/lib/emails/orderConfirmation";
+import { orderConfirmationHtml, orderConfirmationText, type OrderBreakdown } from "@/lib/emails/orderConfirmation";
 import { orderNotificationHtml, orderNotificationText, type OrderNotificationProps } from "@/lib/emails/orderNotification";
 
 /**
@@ -27,7 +27,7 @@ export async function sendOrderEmails(orderId: string): Promise<void> {
       .update({ emails_sent_at: new Date().toISOString() })
       .eq("id", orderId)
       .is("emails_sent_at", null)
-      .select("id, customer_name, customer_email, customer_phone, customer_address, delivery_method, notes, total_amount, round_up_amount, is_florist_order")
+      .select("id, customer_name, customer_email, customer_phone, customer_address, delivery_method, notes, total_amount, subtotal, delivery_fee, gst_amount, qst_amount, round_up_amount, is_florist_order")
       .maybeSingle();
 
     if (!order) return;
@@ -46,14 +46,30 @@ export async function sendOrderEmails(orderId: string): Promise<void> {
     const total = Number(order.total_amount);
     const errors: string[] = [];
 
+    const { data: settingRows } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["contact_email", "gst_number", "qst_number"]);
+    const settings = Object.fromEntries((settingRows ?? []).map((r) => [r.key, r.value ?? ""]));
+
+    const breakdown: OrderBreakdown = {
+      subtotal:    Number(order.subtotal ?? 0),
+      deliveryFee: Number(order.delivery_fee ?? 0),
+      gst:         Number(order.gst_amount ?? 0),
+      qst:         Number(order.qst_amount ?? 0),
+      roundUp:     Number(order.round_up_amount ?? 0),
+      gstNumber:   settings["gst_number"] || undefined,
+      qstNumber:   settings["qst_number"] || undefined,
+    };
+
     // --- Confirmation au client ---
     if (order.customer_email) {
       const { error } = await getResend().emails.send({
         from:    FROM_EMAIL,
         to:      order.customer_email,
         subject: `Confirmation de commande #${orderId.slice(0, 8).toUpperCase()} — Florus Pocus`,
-        html:    orderConfirmationHtml({ orderId, customerName: order.customer_name, items, total }),
-        text:    orderConfirmationText({ orderId, customerName: order.customer_name, items, total }),
+        html:    orderConfirmationHtml({ orderId, customerName: order.customer_name, items, total, breakdown }),
+        text:    orderConfirmationText({ orderId, customerName: order.customer_name, items, total, breakdown }),
       });
       // Resend ne lève pas d'exception : il retourne { error }. Sans cette
       // lecture, un échec d'envoi resterait totalement invisible.
@@ -63,12 +79,7 @@ export async function sendOrderEmails(orderId: string): Promise<void> {
     }
 
     // --- Notification à l'administrateur ---
-    const { data: setting } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "contact_email")
-      .maybeSingle();
-    const adminEmail = setting?.value || "info@floruspocus.com";
+    const adminEmail = settings["contact_email"] || "info@floruspocus.com";
 
     const payload: OrderNotificationProps = {
       orderId,
@@ -80,8 +91,9 @@ export async function sendOrderEmails(orderId: string): Promise<void> {
       notes:          order.notes,
       items,
       total,
-      roundUp:        Number(order.round_up_amount ?? 0),
+      roundUp:        breakdown.roundUp,
       isFloristOrder: Boolean(order.is_florist_order),
+      breakdown,
     };
 
     const { error: adminError } = await getResend().emails.send({

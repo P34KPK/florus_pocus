@@ -4,15 +4,46 @@ interface OrderItem {
   price: number;
 }
 
+/** Détail fiscal de la commande. Absent = ancienne commande sans ventilation. */
+export interface OrderBreakdown {
+  subtotal:    number;
+  deliveryFee: number;
+  gst:         number;
+  qst:         number;
+  roundUp:     number;
+  gstNumber?:  string;
+  qstNumber?:  string;
+}
+
 interface OrderConfirmationProps {
   orderId: string;
   customerName: string;
   items: OrderItem[];
   total: number;
+  breakdown?: OrderBreakdown;
 }
 
-export function orderConfirmationHtml({ orderId, customerName, items, total }: OrderConfirmationProps): string {
+/** Lignes de ventilation communes au HTML et au texte. */
+function breakdownLines(b: OrderBreakdown): Array<[string, string]> {
+  const lines: Array<[string, string]> = [["Sous-total", `${b.subtotal.toFixed(2)} $`]];
+  lines.push(["Livraison", b.deliveryFee > 0 ? `${b.deliveryFee.toFixed(2)} $` : "Gratuite"]);
+  if (b.gst > 0) lines.push([b.gstNumber ? `TPS (${b.gstNumber})` : "TPS", `${b.gst.toFixed(2)} $`]);
+  if (b.qst > 0) lines.push([b.qstNumber ? `TVQ (${b.qstNumber})` : "TVQ", `${b.qst.toFixed(2)} $`]);
+  if (b.roundUp > 0) lines.push(["Arrondi pour la cause", `${b.roundUp.toFixed(2)} $`]);
+  return lines;
+}
+
+export function orderConfirmationHtml({ orderId, customerName, items, total, breakdown }: OrderConfirmationProps): string {
   const orderRef = orderId.slice(0, 8).toUpperCase();
+
+  const breakdownRows = breakdown
+    ? breakdownLines(breakdown).map(([label, value]) => `
+        <tr>
+          <td style="padding: 6px 0; font-family: Georgia, serif; color: #666; font-size: 14px;">${label}</td>
+          <td style="padding: 6px 0; text-align: right; font-family: Georgia, serif; color: #666; font-size: 14px;">${value}</td>
+        </tr>
+      `).join("")
+    : "";
 
   const itemsRows = items.map((item) => `
     <tr>
@@ -68,9 +99,10 @@ export function orderConfirmationHtml({ orderId, customerName, items, total }: O
               <p style="margin: 0 0 12px 0; font-size: 13px; color: #888; letter-spacing: 2px; text-transform: uppercase;">Détails de votre commande</p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 ${itemsRows}
+                ${breakdownRows ? `<tr><td colspan="2" style="padding: 10px 0 0 0;"></td></tr>${breakdownRows}` : ""}
                 <tr>
-                  <td style="padding: 16px 0 0 0; font-size: 16px; font-weight: bold; color: #1A1A1A;">Total</td>
-                  <td style="padding: 16px 0 0 0; text-align: right; font-size: 20px; font-weight: bold; color: #2D5016;">${total.toFixed(2)} $</td>
+                  <td style="padding: 16px 0 0 0; font-size: 16px; font-weight: bold; color: #1A1A1A; border-top: 1px solid #E0D5C8;">Total</td>
+                  <td style="padding: 16px 0 0 0; text-align: right; font-size: 20px; font-weight: bold; color: #2D5016; border-top: 1px solid #E0D5C8;">${total.toFixed(2)} $</td>
                 </tr>
               </table>
             </td>
@@ -98,9 +130,12 @@ export function orderConfirmationHtml({ orderId, customerName, items, total }: O
   `.trim();
 }
 
-export function orderConfirmationText({ orderId, customerName, items, total }: OrderConfirmationProps): string {
+export function orderConfirmationText({ orderId, customerName, items, total, breakdown }: OrderConfirmationProps): string {
   const orderRef = orderId.slice(0, 8).toUpperCase();
   const itemsList = items.map((i) => `  - ${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""} : ${(i.price * i.quantity).toFixed(2)} $`).join("\n");
+  const detail = breakdown
+    ? "\n" + breakdownLines(breakdown).map(([l, v]) => `  ${l} : ${v}`).join("\n") + "\n"
+    : "";
 
   return `
 Bonjour ${customerName},
@@ -110,7 +145,7 @@ Merci pour votre commande chez Florus Pocus !
 Numéro de commande : #${orderRef}
 
 ${itemsList}
-
+${detail}
 Total : ${total.toFixed(2)} $
 
 Nous vous contacterons sous peu pour coordonner la livraison ou la cueillette.

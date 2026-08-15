@@ -1,4 +1,5 @@
 import { SITE_URL } from "@/lib/site";
+import type { OrderBreakdown } from "@/lib/emails/orderConfirmation";
 
 interface NotificationItem {
   name: string;
@@ -18,6 +19,20 @@ export interface OrderNotificationProps {
   total: number;
   roundUp: number;
   isFloristOrder: boolean;
+  breakdown?: OrderBreakdown;
+}
+
+/** Lignes de ventilation à afficher au-dessus du total encaissé. */
+function summaryRows(p: OrderNotificationProps): Array<[string, string]> {
+  const b = p.breakdown;
+  if (!b) return p.roundUp > 0 ? [["Arrondi pour la cause", `${p.roundUp.toFixed(2)} $`]] : [];
+
+  const rows: Array<[string, string]> = [["Sous-total", `${b.subtotal.toFixed(2)} $`]];
+  rows.push(["Livraison", b.deliveryFee > 0 ? `${b.deliveryFee.toFixed(2)} $` : "Gratuite"]);
+  if (b.gst > 0) rows.push(["TPS", `${b.gst.toFixed(2)} $`]);
+  if (b.qst > 0) rows.push(["TVQ", `${b.qst.toFixed(2)} $`]);
+  if (b.roundUp > 0) rows.push(["Arrondi pour la cause", `${b.roundUp.toFixed(2)} $`]);
+  return rows;
 }
 
 function escapeHtml(s: string): string {
@@ -79,7 +94,11 @@ export function orderNotificationHtml(p: OrderNotificationProps): string {
             <p style="margin:24px 0 10px;font-size:12px;color:#888;letter-spacing:2px;text-transform:uppercase;">Articles</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
               ${rows}
-              ${p.roundUp > 0 ? `<tr><td style="padding:8px 0;border-bottom:1px solid #E0D5C8;color:#666;">Arrondi pour la cause</td><td style="padding:8px 0;border-bottom:1px solid #E0D5C8;text-align:right;color:#666;">${p.roundUp.toFixed(2)} $</td></tr>` : ""}
+              ${summaryRows(p).map(([l, v]) => `
+              <tr>
+                <td style="padding:6px 0;color:#666;font-size:13px;">${l}</td>
+                <td style="padding:6px 0;text-align:right;color:#666;font-size:13px;">${v}</td>
+              </tr>`).join("")}
               <tr>
                 <td style="padding:14px 0 0;font-size:16px;font-weight:bold;">Total encaissé</td>
                 <td style="padding:14px 0 0;text-align:right;font-size:20px;font-weight:bold;color:#2D5016;">${p.total.toFixed(2)} $</td>
@@ -118,7 +137,9 @@ ${p.address}
 ${p.notes ? `\nNote du client :\n${p.notes}\n` : ""}
 Articles :
 ${lines}
-${p.roundUp > 0 ? `  - Arrondi pour la cause : ${p.roundUp.toFixed(2)} $\n` : ""}
+
+${summaryRows(p).map(([l, v]) => `  ${l} : ${v}`).join("\n")}
+
 Total encaissé : ${p.total.toFixed(2)} $
 
 Voir la commande : ${SITE_URL}/admin/commandes

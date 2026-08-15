@@ -5,6 +5,7 @@ import { ArrowLeft, ShoppingBag, CheckCircle, Loader2, Lock, Heart, Store, Truck
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { createOrder } from "@/lib/actions/checkout";
+import { computeTotals, type PricingConfig } from "@/lib/pricing";
 
 declare global {
   interface Window {
@@ -43,7 +44,15 @@ const PROVINCES = [
   { code: "NU", name: "Nunavut" },
 ];
 
-export default function CheckoutClient({ causeName, pickupAddress }: { causeName: string; pickupAddress: string }) {
+export default function CheckoutClient({
+  causeName,
+  pickupAddress,
+  pricing,
+}: {
+  causeName: string;
+  pickupAddress: string;
+  pricing: PricingConfig;
+}) {
   const { items, total, clearCart } = useCart();
 
   const [success,  setSuccess]  = useState(false);
@@ -54,8 +63,12 @@ export default function CheckoutClient({ causeName, pickupAddress }: { causeName
   const [roundUp,  setRoundUp]  = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("delivery");
 
-  const roundUpAmount = total % 1 === 0 ? 0 : Math.round((Math.ceil(total) - total) * 100) / 100;
-  const finalTotal    = Math.round((total + (roundUp ? roundUpAmount : 0)) * 100) / 100;
+  // Même module de calcul que le serveur — l'affichage ne peut pas diverger du
+  // montant réellement encaissé.
+  const totals        = computeTotals({ subtotal: total, deliveryMethod, config: pricing, roundUpRequested: roundUp });
+  const preview       = computeTotals({ subtotal: total, deliveryMethod, config: pricing, roundUpRequested: true });
+  const roundUpAmount = preview.roundUp;
+  const finalTotal    = totals.total;
 
   const cardRef = useRef<SquareCard | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -145,7 +158,7 @@ export default function CheckoutClient({ causeName, pickupAddress }: { causeName
         metadata:    i.metadata,
       }))
     ));
-    fd.set("round_up_amount", roundUp ? String(roundUpAmount) : "0");
+    fd.set("round_up", roundUp ? "true" : "false");
 
     const orderResult = await createOrder({}, fd);
     if (!orderResult.success || !orderResult.orderId) {
@@ -357,7 +370,7 @@ export default function CheckoutClient({ causeName, pickupAddress }: { causeName
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <Heart size={13} style={{ color: "#D4A574" }} />
                       <span className="text-sm font-heading font-semibold" style={{ color: "#1A1A1A" }}>
-                        Arrondir à {Math.ceil(total).toFixed(2)} $ pour {causeName}
+                        Arrondir à {preview.total.toFixed(2)} $ pour {causeName}
                       </span>
                     </div>
                     <p className="text-xs opacity-50">
@@ -401,13 +414,45 @@ export default function CheckoutClient({ causeName, pickupAddress }: { causeName
                   </li>
                 ))}
               </ul>
-              {roundUp && roundUpAmount > 0 && (
-                <div className="px-5 py-3 border-t border-[#E0D5C8] flex justify-between items-center text-sm">
-                  <span className="flex items-center gap-1.5 opacity-60">
-                    <Heart size={12} style={{ color: "#D4A574" }} />
-                    Arrondi pour {causeName}
+              <div className="px-5 py-3 border-t border-[#E0D5C8] space-y-1.5 text-sm">
+                <div className="flex justify-between opacity-60">
+                  <span>Sous-total</span>
+                  <span>{totals.subtotal.toFixed(2)} $</span>
+                </div>
+                <div className="flex justify-between opacity-60">
+                  <span>{deliveryMethod === "pickup" ? "Ramassage" : "Livraison locale"}</span>
+                  <span>
+                    {totals.deliveryFee > 0
+                      ? `${totals.deliveryFee.toFixed(2)} $`
+                      : <span style={{ color: "#2D5016" }}>Gratuite</span>}
                   </span>
-                  <span className="opacity-60">+{roundUpAmount.toFixed(2)} $</span>
+                </div>
+                {pricing.taxesEnabled && (
+                  <>
+                    <div className="flex justify-between opacity-60">
+                      <span>TPS ({(pricing.gstRate * 100).toFixed(3).replace(/\.?0+$/, "")} %)</span>
+                      <span>{totals.gst.toFixed(2)} $</span>
+                    </div>
+                    <div className="flex justify-between opacity-60">
+                      <span>TVQ ({(pricing.qstRate * 100).toFixed(3).replace(/\.?0+$/, "")} %)</span>
+                      <span>{totals.qst.toFixed(2)} $</span>
+                    </div>
+                  </>
+                )}
+                {roundUp && totals.roundUp > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1.5 opacity-60">
+                      <Heart size={12} style={{ color: "#D4A574" }} />
+                      Arrondi pour {causeName}
+                    </span>
+                    <span className="opacity-60">+{totals.roundUp.toFixed(2)} $</span>
+                  </div>
+                )}
+              </div>
+
+              {deliveryMethod === "delivery" && totals.deliveryFee > 0 && (
+                <div className="px-5 pb-3 text-xs" style={{ color: "#D4A574" }}>
+                  Plus que {(pricing.freeDeliveryThreshold - totals.subtotal).toFixed(2)} $ pour la livraison gratuite.
                 </div>
               )}
               <div className="px-5 py-4 border-t border-[#E0D5C8] flex justify-between items-center"

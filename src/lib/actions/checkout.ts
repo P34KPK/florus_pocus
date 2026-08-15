@@ -1,7 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { createAdminClient } from "@/lib/supabase-server";
+import { createAdminClient, getSiteSettings } from "@/lib/supabase-server";
+import { computeTotals, pricingFromSettings } from "@/lib/pricing";
 import { isFloristAuthenticated } from "@/lib/actions/florist";
 
 const POSTAL_CODE = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
@@ -16,7 +17,9 @@ const CustomerSchema = z.object({
   province:        z.string().max(100).optional(),
   postal_code:     z.string().max(20).optional(),
   notes:           z.string().max(1000).optional(),
-  round_up_amount: z.coerce.number().min(0).max(1).optional(),
+  // Le client indique seulement s'il souhaite l'arrondi ; le montant exact est
+  // calculé ici, après taxes et livraison.
+  round_up:        z.boolean(),
 }).superRefine((data, ctx) => {
   // L'adresse n'est requise que pour la livraison locale (pas pour le ramassage).
   if (data.delivery_method === "delivery") {
@@ -54,7 +57,7 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
     province:        formData.get("province") || undefined,
     postal_code:     formData.get("postal_code") || undefined,
     notes:           formData.get("notes") || undefined,
-    round_up_amount: formData.get("round_up_amount") || 0,
+    round_up:        formData.get("round_up") === "true",
   });
 
   if (!parsed.success) {
@@ -127,11 +130,17 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
     }
   }
 
-  const itemsTotal  = priced.reduce((acc, p) => acc + p.unitPrice * p.item.quantity, 0);
-  const roundUp     = parsed.data.round_up_amount ?? 0;
-  const totalAmount = Math.round((itemsTotal + roundUp) * 100) / 100;
+  // Taxes et livraison : mêmes règles et mêmes réglages que ceux affichés à la
+  // caisse, via le module partagé `pricing.ts`.
+  const settings = await getSiteSettings();
+  const totals   = computeTotals({
+    subtotal:         priced.reduce((acc, p) => acc + p.unitPrice * p.item.quantity, 0),
+    deliveryMethod:   parsed.data.delivery_method,
+    config:           pricingFromSettings(settings),
+    roundUpRequested: parsed.data.round_up,
+  });
 
-  if (!(totalAmount > 0)) {
+  if (!(totals.total > 0)) {
     return { error: "Le montant de la commande est invalide." };
   }
 
@@ -151,8 +160,12 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
       customer_city:        isPickup ? null : parsed.data.city,
       customer_province:    isPickup ? null : parsed.data.province,
       customer_postal_code: isPickup ? null : parsed.data.postal_code,
-      total_amount:         totalAmount,
-      round_up_amount:      roundUp,
+      subtotal:             totals.subtotal,
+      delivery_fee:         totals.deliveryFee,
+      gst_amount:           totals.gst,
+      qst_amount:           totals.qst,
+      total_amount:         totals.total,
+      round_up_amount:      totals.roundUp,
       notes:                parsed.data.notes ?? null,
       status:               "pending",
       payment_status:       "pending",
@@ -188,5 +201,5 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
 
   // `total` remonte au client pour qu'il compare avec le montant affiché avant
   // de lancer le paiement — jamais de surprise sur la carte.
-  return { success: true, orderId: order.id, total: totalAmount };
+  return { success: true, orderId: order.id, total: totals.total };
 }
