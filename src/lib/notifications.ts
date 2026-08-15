@@ -38,6 +38,13 @@ export interface NotificationPayload {
 /** Fenêtre de remontée des événements — au-delà, ce n'est plus une notification. */
 const EVENT_WINDOW_DAYS = 30;
 
+/** Début du message, sur une seule ligne, pour lire l'essentiel sans cliquer. */
+function excerpt(text: string | null, max = 130): string {
+  if (!text) return "";
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length > max ? `${flat.slice(0, max).trimEnd()}…` : flat;
+}
+
 function frDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-CA", {
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
@@ -59,9 +66,9 @@ export async function getAdminNotifications(userId: string | null): Promise<Noti
       .gte("created_at", since)
       .order("created_at", { ascending: false }),
     supabase.from("contact_messages")
-      .select("id, name, created_at, read")
+      .select("id, name, message, created_at, read")
       .eq("read", false)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: true })   // les plus vieux d'abord : ce sont eux qu'on risque de perdre
       .limit(20),
     supabase.from("newsletter_subscribers")
       .select("id, email, created_at")
@@ -133,15 +140,42 @@ export async function getAdminNotifications(userId: string | null): Promise<Noti
     });
   }
 
-  // Messages de contact non lus.
-  const messages = (messagesRes.data ?? []) as Array<{ id: string; name: string; created_at: string }>;
-  if (messages.length) {
+  // Messages de contact non lus — un par un, du plus ancien au plus récent.
+  // Un compteur agrégé se survole trop facilement : une demande de commande
+  // restée sans réponse pendant des semaines est une vente perdue, elle doit
+  // être lisible sans cliquer.
+  const messages = (messagesRes.data ?? []) as Array<{
+    id: string; name: string; message: string | null; created_at: string;
+  }>;
+
+  const DETAILED = 5;
+  for (const m of messages.slice(0, DETAILED)) {
+    const days = Math.floor((Date.now() - new Date(m.created_at).getTime()) / 86400_000);
+
+    // L'urgence vient de l'attente : plus ça traîne, plus c'est grave.
+    const severity: NotificationSeverity = days >= 7 ? "danger" : days >= 2 ? "warning" : "info";
+    const age =
+      days >= 2 ? `sans réponse depuis ${days} jours`
+      : days === 1 ? "reçu hier"
+      : "reçu aujourd'hui";
+
     items.push({
-      id:       "action:unread-messages",
+      id:       `action:message:${m.id}`,
+      kind:     "action",
+      severity,
+      title:    `Message de ${m.name} — ${age}`,
+      description: excerpt(m.message) || `Reçu le ${frDate(m.created_at)}.`,
+      href:     "/admin/messages",
+    });
+  }
+
+  if (messages.length > DETAILED) {
+    items.push({
+      id:       "action:unread-messages-more",
       kind:     "action",
       severity: "info",
-      title:    `${messages.length} message${messages.length > 1 ? "s" : ""} non lu${messages.length > 1 ? "s" : ""}`,
-      description: `Dernier reçu de ${messages[0].name}, le ${frDate(messages[0].created_at)}.`,
+      title:    `${messages.length - DETAILED} autre${messages.length - DETAILED > 1 ? "s" : ""} message${messages.length - DETAILED > 1 ? "s" : ""} non lu${messages.length - DETAILED > 1 ? "s" : ""}`,
+      description: "Voir la boîte de réception complète.",
       href:     "/admin/messages",
     });
   }
@@ -172,17 +206,8 @@ export async function getAdminNotifications(userId: string | null): Promise<Noti
     });
   }
 
-  for (const m of messages) {
-    items.push({
-      id:       `event:msg:${m.id}`,
-      kind:     "event",
-      severity: "info",
-      title:    "Nouveau message de contact",
-      description: `${m.name} · ${frDate(m.created_at)}`,
-      href:     "/admin/messages",
-      createdAt: m.created_at,
-    });
-  }
+  // Pas d'événement pour les messages : ils sont déjà listés un par un dans
+  // les actions ci-dessus, et y figurer deux fois les diluerait.
 
   // Actions d'abord (par gravité), puis événements du plus récent au plus ancien.
   const rank: Record<NotificationSeverity, number> = { danger: 0, warning: 1, success: 2, info: 3 };
