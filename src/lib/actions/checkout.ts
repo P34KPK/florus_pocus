@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase-server";
+import { isFloristAuthenticated } from "@/lib/actions/florist";
 
 const POSTAL_CODE = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
@@ -30,7 +31,17 @@ const CustomerSchema = z.object({
   }
 });
 
-export type CheckoutState = { success?: boolean; orderId?: string; error?: string };
+export type CheckoutState = { success?: boolean; orderId?: string; total?: number; error?: string };
+
+/** Article tel qu'envoyé par le panier du navigateur. Le prix qu'il contient n'est JAMAIS utilisé. */
+const CartItemSchema = z.object({
+  referenceId: z.string().uuid(),
+  name:        z.string().max(255).optional(),
+  price:       z.number().optional(),
+  quantity:    z.number().int().min(1).max(99),
+  type:        z.enum(["product", "subscription", "autocueillette"]),
+  metadata:    z.record(z.string(), z.string()).optional(),
+});
 
 export async function createOrder(_prev: CheckoutState, formData: FormData): Promise<CheckoutState> {
   const parsed = CustomerSchema.safeParse({
@@ -55,20 +66,74 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
     return { error: "Panier vide ou invalide." };
   }
 
-  let items: Array<{ referenceId: string; name: string; price: number; quantity: number; type: string; metadata?: Record<string, string> }>;
+  let rawItems: unknown;
   try {
-    items = JSON.parse(itemsRaw);
+    rawItems = JSON.parse(itemsRaw);
   } catch {
     return { error: "Panier invalide." };
   }
 
-  if (!items.length) return { error: "Votre panier est vide." };
+  const itemsParsed = z.array(CartItemSchema).min(1).max(50).safeParse(rawItems);
+  if (!itemsParsed.success) {
+    return { error: "Votre panier est vide ou invalide." };
+  }
+  const items = itemsParsed.data;
 
-  const itemsTotal  = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const supabase = createAdminClient();
+
+  // ── Prix recalculés côté serveur ──────────────────────────────────────────
+  // Le panier vit dans le navigateur : ses prix sont modifiables par le client.
+  // On ne s'en sert donc que pour connaître QUOI a été commandé ; le montant
+  // vient toujours de la base. Les prix de gros ne s'appliquent que si le cookie
+  // fleuriste est valide, vérifié ici côté serveur.
+  const isFlorist = await isFloristAuthenticated();
+
+  const productIds = items.filter((i) => i.type === "product").map((i) => i.referenceId);
+  const subIds     = items.filter((i) => i.type === "subscription").map((i) => i.referenceId);
+
+  const [{ data: dbProducts }, { data: dbSubs }] = await Promise.all([
+    productIds.length
+      ? supabase.from("products").select("id, name, price, florist_price, price_type, active, stock").in("id", productIds)
+      : Promise.resolve({ data: [] as never[] }),
+    subIds.length
+      ? supabase.from("subscriptions").select("id, name, price, active").in("id", subIds)
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
+
+  const productById = new Map((dbProducts ?? []).map((p) => [p.id, p]));
+  const subById     = new Map((dbSubs ?? []).map((s) => [s.id, s]));
+
+  const priced: Array<{ item: (typeof items)[number]; name: string; unitPrice: number }> = [];
+
+  for (const item of items) {
+    if (item.type === "product") {
+      const p = productById.get(item.referenceId);
+      if (!p || !p.active)         return { error: "Un article de votre panier n'est plus disponible. Veuillez rafraîchir votre panier." };
+      if (p.price_type === "devis") return { error: `« ${p.name} » est vendu sur devis et ne peut pas être payé en ligne. Retirez-le de votre panier.` };
+      if (p.stock === 0)            return { error: `« ${p.name} » est épuisé. Retirez-le de votre panier.` };
+
+      const unitPrice = isFlorist && p.florist_price !== null ? Number(p.florist_price) : Number(p.price);
+      if (!(unitPrice > 0))         return { error: `Le prix de « ${p.name} » est indisponible. Contactez-nous pour finaliser cette commande.` };
+
+      priced.push({ item, name: p.name, unitPrice });
+    } else if (item.type === "subscription") {
+      const s = subById.get(item.referenceId);
+      if (!s || !s.active)          return { error: "Un abonnement de votre panier n'est plus disponible. Veuillez rafraîchir votre panier." };
+      if (!(Number(s.price) > 0))   return { error: `Le prix de « ${s.name} » est indisponible.` };
+
+      priced.push({ item, name: s.name, unitPrice: Number(s.price) });
+    } else {
+      return { error: "Un article de votre panier n'est plus offert. Veuillez rafraîchir votre panier." };
+    }
+  }
+
+  const itemsTotal  = priced.reduce((acc, p) => acc + p.unitPrice * p.item.quantity, 0);
   const roundUp     = parsed.data.round_up_amount ?? 0;
   const totalAmount = Math.round((itemsTotal + roundUp) * 100) / 100;
 
-  const supabase = createAdminClient();
+  if (!(totalAmount > 0)) {
+    return { error: "Le montant de la commande est invalide." };
+  }
 
   const isPickup = parsed.data.delivery_method === "pickup";
   const fullAddress = isPickup
@@ -91,6 +156,7 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
       notes:                parsed.data.notes ?? null,
       status:               "pending",
       payment_status:       "pending",
+      is_florist_order:     isFlorist,
     })
     .select("id")
     .single();
@@ -100,15 +166,15 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
     return { error: "Erreur lors de la création de la commande." };
   }
 
-  const orderItems = items.map((item) => ({
+  const orderItems = priced.map(({ item, name, unitPrice }) => ({
     order_id:       order.id,
     product_id:     item.type === "product" ? item.referenceId : null,
-    product_type:   item.type as "product" | "subscription" | "autocueillette",
+    product_type:   item.type,
     quantity:       item.quantity,
-    price_per_unit: item.price,
+    price_per_unit: unitPrice,
     metadata:       {
-      product_name: item.name,
       ...item.metadata,
+      product_name: name,
     },
   }));
 
@@ -120,5 +186,7 @@ export async function createOrder(_prev: CheckoutState, formData: FormData): Pro
     return { error: "Erreur lors de l'enregistrement de la commande." };
   }
 
-  return { success: true, orderId: order.id };
+  // `total` remonte au client pour qu'il compare avec le montant affiché avant
+  // de lancer le paiement — jamais de surprise sur la carte.
+  return { success: true, orderId: order.id, total: totalAmount };
 }

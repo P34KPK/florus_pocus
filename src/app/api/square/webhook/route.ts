@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 import { createAdminClient } from "@/lib/supabase-server";
-import { getResend, FROM_EMAIL } from "@/lib/resend";
-import { orderConfirmationHtml, orderConfirmationText } from "@/lib/emails/orderConfirmation";
+import { sendOrderEmails } from "@/lib/orderEmails";
 
 function verifySignature(body: string, signature: string, url: string): boolean {
   const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
@@ -46,8 +45,12 @@ export async function POST(req: NextRequest) {
     event.type === "payment.completed" ||
     ((event.type === "payment.updated" || event.type === "payment.created") && status === "COMPLETED")
   ) {
+    // Les paiements encaissés au terminal (POS) passent aussi par ce webhook,
+    // mais sans reference_id : ils ne correspondent à aucune commande web.
     if (orderId && paymentId) {
-      const { data: updated } = await supabase
+      // Ne marque payée qu'une commande encore en attente, sans écraser un
+      // statut déjà avancé (expédiée, livrée…).
+      await supabase
         .from("orders")
         .update({
           payment_status:    "completed",
@@ -55,37 +58,13 @@ export async function POST(req: NextRequest) {
           square_payment_id: paymentId,
         })
         .eq("id", orderId)
-        .eq("payment_status", "pending")
-        .select("id, customer_name, customer_email")
-        .single();
+        .eq("payment_status", "pending");
 
-      if (updated?.customer_email) {
-        const { data: orderItems } = await supabase
-          .from("order_items")
-          .select("price_per_unit, quantity, metadata")
-          .eq("order_id", orderId);
-
-        const items = (orderItems ?? []).map((row) => ({
-          name:     (row.metadata as { product_name?: string })?.product_name ?? "Article",
-          quantity: row.quantity,
-          price:    row.price_per_unit,
-        }));
-
-        const total = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-
-        try {
-          const resend = getResend();
-          await resend.emails.send({
-            from:    FROM_EMAIL,
-            to:      updated.customer_email,
-            subject: "Votre commande Florus Pocus est confirmée 🌸",
-            html:    orderConfirmationHtml({ orderId, customerName: updated.customer_name, items, total }),
-            text:    orderConfirmationText({ orderId, customerName: updated.customer_name, items, total }),
-          });
-        } catch (err) {
-          console.error("[webhook] resend error:", err);
-        }
-      }
+      // Filet de secours : appelé systématiquement, même si la route de
+      // paiement a déjà marqué la commande. L'idempotence est assurée par
+      // `orders.emails_sent_at`, donc aucun risque de doublon — et si la route
+      // de paiement a planté après l'encaissement, les courriels partent ici.
+      await sendOrderEmails(orderId);
     }
   }
 

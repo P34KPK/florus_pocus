@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Grid, List, ShoppingBag, Mail, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
+import { isSoldOut, lowStockCount } from "@/lib/inventory";
 
 const LEGACY_LABELS: Record<string, string> = {
   "fleurs-fraiches":   "Fleurs Fraîches",
@@ -69,7 +70,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
               ) : (
                 <>
                   <p className="font-heading font-bold text-base sm:text-lg" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
-                  {product.stock === 0
+                  {isSoldOut(product)
                     ? <span className="text-xs opacity-40">Épuisé</span>
                     : <button onClick={handleAdd}
                         className="font-heading font-semibold px-3 py-1.5 rounded-xl text-xs text-white transition-all hover:opacity-90"
@@ -115,7 +116,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
           ) : (
             <>
               <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
-              {product.stock === 0
+              {isSoldOut(product)
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}
                     className="relative z-10 flex items-center gap-1.5 font-heading font-semibold px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"
@@ -127,7 +128,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
             </>
           )}
         </div>
-        {product.stock && product.stock < 10 && product.stock > 0 && (
+        {lowStockCount(product) !== null && (
           <p className="text-xs mt-2 font-medium" style={{ color: "#D4A574" }}>
             ⚠️ Plus que {product.stock} en stock
           </p>

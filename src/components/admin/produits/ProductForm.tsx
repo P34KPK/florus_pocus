@@ -23,6 +23,9 @@ const CATEGORY_SUGGESTIONS = [
 export default function ProductForm({ action, product, onSuccess }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const [priceType, setPriceType]   = useState<"fixed" | "devis">(product?.price_type ?? "fixed");
+  // Par défaut on ne suit pas l'inventaire : un 0 saisi par inadvertance ne doit
+  // plus pouvoir retirer un produit de la vente à l'insu du gestionnaire.
+  const [trackInventory, setTrackInventory] = useState<boolean>(product?.track_inventory ?? false);
 
   // Galerie d'images — initialisée depuis product.images ou image_url existant
   const initialImages: string[] = product?.images && product.images.length > 0
@@ -109,10 +112,42 @@ export default function ProductForm({ action, product, onSuccess }: Props) {
         </div>
 
         <div>
-          <label className={label}>Stock</label>
-          <input name="stock" type="number" min="0" defaultValue={product?.stock ?? ""}
-            className={field} placeholder="Laissez vide si illimité" />
+          <label className={label}>Inventaire</label>
+          <div className="flex items-center gap-3 h-[42px]">
+            <button
+              type="button"
+              onClick={() => setTrackInventory((v) => !v)}
+              aria-pressed={trackInventory}
+              className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+              style={{ backgroundColor: trackInventory ? "#2D5016" : "#E0D5C8" }}
+            >
+              <span
+                className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+                style={{ left: trackInventory ? 22 : 2 }}
+              />
+            </button>
+            <span className="text-sm" style={{ color: trackInventory ? "#2D5016" : "#888" }}>
+              {trackInventory ? "Suivre les quantités" : "Toujours disponible"}
+            </span>
+          </div>
+          <input type="hidden" name="track_inventory" value={trackInventory ? "true" : "false"} />
+          <p className="text-xs mt-1.5" style={{ color: "#888" }}>
+            {trackInventory
+              ? "Le produit s'affichera « Épuisé » et ne pourra plus être commandé quand la quantité tombe à 0."
+              : "Le produit reste commandable en tout temps — aucune quantité à tenir à jour."}
+          </p>
         </div>
+
+        {trackInventory && (
+          <div>
+            <label className={label}>Quantité en stock</label>
+            <input name="stock" type="number" min="0" defaultValue={product?.stock ?? ""}
+              className={field} placeholder="0" />
+            <p className="text-xs mt-1.5" style={{ color: "#888" }}>
+              0 = épuisé, retiré de la vente.
+            </p>
+          </div>
+        )}
 
         <div className="col-span-2">
           <label className={label}>Description *</label>

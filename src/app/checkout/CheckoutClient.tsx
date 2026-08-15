@@ -110,7 +110,12 @@ export default function CheckoutClient({ causeName, pickupAddress }: { causeName
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!cardRef.current) return;
+    // Sans ce message, un formulaire Square non chargé rendait le bouton
+    // totalement muet : le client croyait avoir commandé sans rien déclencher.
+    if (!cardRef.current) {
+      setError("Le formulaire de paiement n'est pas encore prêt. Rechargez la page et réessayez.");
+      return;
+    }
     setError(null);
     setPending(true);
 
@@ -149,10 +154,23 @@ export default function CheckoutClient({ causeName, pickupAddress }: { causeName
       return;
     }
 
+    // Le serveur recalcule les prix depuis la base. Si son total diffère de
+    // celui affiché, le panier est périmé : on arrête avant de débiter la carte
+    // plutôt que de facturer un montant que l'acheteur n'a pas vu.
+    const serverTotal = orderResult.total ?? finalTotal;
+    if (Math.abs(serverTotal - finalTotal) > 0.01) {
+      setError(
+        `Le total a changé (${serverTotal.toFixed(2)} $ au lieu de ${finalTotal.toFixed(2)} $). ` +
+        "Rafraîchissez la page pour vérifier votre panier avant de payer.",
+      );
+      setPending(false);
+      return;
+    }
+
     const payRes = await fetch("/api/square/payment", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ sourceId, orderId: orderResult.orderId, amountCAD: finalTotal }),
+      body:    JSON.stringify({ sourceId, orderId: orderResult.orderId, amountCAD: serverTotal }),
     });
 
     const payData = await payRes.json();

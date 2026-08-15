@@ -23,6 +23,8 @@ export interface Product {
   price_type: "fixed" | "devis";
   florist_price: number | null;
   florist_only: boolean;
+  /** true = stock suivi, `stock === 0` signifie « Épuisé ». false = toujours vendable. */
+  track_inventory: boolean;
   stock: number | null;
   image_url: string | null;
   season: string | null;

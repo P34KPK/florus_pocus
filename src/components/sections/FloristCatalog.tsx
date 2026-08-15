@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Grid, List, ShoppingBag, Tag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
+import { isSoldOut } from "@/lib/inventory";
 
 const LEGACY_LABELS: Record<string, string> = {
   "fleurs-fraiches":   "Fleurs Fraîches",
@@ -74,7 +75,7 @@ function ProductRow({ product }: { product: Product }) {
             </p>
           )}
         </div>
-        {product.stock === 0
+        {isSoldOut(product)
           ? <span className="text-xs px-3 py-2 rounded-xl bg-gray-100 text-gray-400">Épuisé</span>
           : <button onClick={handleAdd}
               className="font-heading font-semibold px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90"
@@ -127,7 +128,7 @@ function ProductCard({ product }: { product: Product }) {
               <p className="text-xs line-through" style={{ color: "#bbb" }}>{product.price.toFixed(2)} $</p>
             )}
           </div>
-          {product.stock === 0
+          {isSoldOut(product)
             ? <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-400">Épuisé</span>
             : <button onClick={handleAdd}
                 className="flex items-center gap-1.5 font-heading font-semibold px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"

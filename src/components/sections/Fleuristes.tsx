@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Grid, List, ShoppingBag, Mail } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
+import { isSoldOut } from "@/lib/inventory";
 
 interface FleuristesProps {
   products?: Product[];
@@ -13,16 +14,16 @@ interface FleuristesProps {
 }
 
 const PLACEHOLDER_FLEURS: Product[] = [
-  { id: "f1",  name: "Rose Rouge",          description: "Roses fraîchement coupées, parfum délicat.",                        category: "fleur",    price: 8.5, price_type: "fixed", florist_price: null, florist_only: false, stock: 50, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
-  { id: "f2",  name: "Tulipe Rose",          description: "Tulipes printanières, tiges longues et droites.",                  category: "fleur",    price: 6,   price_type: "fixed", florist_price: null, florist_only: false, stock: 30, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
-  { id: "f3",  name: "Tournesol",            description: "Grands tournesols lumineux qui égaient n'importe quel espace.",    category: "fleur",    price: 5.5, price_type: "fixed", florist_price: null, florist_only: false, stock: 40, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
-  { id: "f4",  name: "Confiture de Roses",   description: "Confiture artisanale aux pétales de roses.",                      category: "transforme", price: 9, price_type: "fixed", florist_price: null, florist_only: false, stock: 20, image_url: null, season: "comestibles",       active: true, created_at: "", updated_at: "" },
-  { id: "f5",  name: "Zinnia Multicolore",   description: "Zinnias vibrants dans toutes les couleurs de l'arc-en-ciel.",     category: "fleur",    price: 4.5, price_type: "fixed", florist_price: null, florist_only: false, stock: 60, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
-  { id: "f6",  name: "Dahlia Bordeaux",      description: "Dahlias profonds aux pétales veloutés.",                          category: "fleur",    price: 7.5, price_type: "fixed", florist_price: null, florist_only: false, stock: 15, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
-  { id: "f7",  name: "Plant de Tomate Serre",description: "Plants de tomates cultivés en serre Inter-Ligna.",                category: "fleur",    price: 5,   price_type: "fixed", florist_price: null, florist_only: false, stock: 25, image_url: null, season: "serre-inter-ligna", active: true, created_at: "", updated_at: "" },
-  { id: "f8",  name: "Lisianthus Blanc",     description: "Lisianthus élégants, ressemblent aux roses.",                     category: "fleur",    price: 8,   price_type: "fixed", florist_price: null, florist_only: false, stock: 18, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
-  { id: "f9",  name: "Tablier de Jardinage", description: "Tablier en coton épais, poche avant, style artisan.",             category: "transforme", price: 42, price_type: "fixed", florist_price: null, florist_only: false, stock: 10, image_url: null, season: "garde-robe",       active: true, created_at: "", updated_at: "" },
-  { id: "f10", name: "Sirop de Lavande",     description: "Sirop de lavande artisanal, idéal en cocktail ou en dessert.",    category: "transforme", price: 12, price_type: "fixed", florist_price: null, florist_only: false, stock: 35, image_url: null, season: "comestibles",       active: true, created_at: "", updated_at: "" },
+  { id: "f1",  name: "Rose Rouge",          description: "Roses fraîchement coupées, parfum délicat.",                        category: "fleur",    price: 8.5, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 50, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
+  { id: "f2",  name: "Tulipe Rose",          description: "Tulipes printanières, tiges longues et droites.",                  category: "fleur",    price: 6,   price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 30, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
+  { id: "f3",  name: "Tournesol",            description: "Grands tournesols lumineux qui égaient n'importe quel espace.",    category: "fleur",    price: 5.5, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 40, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
+  { id: "f4",  name: "Confiture de Roses",   description: "Confiture artisanale aux pétales de roses.",                      category: "transforme", price: 9, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 20, image_url: null, season: "comestibles",       active: true, created_at: "", updated_at: "" },
+  { id: "f5",  name: "Zinnia Multicolore",   description: "Zinnias vibrants dans toutes les couleurs de l'arc-en-ciel.",     category: "fleur",    price: 4.5, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 60, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
+  { id: "f6",  name: "Dahlia Bordeaux",      description: "Dahlias profonds aux pétales veloutés.",                          category: "fleur",    price: 7.5, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 15, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
+  { id: "f7",  name: "Plant de Tomate Serre",description: "Plants de tomates cultivés en serre Inter-Ligna.",                category: "fleur",    price: 5,   price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 25, image_url: null, season: "serre-inter-ligna", active: true, created_at: "", updated_at: "" },
+  { id: "f8",  name: "Lisianthus Blanc",     description: "Lisianthus élégants, ressemblent aux roses.",                     category: "fleur",    price: 8,   price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 18, image_url: null, season: "fleurs-fraiches",   active: true, created_at: "", updated_at: "" },
+  { id: "f9",  name: "Tablier de Jardinage", description: "Tablier en coton épais, poche avant, style artisan.",             category: "transforme", price: 42, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 10, image_url: null, season: "garde-robe",       active: true, created_at: "", updated_at: "" },
+  { id: "f10", name: "Sirop de Lavande",     description: "Sirop de lavande artisanal, idéal en cocktail ou en dessert.",    category: "transforme", price: 12, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 35, image_url: null, season: "comestibles",       active: true, created_at: "", updated_at: "" },
 ];
 
 const LEGACY_LABELS: Record<string, string> = {
@@ -94,7 +95,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
           ) : (
             <>
               <p className="font-heading font-bold text-lg" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
-              {product.stock === 0
+              {isSoldOut(product)
                 ? <span className="text-xs opacity-40">Épuisé</span>
                 : <button onClick={handleAdd} className="font-heading font-semibold px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90"
                     style={{ backgroundColor: "#2D5016" }}>
@@ -142,7 +143,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
           ) : (
             <>
               <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
-              {product.stock === 0
+              {isSoldOut(product)
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}
                     className="flex items-center gap-1.5 font-heading font-semibold px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"

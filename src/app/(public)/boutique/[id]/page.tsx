@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Mail } from "lucide-react";
 import { getProduct, getActiveProducts } from "@/lib/supabase-server";
+import { isSoldOut, lowStockCount } from "@/lib/inventory";
 import type { Metadata } from "next";
 import AddToCartButton from "./AddToCartButton";
 import ProductGallery from "./ProductGallery";
@@ -43,7 +44,7 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const isDevis    = product.price_type === "devis";
-  const isEpuise   = product.stock === 0;
+  const isEpuise   = isSoldOut(product);
   const seasonLabel = product.season ? (LEGACY_LABELS[product.season] ?? product.season) : null;
 
   const related = (allProducts as typeof product[])
@@ -156,7 +157,7 @@ export default async function ProductPage({ params }: Props) {
             )}
 
             {/* Stock faible */}
-            {!isDevis && product.stock !== null && product.stock > 0 && product.stock < 10 && (
+            {!isDevis && lowStockCount(product) !== null && (
               <p className="text-sm mt-4 font-medium" style={{ color: "#D4A574" }}>
                 ⚠️ Plus que {product.stock} en stock
               </p>

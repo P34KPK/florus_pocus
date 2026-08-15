@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShoppingBag, Mail } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
+import { isSoldOut, lowStockCount } from "@/lib/inventory";
 
 const LEGACY_LABELS: Record<string, string> = {
   "fleurs-fraiches":   "Fleurs Fraîches",
@@ -25,11 +26,11 @@ interface TransformedProductsProps {
 }
 
 const PLACEHOLDER_TRANSFORMES: Product[] = [
-  { id: "t1", name: "Gelée de Roses",       description: "Gelée artisanale aux pétales de roses fraîches. Parfaite sur toast ou fromage.", category: "transforme", price: 12, price_type: "fixed", florist_price: null, florist_only: false, stock: 24, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t2", name: "Sirop de Lavande",     description: "Sirop naturel de lavande québécoise. Idéal pour cocktails, limonades et desserts.", category: "transforme", price: 14, price_type: "fixed", florist_price: null, florist_only: false, stock: 18, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t3", name: "Bouquet Séché Naturel",description: "Bouquet de fleurs séchées naturellement, pour une décoration durable.", category: "transforme", price: 28, price_type: "fixed", florist_price: null, florist_only: false, stock: 10, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t4", name: "Vinaigre de Fleurs",   description: "Vinaigre de cidre infusé aux fleurs sauvages. Pour salades et marinades.", category: "transforme", price: 11, price_type: "fixed", florist_price: null, florist_only: false, stock: 20, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
-  { id: "t5", name: "Tisane de la Ferme",   description: "Mélange de plantes séchées de notre jardin pour une tisane apaisante.", category: "transforme", price: 9, price_type: "fixed", florist_price: null, florist_only: false, stock: 30, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t1", name: "Gelée de Roses",       description: "Gelée artisanale aux pétales de roses fraîches. Parfaite sur toast ou fromage.", category: "transforme", price: 12, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 24, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t2", name: "Sirop de Lavande",     description: "Sirop naturel de lavande québécoise. Idéal pour cocktails, limonades et desserts.", category: "transforme", price: 14, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 18, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t3", name: "Bouquet Séché Naturel",description: "Bouquet de fleurs séchées naturellement, pour une décoration durable.", category: "transforme", price: 28, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 10, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t4", name: "Vinaigre de Fleurs",   description: "Vinaigre de cidre infusé aux fleurs sauvages. Pour salades et marinades.", category: "transforme", price: 11, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 20, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
+  { id: "t5", name: "Tisane de la Ferme",   description: "Mélange de plantes séchées de notre jardin pour une tisane apaisante.", category: "transforme", price: 9, price_type: "fixed", florist_price: null, florist_only: false, track_inventory: true, stock: 30, image_url: null, season: null, active: true, created_at: "", updated_at: "" },
 ];
 
 function TransformedCard({ product }: { product: Product }) {
@@ -79,7 +80,7 @@ function TransformedCard({ product }: { product: Product }) {
           ) : (
             <>
               <p className="font-heading font-bold text-2xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
-              {product.stock === 0
+              {isSoldOut(product)
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}
                     className="relative z-10 flex items-center gap-2 font-heading font-semibold px-5 py-2.5 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:scale-105"
@@ -91,7 +92,7 @@ function TransformedCard({ product }: { product: Product }) {
             </>
           )}
         </div>
-        {product.stock && product.stock < 10 && product.stock > 0 && (
+        {lowStockCount(product) !== null && (
           <p className="text-xs mt-2 font-medium" style={{ color: "#D4A574" }}>
             ⚠️ Plus que {product.stock} en stock
           </p>

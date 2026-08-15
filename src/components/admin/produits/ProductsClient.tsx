@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import type { Product } from "@/types";
+import { isSoldOut } from "@/lib/inventory";
 import Modal from "@/components/admin/Modal";
 import ProductForm from "./ProductForm";
 import { createProduct, updateProduct, deleteProduct, toggleProductActive } from "@/lib/actions/products";
@@ -95,7 +96,16 @@ export default function ProductsClient({ products }: Props) {
                     </td>
                     <td className="px-6 py-4 font-semibold">{p.price.toFixed(2)} $</td>
                     <td className="px-6 py-4">
-                      <span className={p.stock === 0 ? "text-red-500 font-medium" : ""}>{p.stock ?? "∞"}</span>
+                      {!p.track_inventory ? (
+                        <span className="text-xs opacity-40" title="Inventaire non suivi — toujours disponible">∞</span>
+                      ) : isSoldOut(p) ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold text-red-600 bg-red-100"
+                          title="Affiché « Épuisé » — ce produit ne peut pas être commandé">
+                          0 · Épuisé
+                        </span>
+                      ) : (
+                        <span className="font-medium">{p.stock}</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${p.active ? "text-green-700 bg-green-100" : "text-red-600 bg-red-100"}`}>

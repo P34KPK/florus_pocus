@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-06-29 (session 13 — désactivation Image Optimization Vercel, zéro transformation facturable)
+**Dernière session :** 2026-08-14 (session 14 — audit du tunnel de commande : notification admin, courriels fiabilisés, prix recalculés serveur)
 
 ---
 
@@ -95,6 +95,19 @@
   - Compromis mineur : mobile télécharge la pleine taille (1920px) au lieu d'une version redimensionnée
   - Commit `c25a96a` poussé sur `main`
 
+- [x] **Session 14 — Audit du tunnel de commande (suite à une commande fleuriste « disparue ») :**
+  - **Constat de l'enquête** : 1 seule commande en base (test du 31 mai, `pending`) et **0 paiement sur 86 dans Square provenant du site** (aucun `reference_id`). La cliente n'a jamais été débitée ; aucune commande web n'a jamais abouti.
+  - **Cause de l'absence de notification** : il n'existait **aucun** courriel de commande vers l'admin. Ajout de `src/lib/emails/orderNotification.ts` (bon de travail : client, mode de réception, adresse, note, articles, total, badge FLEURISTE, lien admin).
+  - **Courriels fiabilisés** : `src/lib/orderEmails.ts` centralise l'envoi. Lecture du `{ error }` de Resend (il ne throw jamais — même bug qu'en session 11, jamais reporté sur les routes de commande). Erreurs journalisées ET écrites dans `orders.email_error`.
+  - **Webhook redevenu un filet de secours** : il ne pouvait plus jamais envoyer de courriel (la route de paiement avait déjà passé `payment_status` à `completed`, donc son `.eq("payment_status","pending")` ne retournait aucune ligne). Il appelle désormais `sendOrderEmails()` systématiquement ; l'idempotence vient de `orders.emails_sent_at`.
+  - **Faille de prix corrigée** : `createOrder` recalcule tous les prix depuis la base (les prix du panier navigateur étaient acceptés tels quels — on pouvait payer 0,01 $). Prix de gros appliqués seulement si le cookie fleuriste est valide côté serveur. Refus des produits inactifs, `devis` et `stock = 0`.
+  - **Montant encaissé** : la route de paiement charge `orders.total_amount` (base), plus le montant envoyé par le navigateur. En cas d'écart → 409 « panier périmé » au lieu de débiter une autre somme.
+  - Garde-fou mort réparé : `payment_status === "paid"` → `"completed"` (l'enum ne contient pas `"paid"`, le test anti-double-paiement n'a jamais fonctionné).
+  - Bouton « Payer » muet corrigé : si le SDK Square n'est pas chargé, un message s'affiche au lieu d'un `return` silencieux.
+  - Migration `022_orders_email_tracking.sql` + `scripts/verify-orders-pipeline.mjs` (vérificateur lecture seule).
+  - **Suivi d'inventaire explicite (migration 023)** : enquête sur les 39 produits « Épuisé » → tous de catégorie `fleur`, tous créés le 2026-06-08, 38 sur 39 jamais rouverts depuis. Ce n'était pas un choix maintenu mais une saisie initiale périmée. Ajout de `track_inventory` + `src/lib/inventory.ts` (`isSoldOut` / `lowStockCount`) + interrupteur admin. Remplissage : les 39 repassent en « toujours disponible » et redeviennent commandables.
+  - ⚠️ **Non traité, décision d'affaires en attente** : aucune TPS/TVQ sur les commandes web (les ventes au terminal en facturent) ; frais de livraison annoncés 9,99 $ dans le panier mais jamais ajoutés au total ; 39 des 60 produits fleuristes sont à `stock = 0` donc affichés « Épuisé » et non commandables.
+
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
 - [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`
@@ -147,6 +160,8 @@
 - [x] Migration `019_product_images.sql` — table `product_images` (id, product_id FK cascade, image_url, sort_order, created_at), RLS public read, écriture service_role
 - [x] Migration `020_page_views.sql` — table `page_views` (id BIGSERIAL, path, referrer, created_at), pas de PII, 2 index (created_at, path), RLS activé sans policy publique (service_role uniquement)
 - [x] Migration `021_orders_delivery.sql` — 4 colonnes sur `orders` : `delivery_method TEXT NOT NULL DEFAULT 'delivery' CHECK (IN ('pickup','delivery'))`, `customer_city`, `customer_province`, `customer_postal_code`
+- [x] Migration `023_product_track_inventory.sql` — colonne `track_inventory BOOLEAN NOT NULL DEFAULT false` sur `products` + remplissage (`true` si `stock > 0`, `false` si `stock` NULL ou 0)
+- [x] Migration `022_orders_email_tracking.sql` — 3 colonnes sur `orders` : `is_florist_order BOOLEAN NOT NULL DEFAULT false`, `emails_sent_at TIMESTAMPTZ` (verrou d'idempotence des courriels), `email_error TEXT` + index partiel `idx_orders_emails_pending`
 - [x] Popup infolettre boutique — apparaît 2.5s après visite (localStorage `fp_newsletter_shown`), code promo BIENVENUE10
 - [x] Formulaire contact — champ téléphone optionnel + case "s'inscrire à l'infolettre"
 - [x] Bandeau cookie consent (Loi 25 Québec) — toutes les pages publiques, localStorage `fp_cookie_consent`
@@ -170,6 +185,9 @@
 - [x] ~~Sitemap + SEO~~ — FAIT : `app/sitemap.ts` (statiques + blog), `app/robots.ts`, metadataBase, openGraph/twitter, canonical par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
 - [ ] **Gestion stock** — sold out sur les produits (champ stock existe, affichage "Épuisé" existe, mais pas de logique automatique)
+- [ ] **⚠️ Aucune TPS/TVQ sur les commandes web** — les ventes au terminal Square facturent les taxes (23,00 $ = 20 × 1,15), le site non. Décision d'affaires en attente.
+- [ ] **⚠️ Frais de livraison jamais facturés** — le panier annonce « 9,99 $ / gratuite dès 100 $ » mais `createOrder` ne les ajoute pas au total. Soit les ajouter, soit retirer la mention.
+- [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
 
 ---
 
@@ -439,6 +457,28 @@ payment_status = 'pending' | 'completed' | 'failed'
 Après un paiement réussi : `status = "paid"`, `payment_status = "completed"`.
 (Bug historique session 4 : le code écrivait `"confirmed"` / `"paid"` invalides → UPDATE échouait en silence → commandes bloquées à pending. Corrigé.)
 Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
+
+### ⚠️ Courriels de commande — un seul point d'entrée
+`src/lib/orderEmails.ts` → `sendOrderEmails(orderId)` envoie **les deux** courriels (confirmation client + notification admin). Appelée par la route de paiement ET par le webhook Square.
+- **Idempotence** : réservation atomique sur `orders.emails_sent_at` (`UPDATE … WHERE emails_sent_at IS NULL RETURNING`). Le premier arrivé envoie, l'autre ressort sans rien faire. C'est ce qui permet au webhook d'être un vrai filet de secours sans créer de doublons.
+- **Ne jamais rappeler Resend directement depuis une route de commande** — passer par cette fonction, sinon on reperd le suivi et l'idempotence.
+- Resend ne lève **jamais** d'exception : toujours lire le `{ error }` retourné. Les échecs atterrissent dans `orders.email_error`, visible via `node scripts/verify-orders-pipeline.mjs`.
+- L'adresse admin vient de `site_settings.contact_email` (repli `info@floruspocus.com`).
+
+### ⚠️ Inventaire — `track_inventory`, jamais `stock === 0` en dur
+`src/lib/inventory.ts` est la source unique : `isSoldOut(p)` = `track_inventory && stock === 0`, et `lowStockCount(p)` pour l'avertissement « Plus que N en stock ». **Ne jamais retester `stock === 0` directement** — utiliser ces helpers (6 emplacements : `FloristCatalog`, `BoutiqueShop`, `Fleuristes`, `TransformedProducts`, `boutique/[id]`, `ProductsClient`).
+- Pourquoi : `stock` encodait 3 états dans un champ nullable, dont deux quasi identiques à la saisie mais aux effets opposés (vide = illimité, `0` = **invendable**). Diagnostic de session 14 : 39 fiches de fleurs coupées saisies à 0 le 2026-06-08, jamais rouvertes ensuite → tout le catalogue de fleurs était invendable, sans aucun signal.
+- Admin : interrupteur « Suivre les quantités / Toujours disponible » dans `ProductForm`. Désactivé (défaut), le champ Quantité disparaît et le produit reste vendable ; activé, `0` signifie vraiment « Épuisé ».
+- `products.ts` force `stock = null` quand `track_inventory` est faux — pas de valeur fantôme qui ressurgit si on réactive le suivi.
+- La liste admin affiche `∞` (non suivi), la quantité, ou un badge rouge `0 · Épuisé` pour rendre un blocage de vente immédiatement visible.
+- Le stock n'est toujours **pas** décrémenté automatiquement à l'achat — c'est un compteur manuel.
+
+### ⚠️ Prix — recalculés côté serveur, jamais lus du panier
+`createOrder` (`src/lib/actions/checkout.ts`) ignore les prix envoyés par le navigateur : il recharge `products` / `subscriptions` depuis la base. Le panier ne sert qu'à savoir **quoi** a été commandé.
+- Prix de gros (`florist_price`) appliqué uniquement si `isFloristAuthenticated()` est vrai côté serveur — le cookie `fp_florist` est la seule source d'autorité.
+- Refus explicite : produit inactif/introuvable, `price_type = 'devis'`, `stock = 0`, prix ≤ 0.
+- `createOrder` retourne `total` ; `CheckoutClient` compare avec le montant affiché et **abandonne** en cas d'écart plutôt que de débiter une somme non vue par l'acheteur.
+- La route de paiement encaisse `orders.total_amount` (base), jamais `amountCAD` du client.
 
 ### Square Webhook — URL dynamique
 Le handler utilise `req.url` (pas `NEXT_PUBLIC_SITE_URL`) pour la vérification HMAC — évite le mismatch www vs non-www.
