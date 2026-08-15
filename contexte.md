@@ -12,7 +12,8 @@
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-14 (session 14 — audit du tunnel de commande, taxes/livraison, suivi d'inventaire, cloche de notifications admin)
 **Migrations appliquées en prod :** jusqu'à `025` incluse
-**Derniers commits :** `e2580ae` (correctifs commande + inventaire) · `553d1a5` (taxes/livraison + notifications) — tous deux déployés et vérifiés en production
+**Derniers commits :** `e2580ae` (correctifs commande + inventaire) · `553d1a5` (taxes/livraison + notifications) · `d2661bb` (messages non lus hiérarchisés) — tous déployés et vérifiés en production
+**Build id en prod après `d2661bb` :** `gNOG2Mt824wjCLxPtMn0k` (était `bPQDZdOEQ9DUJYdUprnSs` avant la session 14)
 
 ---
 
@@ -117,7 +118,9 @@
   - Espace fleuristes : **60 / 60 produits commandables** (21 / 60 avant), fleurs coupées 50 / 50.
   - Cloche simulée sur les données réelles : pastille à 7 — alerte numéros TPS/TVQ + 3 messages non lus + activité.
   - ⚠️ **3 messages de contact jamais ouverts**, dont Marianne Pertuiset-Ferland (28 juin) qui demandait des fleurs pour son mariage du 6 septembre. La cloche les remonte désormais.
+  - Déploiement de `d2661bb` confirmé par le changement d'identifiant de build (`bPQDZdOEQ9DUJYdUprnSs` → `gNOG2Mt824wjCLxPtMn0k`) et la santé des routes (`/`, `/boutique`, `/checkout` en 200 ; `/admin` en 307).
   - ❗ Reste non vérifiable sans une vraie commande : l'envoi effectif des courriels (`RESEND_API_KEY` en prod, réponse de Resend). Diagnostic après le premier achat : `node scripts/verify-orders-pipeline.mjs`.
+  - ❗ **L'affichage de la cloche n'est pas sondable de l'extérieur** : son code n'est servi qu'aux pages admin authentifiées. Ce qui a été vérifié, c'est sa logique exécutée contre la base de production (pastille à 6, bon ordre, bons libellés), pas le rendu à l'écran.
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -200,6 +203,7 @@
 - [x] ~~Taxes TPS/TVQ~~ — FAIT session 14 (migration 024, `src/lib/pricing.ts`)
 - [x] ~~Frais de livraison jamais facturés~~ — FAIT session 14 (mêmes réglages partout, plus rien en dur)
 - [x] ~~39 produits bloqués « Épuisé »~~ — FAIT session 14 (migration 023, `track_inventory`)
+- [ ] 🔴 **URGENT — Marianne Pertuiset-Ferland (mpertuisetferland@gmail.com, 514 707-7446)** : demande de fleurs pour un **mariage le 6 septembre 2026**, reçue le 28 juin, restée non lue 47 jours. Même traitée aujourd'hui, la réponse arrive avec ~7 semaines de retard. À rattraper par téléphone plutôt que par courriel, et à signaler directement au client sans attendre qu'il ouvre son admin.
 - [ ] **Numéros de TPS et TVQ à saisir par le client** — Admin → Contenu → Taxes et livraison. La cloche le lui rappelle automatiquement, aucune relance à faire.
 - [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
