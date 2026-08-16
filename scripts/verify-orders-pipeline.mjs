@@ -52,7 +52,7 @@ console.log("  ✅ Migration 022 appliquée.\n");
 // ── 2. Commandes récentes ───────────────────────────────────────────────────
 const { data: orders } = await sb
   .from("orders")
-  .select("id, created_at, customer_name, customer_email, total_amount, status, payment_status, square_payment_id, is_florist_order, emails_sent_at, email_error")
+  .select("id, created_at, customer_name, customer_email, total_amount, status, payment_status, square_payment_id, is_florist_order, emails_sent_at, email_error, payment_error")
   .order("created_at", { ascending: false })
   .limit(15);
 
@@ -61,15 +61,26 @@ for (const o of orders ?? []) {
   const courriels = o.email_error ? "❌ échec" : o.emails_sent_at ? "✅ envoyés" : "— non envoyés";
   console.log(`  ${o.created_at.slice(0, 16)}  #${o.id.slice(0, 8).toUpperCase()}  ${o.total_amount}$  ${o.status}/${o.payment_status}${o.is_florist_order ? "  [FLEURISTE]" : ""}`);
   console.log(`     ${o.customer_name} <${o.customer_email}>  courriels: ${courriels}`);
-  if (o.email_error) console.log(`     ⚠ ${o.email_error}`);
+  if (o.email_error) console.log(`     ⚠ courriel : ${o.email_error}`);
+  if (o.payment_error) console.log(`     ⛔ paiement refusé par Square : ${o.payment_error}`);
 }
 
 // ── 3. Anomalies ────────────────────────────────────────────────────────────
 const payees = (orders ?? []).filter((o) => o.payment_status === "completed");
 const sansCourriel = payees.filter((o) => !o.emails_sent_at);
 const enEchec = payees.filter((o) => o.email_error);
+const paiementsRefuses = (orders ?? []).filter((o) => o.payment_error);
 
 console.log("\n=== 3. Anomalies ===");
 console.log(`  Commandes payées sans courriel envoyé : ${sansCourriel.length}`);
 console.log(`  Commandes payées avec échec d'envoi   : ${enEchec.length}`);
-if (!sansCourriel.length && !enEchec.length) console.log("  ✅ Rien à signaler.");
+console.log(`  Paiements refusés par Square          : ${paiementsRefuses.length}`);
+if (paiementsRefuses.length) {
+  console.log("\n  Causes exactes renvoyées par Square :");
+  for (const o of paiementsRefuses) {
+    console.log(`    #${o.id.slice(0, 8).toUpperCase()}  ${o.payment_error}`);
+  }
+  console.log("    → PAYMENT_METHOD_ERROR = carte refusée (rien à corriger côté site).");
+  console.log("    → AUTHENTICATION_ERROR / INVALID_REQUEST_ERROR = configuration Square à revoir sur Vercel.");
+}
+if (!sansCourriel.length && !enEchec.length && !paiementsRefuses.length) console.log("  ✅ Rien à signaler.");

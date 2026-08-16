@@ -4,6 +4,62 @@ import { squareClient, SQUARE_LOCATION_ID } from "@/lib/square";
 import { createAdminClient } from "@/lib/supabase-server";
 import { sendOrderEmails } from "@/lib/orderEmails";
 
+/**
+ * Détaille une erreur Square pour la rendre exploitable.
+ *
+ * Le SDK lève une exception dont le message seul (« Bad Request ») ne dit rien.
+ * Ce qui compte est dans `errors[]` : `category` distingue une carte refusée
+ * (`PAYMENT_METHOD_ERROR`) d'un problème de configuration (`AUTHENTICATION_ERROR`,
+ * `INVALID_REQUEST_ERROR`) — deux situations qui appellent des réponses opposées.
+ */
+function detailsSquare(err: unknown): { texte: string; categorie: string | null; code: string | null } {
+  const e = err as {
+    statusCode?: number;
+    errors?: Array<{ category?: string; code?: string; detail?: string }>;
+    body?: unknown;
+    message?: string;
+  } | null;
+
+  if (!e || typeof e !== "object") {
+    return { texte: String(err).slice(0, 500), categorie: null, code: null };
+  }
+
+  const morceaux: string[] = [];
+  if (e.statusCode) morceaux.push(`HTTP ${e.statusCode}`);
+
+  const premiere = Array.isArray(e.errors) ? e.errors[0] : undefined;
+  if (Array.isArray(e.errors) && e.errors.length) {
+    morceaux.push(
+      ...e.errors.map((x) => [x.category, x.code, x.detail].filter(Boolean).join(" / ")),
+    );
+  } else if (e.body !== undefined) {
+    morceaux.push(typeof e.body === "string" ? e.body : JSON.stringify(e.body));
+  } else if (e.message) {
+    morceaux.push(e.message);
+  }
+
+  return {
+    texte:     morceaux.join(" | ").slice(0, 500) || "Erreur Square sans détail.",
+    categorie: premiere?.category ?? null,
+    code:      premiere?.code ?? null,
+  };
+}
+
+/** Message destiné à l'acheteur — sans jargon, mais qui distingue les deux cas. */
+function messageAcheteur(categorie: string | null, code: string | null): string {
+  if (categorie === "PAYMENT_METHOD_ERROR") {
+    if (code === "INSUFFICIENT_FUNDS") return "Fonds insuffisants sur cette carte.";
+    if (code === "CVV_FAILURE")        return "Le code de sécurité (CVV) est incorrect.";
+    if (code === "ADDRESS_VERIFICATION_FAILURE") return "L'adresse de facturation ne correspond pas à la carte.";
+    if (code === "EXPIRATION_FAILURE") return "La date d'expiration de la carte est invalide.";
+    if (code === "CARD_EXPIRED")       return "Cette carte est expirée.";
+    return "Votre carte a été refusée. Essayez une autre carte.";
+  }
+  // Tout le reste (authentification, requête invalide, panne) n'est pas la faute
+  // de l'acheteur : ne pas lui dire de réessayer indéfiniment.
+  return "Le paiement n'a pas pu être traité en raison d'un problème technique. Votre carte n'a pas été débitée — contactez-nous et nous finaliserons votre commande.";
+}
+
 const PaymentSchema = z.object({
   sourceId:  z.string().min(1),
   orderId:   z.string().uuid(),
@@ -99,16 +155,24 @@ export async function POST(req: NextRequest) {
     // est marquée « failed ». Sans cela elle restait « pending », impossible à
     // distinguer d'une vraie commande à préparer dans l'admin.
     console.error("[square/payment] statut non complété:", payment?.status, "orderId:", orderId);
-    await supabase.from("orders").update({ payment_status: "failed" }).eq("id", orderId);
+    await supabase
+      .from("orders")
+      .update({ payment_status: "failed", payment_error: `Statut Square : ${payment?.status ?? "inconnu"}` })
+      .eq("id", orderId);
 
     return NextResponse.json({ error: "Paiement non complété." }, { status: 402 });
 
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Erreur Square inconnue.";
-    console.error("[square/payment]", msg, "orderId:", orderId);
-    // Ici l'issue est INCONNUE (réseau, délai d'attente) : la carte a pu être
-    // débitée. On laisse « pending » pour que le webhook Square puisse encore
-    // confirmer l'encaissement — le marquer « failed » masquerait un vrai paiement.
-    return NextResponse.json({ error: "Paiement refusé. Veuillez réessayer." }, { status: 402 });
+    const { texte, categorie, code } = detailsSquare(err);
+    console.error("[square/payment]", texte, "orderId:", orderId);
+
+    // La vraie cause est écrite en base : sans elle, un échec en production est
+    // indiagnosticable (les logs runtime de Vercel ne sont pas accessibles ici).
+    // On n'écrase pas `payment_status` : l'issue est incertaine (la carte a pu
+    // être débitée avant la coupure), et le webhook Square doit rester libre de
+    // confirmer un encaissement réel.
+    await supabase.from("orders").update({ payment_error: texte }).eq("id", orderId);
+
+    return NextResponse.json({ error: messageAcheteur(categorie, code) }, { status: 402 });
   }
 }
