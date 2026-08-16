@@ -10,7 +10,7 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-08-16 (session 15 — réparation du tunnel d'achat : le site était invendable)
+**Dernière session :** 2026-08-16 (session 15 — tunnel d'achat réparé ; **première vente en ligne réussie de l'histoire du site**)
 **Migrations appliquées en prod :** jusqu'à `026` incluse (`026_orders_payment_error.sql` appliquée le 2026-08-16)
 **Dernier commit :** `db55746` — **tout est poussé sur `main`, l'arbre est propre**
 **Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
@@ -135,7 +135,8 @@
   - `node scripts/verify-purchase-flow.mjs` — **0 produit refusé** sur les 53 affichés comme achetables (24 avant) ; **24/24** prix affichés identiques aux prix facturés, en public comme en fleuriste, lus sur le rendu serveur réel.
   - `node scripts/verify-checkout-quote.mjs` — `quoteCart` **appelée pour de vrai** via le protocole Server Actions sur un build de production : prix public (12 → 13,80 $), prix de gros par cookie (10 → 11,50 $), livraison 9,99 $ et gratuité dès 100 $, arrondi non taxé, et acceptation d'un produit à stock 0 non suivi (Tournesol 20 $ → **23,00 $**, le chiffre de contrôle du terminal Square).
   - ✅ **Écran de caisse confirmé visuellement** (capture du 2026-08-16) : 14,00 $ + 9,99 $ de livraison → TPS 1,20 / TVQ 2,39 → **27,58 $**, montant identique sur le bouton « Payer », bouton actif, champ Square chargé, arrondi et seuil de gratuité exacts.
-  - ❗ **Le débit Square reste non testé** — impossible sans un vrai achat (compte du client en production). C'est le SEUL maillon non vérifié de toute la chaîne.
+  - ✅ **Débit Square confirmé** le 2026-08-16 : commande `#F5DA1126`, 23,00 $, paiement `Ln9knwh87FcuEH0GocgohAbRy2BZY` COMPLETED/CAPTURED, `reference_id` concordant. **Premier paiement de l'histoire du site portant un `reference_id`** — les 86 précédents venaient tous du terminal. Les deux courriels sont partis 3 secondes plus tard, sans erreur.
+  - Le blocage final n'était pas dans le code mais dans la configuration : `SQUARE_SECRET_API_KEY` sur Vercel renvoyait `401 AUTHENTICATION_ERROR` (voir section 7).
   - ❗ `createOrder` n'a pas pu être exercée depuis un script : reproduire l'encodage des arguments d'une action serveur React (`$K` + préfixe `_<id>_`) n'a pas abouti en trois tentatives. Ce qui la couvre : elle partage `priceItems()` / `totalsFor()` avec `quoteCart` (prouvée), son code d'enregistrement est inchangé, et les 2 commandes du 16 août prouvent que ce code écrit correctement en base.
 
 ### Square paiement (production)
@@ -231,8 +232,8 @@
 - [x] ~~Pousser `1cea9af`~~ — FAIT : poussé et déploiement vérifié en production (24/24 prix, 0 produit refusé, routes en 200)
 - [x] ~~Confirmer l'écran de caisse à l'œil~~ — FAIT : capture vérifiée le 2026-08-16. Bombe de Semences 14,00 $ + livraison 9,99 $ → TPS 1,20 / TVQ 2,39 → **total 27,58 $**, identique sur le bouton « Payer ». Bouton actif, champ Square chargé, seuil de livraison gratuite (86,00 $ restants) et arrondi (0,42 $ → 28,00 $) exacts. Le devis serveur s'affiche bien (ligne « Qté : 1 × 14.00 $ »).
 - [x] ~~Impossible d'acheter (inventaire + prix fleuriste)~~ — FAIT session 15 (`1cea9af`)
-- [ ] 🔴 **`SQUARE_SECRET_API_KEY` à recoller dans Vercel, puis REDÉPLOYER** — Square renvoie `401 AUTHENTICATION_ERROR` en production : le site ne peut pas encaisser. La clé de `.env.local` est valide et vérifiée ; c'est celle de Vercel qui est fautive. **Tant que ce n'est pas fait, aucune vente n'est possible.**
-- [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
+- [x] ~~`SQUARE_SECRET_API_KEY` invalide sur Vercel~~ — RÉGLÉ le 2026-08-16 : clé recollée + redéploiement. Paiement confirmé dans la foulée.
+- [x] ~~Premier vrai achat à surveiller~~ — **FAIT le 2026-08-16 : réussi.** Commande `#F5DA1126`, 23,00 $, `paid`/`completed`, paiement Square `Ln9knwh87FcuEH0GocgohAbRy2BZY` COMPLETED/CAPTURED (VISA ••••4018), `reference_id` concordant, montants identiques des deux côtés, **et les deux courriels partis 3 secondes après le paiement sans erreur**. Toute la chaîne est désormais vérifiée de bout en bout.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
 - [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
 - [x] ~~Prix affichés avec un point au lieu d'une virgule~~ — FAIT (`db55746`) : `formatPrix()` dans `pricing.ts`, 62 points d'affichage convertis. L'export CSV garde le point (donnée pour tableur).
@@ -540,13 +541,15 @@ Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 - Le stock n'est toujours **pas** décrémenté automatiquement à l'achat — c'est un compteur manuel.
 - ⚠️ **Leçon de la session 15** : `isSoldOut` avait été branché sur les 6 points d'affichage mais pas sur `createOrder`. La boutique montrait les produits comme disponibles et la caisse les refusait — 24 produits invendables sans message cohérent. **Une règle métier doit être appliquée à l'encaissement AVANT l'affichage**, jamais l'inverse : un affichage faux se voit, un refus à la caisse se subit.
 
-### 🔴 Paiements — `SQUARE_SECRET_API_KEY` invalide en production (2026-08-16)
+### ✅ Paiements — `SQUARE_SECRET_API_KEY` invalide en production (résolu le 2026-08-16)
 Symptôme : « Paiement refusé. Veuillez réessayer. » à chaque tentative, et **aucun paiement chez Square — pas même un refus**. Un vrai refus de carte laisse toujours une trace ; son absence totale signale que la requête n'a jamais été autorisée.
 - Cause confirmée par `orders.payment_error` (migration 026) : `HTTP 401 | AUTHENTICATION_ERROR / UNAUTHORIZED`.
 - La clé de `.env.local` est la bonne : même application que le navigateur (`sq0idp-HOzOJErC5EBgA-kB21iu9A`), portée `PAYMENTS_WRITE`, sans expiration, succursale `LQ69J6Z1KMTPB` active, aucun espace. Vérifiable par `POST /oauth2/token/status`.
 - Donc la valeur sur **Vercel** diffère : clé sandbox, clé d'une autre application, ou corrompue par un retour à la ligne au collage — le même piège que les clés Supabase (voir « Clés Supabase »). ⚠️ `square.ts` fait `.trim()`, ce qui masque un espace en bout mais **pas** un saut de ligne au milieu.
 - Correction : recoller la clé dans Vercel → Settings → Environment Variables, **puis redéployer** — une variable modifiée ne s'applique jamais au déploiement déjà en ligne.
 - Contrôle du jeton sans rien encaisser : `POST /oauth2/token/status` (application, portées, expiration) et `GET /v2/locations`.
+- **Résolu** : clé recollée dans Vercel (variable marquée *Sensitive*, donc jamais relisible — elle datait du 25 mai et n'avait jamais été retouchée) puis redéploiement. La tentative suivante a réussi.
+- 💡 Leçon : sur ce projet, **un échec de paiement muet a d'abord été suspecté côté code alors qu'il venait d'une variable d'environnement**. Le réflexe utile est de regarder si Square a la moindre trace : un refus de carte en laisse toujours une, une erreur d'authentification n'en laisse aucune.
 
 ### Diagnostic sans accès Vercel
 Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. Ce qui reste vérifiable :
