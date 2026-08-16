@@ -12,7 +12,7 @@
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — réparation du tunnel d'achat : le site était invendable)
 **Migrations appliquées en prod :** jusqu'à `025` incluse (aucune nouvelle migration en session 15)
-**Dernier commit :** `ffa5daa` — **tout est poussé sur `main`, l'arbre est propre**
+**Dernier commit :** `db55746` — **tout est poussé sur `main`, l'arbre est propre**
 **Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
 **Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
 
@@ -234,7 +234,7 @@
 - [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
 - [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
-- [ ] Cosmétique : les prix s'affichent avec un point (`14.00 $`) et non une virgule — visible jusque dans le récapitulatif de la caisse. Cohérent partout, mais non conforme à la typographie française. Un `formatPrix()` unique dans `pricing.ts`, appelé à la place des `.toFixed(2)`, réglerait le tout.
+- [x] ~~Prix affichés avec un point au lieu d'une virgule~~ — FAIT (`db55746`) : `formatPrix()` dans `pricing.ts`, 62 points d'affichage convertis. L'export CSV garde le point (donnée pour tableur).
 
 ---
 
@@ -569,6 +569,12 @@ Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. C
 - Points d'ajout au panier à garder synchronisés : `boutique/[id]/AddToCartButton`, `BoutiqueShop`, `FloristCatalog`. (`Fleuristes.tsx` et `TransformedProducts.tsx` ne sont plus utilisés depuis la session 12 — s'ils sont un jour remis en service, les brancher aussi.)
 - `/boutique` et `/boutique/[id]` lisent le cookie fleuriste, donc sont **rendues dynamiquement** (`ƒ`). C'est voulu : une page statique ne peut pas afficher le bon prix.
 - Contrôle : `node scripts/verify-purchase-flow.mjs`.
+
+### Affichage des montants — `formatPrix()`
+`src/lib/pricing.ts` → `formatPrix(montant)` retourne « 14,00 » ou « 5 999,00 » (virgule décimale, espace insécable pour les milliers). **Le symbole « $ » n'est pas inclus** : les gabarits l'ajoutent déjà. Utiliser ce formateur partout où un montant est montré à un humain — 62 emplacements, dont les deux courriels de commande.
+- Écrit à la main, pas avec `Intl.NumberFormat` : le séparateur de milliers d'ICU varie selon les versions (espace fine U+202F vs insécable U+00A0), ce qui donnerait un rendu différent côté serveur et côté navigateur — donc une **erreur d'hydratation React**. Un formateur déterministe l'évite.
+- ⚠️ **L'export CSV (`CommandesClient.exportCSV`) garde `toFixed(2)`** — volontairement. C'est de la donnée destinée à un tableur : une virgule décimale dans un fichier séparé par des virgules invite les erreurs d'import. Ne pas « uniformiser » ces 6 lignes.
+- Si un test lit un prix dans le HTML, il doit accepter le format français (voir `scripts/verify-purchase-flow.mjs`).
 
 ### ⚠️ Caisse — le total vient du serveur, jamais du panier
 `quoteCart()` (`src/lib/actions/checkout.ts`) est appelée par `CheckoutClient` à chaque changement de panier ou de mode de réception. **Ne jamais recalculer un total à partir des prix du `localStorage`.**
