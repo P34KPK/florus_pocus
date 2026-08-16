@@ -11,7 +11,7 @@
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — réparation du tunnel d'achat : le site était invendable)
-**Migrations appliquées en prod :** jusqu'à `025` incluse (aucune nouvelle migration en session 15)
+**Migrations appliquées en prod :** jusqu'à `026` incluse (`026_orders_payment_error.sql` appliquée le 2026-08-16)
 **Dernier commit :** `db55746` — **tout est poussé sur `main`, l'arbre est propre**
 **Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
 **Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
@@ -231,6 +231,7 @@
 - [x] ~~Pousser `1cea9af`~~ — FAIT : poussé et déploiement vérifié en production (24/24 prix, 0 produit refusé, routes en 200)
 - [x] ~~Confirmer l'écran de caisse à l'œil~~ — FAIT : capture vérifiée le 2026-08-16. Bombe de Semences 14,00 $ + livraison 9,99 $ → TPS 1,20 / TVQ 2,39 → **total 27,58 $**, identique sur le bouton « Payer ». Bouton actif, champ Square chargé, seuil de livraison gratuite (86,00 $ restants) et arrondi (0,42 $ → 28,00 $) exacts. Le devis serveur s'affiche bien (ligne « Qté : 1 × 14.00 $ »).
 - [x] ~~Impossible d'acheter (inventaire + prix fleuriste)~~ — FAIT session 15 (`1cea9af`)
+- [ ] 🔴 **`SQUARE_SECRET_API_KEY` à recoller dans Vercel, puis REDÉPLOYER** — Square renvoie `401 AUTHENTICATION_ERROR` en production : le site ne peut pas encaisser. La clé de `.env.local` est valide et vérifiée ; c'est celle de Vercel qui est fautive. **Tant que ce n'est pas fait, aucune vente n'est possible.**
 - [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
 - [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
@@ -538,6 +539,14 @@ Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 - La liste admin affiche `∞` (non suivi), la quantité, ou un badge rouge `0 · Épuisé` pour rendre un blocage de vente immédiatement visible.
 - Le stock n'est toujours **pas** décrémenté automatiquement à l'achat — c'est un compteur manuel.
 - ⚠️ **Leçon de la session 15** : `isSoldOut` avait été branché sur les 6 points d'affichage mais pas sur `createOrder`. La boutique montrait les produits comme disponibles et la caisse les refusait — 24 produits invendables sans message cohérent. **Une règle métier doit être appliquée à l'encaissement AVANT l'affichage**, jamais l'inverse : un affichage faux se voit, un refus à la caisse se subit.
+
+### 🔴 Paiements — `SQUARE_SECRET_API_KEY` invalide en production (2026-08-16)
+Symptôme : « Paiement refusé. Veuillez réessayer. » à chaque tentative, et **aucun paiement chez Square — pas même un refus**. Un vrai refus de carte laisse toujours une trace ; son absence totale signale que la requête n'a jamais été autorisée.
+- Cause confirmée par `orders.payment_error` (migration 026) : `HTTP 401 | AUTHENTICATION_ERROR / UNAUTHORIZED`.
+- La clé de `.env.local` est la bonne : même application que le navigateur (`sq0idp-HOzOJErC5EBgA-kB21iu9A`), portée `PAYMENTS_WRITE`, sans expiration, succursale `LQ69J6Z1KMTPB` active, aucun espace. Vérifiable par `POST /oauth2/token/status`.
+- Donc la valeur sur **Vercel** diffère : clé sandbox, clé d'une autre application, ou corrompue par un retour à la ligne au collage — le même piège que les clés Supabase (voir « Clés Supabase »). ⚠️ `square.ts` fait `.trim()`, ce qui masque un espace en bout mais **pas** un saut de ligne au milieu.
+- Correction : recoller la clé dans Vercel → Settings → Environment Variables, **puis redéployer** — une variable modifiée ne s'applique jamais au déploiement déjà en ligne.
+- Contrôle du jeton sans rien encaisser : `POST /oauth2/token/status` (application, portées, expiration) et `GET /v2/locations`.
 
 ### Diagnostic sans accès Vercel
 Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. Ce qui reste vérifiable :
