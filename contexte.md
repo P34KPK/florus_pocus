@@ -212,13 +212,18 @@
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
+> **Périmètre.** Cette liste ne contient que du travail technique. Les demandes de
+> clientèle (devis, mariages, réponses aux messages de contact) ne relèvent pas du
+> développement : la cloche de notifications les remonte au propriétaire du site,
+> qui en dispose comme il l'entend. Ne pas les recopier ici ni les faire remonter
+> en session — le mécanisme est en place, c'est tout ce qui était demandé.
+
 - [x] ~~Clés Supabase corrompues~~ — RÉGLÉ : clés ANON + SERVICE recollées proprement dans Vercel, contournement `extractJwt` retiré du code
 - [x] ~~Sitemap + SEO~~ — FAIT : `app/sitemap.ts` (statiques + blog), `app/robots.ts`, metadataBase, openGraph/twitter, canonical par page
 - [ ] **Contenu réel** — photos produits + articles blog (client le fait via admin)
 - [x] ~~Taxes TPS/TVQ~~ — FAIT session 14 (migration 024, `src/lib/pricing.ts`)
 - [x] ~~Frais de livraison jamais facturés~~ — FAIT session 14 (mêmes réglages partout, plus rien en dur)
 - [x] ~~39 produits bloqués « Épuisé »~~ — FAIT session 14 (migration 023, `track_inventory`)
-- [ ] 🔴 **URGENT — Marianne Pertuiset-Ferland (mpertuisetferland@gmail.com, 514 707-7446)** : demande de fleurs pour un **mariage le 6 septembre 2026**, reçue le 28 juin, restée non lue 47 jours. **Au 16 août il ne reste que 3 semaines avant le mariage.** À rattraper par téléphone plutôt que par courriel, et à signaler directement au client sans attendre qu'il ouvre son admin.
 - [ ] **Numéros de TPS et TVQ à saisir par le client** — Admin → Contenu → Taxes et livraison. La cloche le lui rappelle automatiquement, aucune relance à faire.
 - [ ] 🔴 **Pousser `1cea9af`** — le correctif du tunnel d'achat est commité mais pas poussé. **Tant que ce n'est pas fait, la production reste invendable.**
 - [ ] **Confirmer l'écran de caisse à l'œil** — ajouter un article, aller à `/checkout`, vérifier que le total s'affiche et que le bouton s'active. S'arrêter là, sans payer. C'est le seul point du correctif de session 15 qui n'a pas été vu à l'écran.
