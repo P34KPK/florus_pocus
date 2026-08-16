@@ -12,7 +12,8 @@
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — réparation du tunnel d'achat : le site était invendable)
 **Migrations appliquées en prod :** jusqu'à `025` incluse (aucune nouvelle migration en session 15)
-**Derniers commits :** `afe6b6a` (périmètre de la liste à faire) · `b9cf6f7` (contexte session 15) · `1cea9af` (tunnel d'achat réparé — session 15) — **tous poussés et vérifiés en production**
+**Dernier commit :** `ffa5daa` — **tout est poussé sur `main`, l'arbre est propre**
+**Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
 **Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
 
 ---
@@ -212,6 +213,8 @@
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
+**État au 2026-08-16 :** la boutique vend. Les deux blocages de la session 15 sont corrigés et vérifiés en production, le client a saisi ses numéros de taxes et lu ses messages. **Il ne reste aucun point bloquant** — seulement le premier vrai achat à observer, et des améliorations.
+
 > **Périmètre.** Cette liste ne contient que du travail technique. Les demandes de
 > clientèle (devis, mariages, réponses aux messages de contact) ne relèvent pas du
 > développement : la cloche de notifications les remonte au propriétaire du site,
@@ -224,14 +227,14 @@
 - [x] ~~Taxes TPS/TVQ~~ — FAIT session 14 (migration 024, `src/lib/pricing.ts`)
 - [x] ~~Frais de livraison jamais facturés~~ — FAIT session 14 (mêmes réglages partout, plus rien en dur)
 - [x] ~~39 produits bloqués « Épuisé »~~ — FAIT session 14 (migration 023, `track_inventory`)
-- [ ] **Numéros de TPS et TVQ à saisir par le client** — Admin → Contenu → Taxes et livraison. La cloche le lui rappelle automatiquement, aucune relance à faire.
+- [x] ~~Numéros de TPS et TVQ à saisir par le client~~ — FAIT par le client : `gst_number` et `qst_number` sont remplis dans `site_settings`. La cloche ne les réclame plus. (Vérifié le 2026-08-16 ; les 3 messages de contact sont également tous lus — plus aucune notification de type `action` en attente.)
 - [x] ~~Pousser `1cea9af`~~ — FAIT : poussé et déploiement vérifié en production (24/24 prix, 0 produit refusé, routes en 200)
 - [x] ~~Confirmer l'écran de caisse à l'œil~~ — FAIT : capture vérifiée le 2026-08-16. Bombe de Semences 14,00 $ + livraison 9,99 $ → TPS 1,20 / TVQ 2,39 → **total 27,58 $**, identique sur le bouton « Payer ». Bouton actif, champ Square chargé, seuil de livraison gratuite (86,00 $ restants) et arrondi (0,42 $ → 28,00 $) exacts. Le devis serveur s'affiche bien (ligne « Qté : 1 × 14.00 $ »).
 - [x] ~~Impossible d'acheter (inventaire + prix fleuriste)~~ — FAIT session 15 (`1cea9af`)
 - [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
 - [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
-- [ ] Cosmétique : les prix s'affichent avec un point (`9.99 $`) et non une virgule. Cohérent dans tout le site, mais non conforme à la typographie française — un formateur unique réglerait le tout.
+- [ ] Cosmétique : les prix s'affichent avec un point (`14.00 $`) et non une virgule — visible jusque dans le récapitulatif de la caisse. Cohérent partout, mais non conforme à la typographie française. Un `formatPrix()` unique dans `pricing.ts`, appelé à la place des `.toFixed(2)`, réglerait le tout.
 
 ---
 
@@ -378,8 +381,8 @@ FlorusPocus/
     │   ├── (public)/fleuristes/page.tsx  ← vérifie cookie fp_florist, affiche Gate ou Catalog
     │   ├── (public)/mange-moi/page.tsx         ← catalogue vitrine comestibles (sans achat)
 │   ├── (public)/mange-moi/[id]/page.tsx   ← fiche détail comestible (SSR, generateMetadata, CTA → /contact)
-    │   ├── (public)/boutique/[id]/page.tsx       ← fiche produit (SSR, generateMetadata)
-    │   ├── (public)/boutique/[id]/AddToCartButton.tsx ← client component bouton panier
+    │   ├── (public)/boutique/[id]/page.tsx       ← fiche produit (SSR, generateMetadata, lit le cookie fleuriste → prix de gros)
+    │   ├── (public)/boutique/[id]/AddToCartButton.tsx ← bouton panier (reçoit unitPrice, jamais product.price)
     │   ├── (public)/boutique/[id]/ProductGallery.tsx  ← galerie multi-photos (client, miniatures)
     │   ├── (public)/politique-confidentialite/page.tsx
     │   ├── (public)/conditions-utilisation/page.tsx
@@ -417,9 +420,9 @@ FlorusPocus/
     │       ├── FloristGate.tsx     ← formulaire code d'accès fleuristes
     │       ├── FloristCatalog.tsx  ← catalogue pro avec prix de gros
     │       └── (MangeMoi affiché directement dans /mange-moi/page.tsx)
-    ├── context/CartContext.tsx  ← Zod validation au rehydrate localStorage
+    ├── context/CartContext.tsx  ← Zod validation au rehydrate localStorage (les prix qu'il contient ne font PAS foi)
     ├── lib/
-    │   ├── pricing.ts           ← computeTotals : taxes + livraison + arrondi (serveur ET caisse)
+    │   ├── pricing.ts           ← computeTotals (taxes + livraison + arrondi) + effectiveUnitPrice (prix public vs gros)
     │   ├── inventory.ts         ← isSoldOut / lowStockCount (track_inventory)
     │   ├── orderEmails.ts       ← sendOrderEmails : envoi idempotent des 2 courriels de commande
     │   ├── notifications.ts     ← getAdminNotifications : notifications dérivées, sans table
@@ -434,7 +437,7 @@ FlorusPocus/
     │   └── actions/
     │       ├── auth.ts          ← loginAdmin avec rate limiting
     │       ├── notifications.ts ← markNotificationsSeen (horodatage de consultation)
-    │       ├── checkout.ts      ← createOrder
+    │       ├── checkout.ts      ← createOrder + quoteCart (devis affiché) — partagent priceItems/totalsFor
     │       ├── contact.ts       ← sendContactMessage + notification email admin
     │       ├── settings.ts      ← updateSiteSettings (CMS)
     │       ├── auth-guard.ts    ← assertAdmin() : JWT + is_admin DB (partagé par toutes les actions)
@@ -528,7 +531,7 @@ Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 - L'adresse admin vient de `site_settings.contact_email` (repli `info@floruspocus.com`).
 
 ### ⚠️ Inventaire — `track_inventory`, jamais `stock === 0` en dur
-`src/lib/inventory.ts` est la source unique : `isSoldOut(p)` = `track_inventory && stock === 0`, et `lowStockCount(p)` pour l'avertissement « Plus que N en stock ». **Ne jamais retester `stock === 0` directement** — utiliser ces helpers (6 emplacements : `FloristCatalog`, `BoutiqueShop`, `Fleuristes`, `TransformedProducts`, `boutique/[id]`, `ProductsClient`).
+`src/lib/inventory.ts` est la source unique : `isSoldOut(p)` = `track_inventory && stock === 0`, et `lowStockCount(p)` pour l'avertissement « Plus que N en stock ». **Ne jamais retester `stock === 0` directement** — utiliser ces helpers (7 emplacements : `FloristCatalog`, `BoutiqueShop`, `Fleuristes`, `TransformedProducts`, `boutique/[id]`, `ProductsClient`, et **`priceItems()` dans `checkout.ts`** — c'est celui qui manquait et qui rendait 24 produits invendables).
 - Pourquoi : `stock` encodait 3 états dans un champ nullable, dont deux quasi identiques à la saisie mais aux effets opposés (vide = illimité, `0` = **invendable**). Diagnostic de session 14 : 39 fiches de fleurs coupées saisies à 0 le 2026-06-08, jamais rouvertes ensuite → tout le catalogue de fleurs était invendable, sans aucun signal.
 - Admin : interrupteur « Suivre les quantités / Toujours disponible » dans `ProductForm`. Désactivé (défaut), le champ Quantité disparaît et le produit reste vendable ; activé, `0` signifie vraiment « Épuisé ».
 - `products.ts` force `stock = null` quand `track_inventory` est faux — pas de valeur fantôme qui ressurgit si on réactive le suivi.
@@ -552,11 +555,11 @@ Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. C
 - Le layout admin ne plante pas si la migration 025 manque : la requête échoue en silence et `lastSeenAt` vaut null.
 
 ### ⚠️ Taxes et livraison — un seul module de calcul
-`src/lib/pricing.ts` : `computeTotals()` est appelé par `createOrder` (montant encaissé) **et** par `CheckoutClient` (affichage). **Ne jamais recalculer un total ailleurs** — sinon le montant affiché et le montant débité divergent.
+`src/lib/pricing.ts` : `computeTotals()` est le seul calculateur de totaux. Depuis la session 15 il n'est plus appelé côté navigateur : `createOrder` (montant encaissé) et `quoteCart` (montant affiché) l'appellent tous deux **côté serveur**, via `totalsFor()`. **Ne jamais recalculer un total ailleurs**, et surtout pas dans un composant client.
 - Ordre : sous-total → + livraison → taxes sur la somme → + arrondi pour la cause. Le don n'est jamais taxé, il s'ajoute en dernier.
 - Livraison : gratuite au ramassage et dès le seuil (défaut 100 $), sinon `delivery_fee` (défaut 9,99 $).
 - Réglages dans `site_settings`, groupe `taxes_livraison` : `taxes_enabled`, `gst_rate`, `qst_rate` (en **pourcentage** : « 5 », « 9.975 »), `gst_number`, `qst_number`, `delivery_fee`, `free_delivery_threshold`. Modifiables sans déploiement via Admin → Contenu.
-- `CheckoutClient` envoie `round_up` (booléen) et non plus un montant : le serveur calcule l'arrondi lui-même, après taxes.
+- `CheckoutClient` envoie `round_up` (booléen) et non plus un montant : le serveur calcule l'arrondi lui-même, après taxes. `quoteCart` renvoie les deux versions (`base` et `withRoundUp`) pour que cocher la case ne redemande pas de devis.
 - Contrôle : 20 $ au ramassage → 23,00 $, soit exactement les montants du terminal Square.
 
 ### ⚠️ Prix affiché == prix facturé — la règle qui a rendu le site invendable
@@ -578,8 +581,8 @@ Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. C
 ### ⚠️ Prix — recalculés côté serveur, jamais lus du panier
 `createOrder` (`src/lib/actions/checkout.ts`) ignore les prix envoyés par le navigateur : il recharge `products` / `subscriptions` depuis la base. Le panier ne sert qu'à savoir **quoi** a été commandé.
 - Prix de gros (`florist_price`) appliqué uniquement si `isFloristAuthenticated()` est vrai côté serveur — le cookie `fp_florist` est la seule source d'autorité.
-- Refus explicite : produit inactif/introuvable, `price_type = 'devis'`, `stock = 0`, prix ≤ 0.
-- `createOrder` retourne `total` ; `CheckoutClient` compare avec le montant affiché et **abandonne** en cas d'écart plutôt que de débiter une somme non vue par l'acheteur.
+- Refus explicite : produit inactif/introuvable, `price_type = 'devis'`, **`isSoldOut(p)`** (et non `stock === 0` — c'était le bug de session 15), prix ≤ 0.
+- `createOrder` retourne `total` ; `CheckoutClient` compare avec le montant affiché et **abandonne** en cas d'écart plutôt que de débiter une somme non vue par l'acheteur. Depuis que l'affichage vient de `quoteCart`, ce contrôle est un vrai filet de sécurité (un prix modifié en base entre le devis et la commande) et non plus une source de blocage.
 - La route de paiement encaisse `orders.total_amount` (base), jamais `amountCAD` du client.
 
 ### Square Webhook — URL dynamique
