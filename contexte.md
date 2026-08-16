@@ -12,9 +12,8 @@
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — réparation du tunnel d'achat : le site était invendable)
 **Migrations appliquées en prod :** jusqu'à `025` incluse (aucune nouvelle migration en session 15)
-**Derniers commits :** `1cea9af` (tunnel d'achat réparé — session 15) · `d2661bb` (messages non lus hiérarchisés) · `553d1a5` (taxes/livraison + notifications)
-**⚠️ `1cea9af` est commité mais PAS ENCORE POUSSÉ** — la production tourne donc toujours sur le code cassé. `git push` déclenche l'auto-deploy Vercel.
-**Build id en prod après `d2661bb` :** `gNOG2Mt824wjCLxPtMn0k` (à revérifier après le push de `1cea9af`)
+**Derniers commits :** `afe6b6a` (périmètre de la liste à faire) · `b9cf6f7` (contexte session 15) · `1cea9af` (tunnel d'achat réparé — session 15) — **tous poussés et vérifiés en production**
+**Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
 
 ---
 
@@ -225,8 +224,8 @@
 - [x] ~~Frais de livraison jamais facturés~~ — FAIT session 14 (mêmes réglages partout, plus rien en dur)
 - [x] ~~39 produits bloqués « Épuisé »~~ — FAIT session 14 (migration 023, `track_inventory`)
 - [ ] **Numéros de TPS et TVQ à saisir par le client** — Admin → Contenu → Taxes et livraison. La cloche le lui rappelle automatiquement, aucune relance à faire.
-- [ ] 🔴 **Pousser `1cea9af`** — le correctif du tunnel d'achat est commité mais pas poussé. **Tant que ce n'est pas fait, la production reste invendable.**
-- [ ] **Confirmer l'écran de caisse à l'œil** — ajouter un article, aller à `/checkout`, vérifier que le total s'affiche et que le bouton s'active. S'arrêter là, sans payer. C'est le seul point du correctif de session 15 qui n'a pas été vu à l'écran.
+- [x] ~~Pousser `1cea9af`~~ — FAIT : poussé et déploiement vérifié en production (24/24 prix, 0 produit refusé, routes en 200)
+- [ ] **Confirmer l'écran de caisse à l'œil** — ajouter un article, aller à `/checkout`, vérifier que le total s'affiche et que le bouton s'active. S'arrêter là, sans payer. C'est le seul point du correctif de session 15 qui n'a pas été vu à l'écran (le rendu React du devis ; les données qui l'alimentent sont prouvées).
 - [x] ~~Impossible d'acheter (inventaire + prix fleuriste)~~ — FAIT session 15 (`1cea9af`)
 - [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
