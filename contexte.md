@@ -10,10 +10,11 @@
 **Serveur local :** `npm run dev` → http://localhost:3000
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
-**Dernière session :** 2026-08-14 (session 14 — audit du tunnel de commande, taxes/livraison, suivi d'inventaire, cloche de notifications admin)
-**Migrations appliquées en prod :** jusqu'à `025` incluse
-**Derniers commits :** `e2580ae` (correctifs commande + inventaire) · `553d1a5` (taxes/livraison + notifications) · `d2661bb` (messages non lus hiérarchisés) — tous déployés et vérifiés en production
-**Build id en prod après `d2661bb` :** `gNOG2Mt824wjCLxPtMn0k` (était `bPQDZdOEQ9DUJYdUprnSs` avant la session 14)
+**Dernière session :** 2026-08-16 (session 15 — réparation du tunnel d'achat : le site était invendable)
+**Migrations appliquées en prod :** jusqu'à `025` incluse (aucune nouvelle migration en session 15)
+**Derniers commits :** `1cea9af` (tunnel d'achat réparé — session 15) · `d2661bb` (messages non lus hiérarchisés) · `553d1a5` (taxes/livraison + notifications)
+**⚠️ `1cea9af` est commité mais PAS ENCORE POUSSÉ** — la production tourne donc toujours sur le code cassé. `git push` déclenche l'auto-deploy Vercel.
+**Build id en prod après `d2661bb` :** `gNOG2Mt824wjCLxPtMn0k` (à revérifier après le push de `1cea9af`)
 
 ---
 
@@ -122,6 +123,20 @@
   - ❗ Reste non vérifiable sans une vraie commande : l'envoi effectif des courriels (`RESEND_API_KEY` en prod, réponse de Resend). Diagnostic après le premier achat : `node scripts/verify-orders-pipeline.mjs`.
   - ❗ **L'affichage de la cloche n'est pas sondable de l'extérieur** : son code n'est servi qu'aux pages admin authentifiées. Ce qui a été vérifié, c'est sa logique exécutée contre la base de production (pastille à 6, bon ordre, bons libellés), pas le rendu à l'écran.
 
+- [x] **Session 15 — Le site était invendable (deux régressions de la session 14) :**
+  - **Symptôme** : impossible d'acheter quoi que ce soit. Deux commandes créées le 2026-08-16 à 21:04 et 21:05 UTC (Calendula, 11,50 $) restées `pending`/`pending`, **sans aucun paiement correspondant chez Square** (les 3 paiements du jour venaient du terminal, sans `reference_id`).
+  - **Cause 1 — inventaire.** `createOrder` refusait sur `p.stock === 0` **sans regarder `track_inventory`**. La session 14 avait branché `isSoldOut()` sur les 6 points d'**affichage** mais jamais sur la seule fonction qui **encaisse**. La boutique affichait le produit comme disponible, la caisse répondait « est épuisé. Retirez-le de votre panier », sans issue. **24 des 53 produits affichés comme achetables.**
+  - **Cause 2 — prix fleuriste.** `/boutique/[id]` et `BoutiqueShop` mettaient toujours le **prix public** au panier, alors que `createOrder` applique le **prix de gros** dès que le cookie `fp_florist` est valide. `CheckoutClient` détectait l'écart de total et **abandonnait avant de débiter** (garde-fou correct, sur un écart fabriqué par le site lui-même). C'est exactement la « limite connue » notée en session 10, devenue bloquante depuis que la session 14 recalcule les prix côté serveur. **46 des 53 produits, pour quiconque a le cookie fleuriste** (30 jours — le testeur l'avait).
+  - **Bilan avant correctif** : 29 produits sur 79 achetables par un client ordinaire, **7 sur 79** avec le cookie fleuriste.
+  - **Correctifs** : `effectiveUnitPrice()` dans `pricing.ts` (règle de prix unique) ; `isSoldOut()` enfin utilisé par `createOrder` ; `quoteCart()` — la caisse demande son total au serveur au lieu de l'additionner depuis le `localStorage` ; un paiement refusé marque `payment_status = 'failed'` ; le `.json()` de la réponse de paiement est protégé (un 500 renvoie du HTML et figeait le bouton sur « Traitement… » sans message).
+  - **Commandes fantômes** : les 2 commandes orphelines du 16 août supprimées via `scripts/cleanup-ghost-orders.mjs` (garde-fou : refuse toute commande portant une trace de paiement ou de courriel). Il reste la commande de test du 31 mai.
+
+  **Vérifications faites (aucun paiement déclenché) :**
+  - `node scripts/verify-purchase-flow.mjs` — **0 produit refusé** sur les 53 affichés comme achetables (24 avant) ; **24/24** prix affichés identiques aux prix facturés, en public comme en fleuriste, lus sur le rendu serveur réel.
+  - `node scripts/verify-checkout-quote.mjs` — `quoteCart` **appelée pour de vrai** via le protocole Server Actions sur un build de production : prix public (12 → 13,80 $), prix de gros par cookie (10 → 11,50 $), livraison 9,99 $ et gratuité dès 100 $, arrondi non taxé, et acceptation d'un produit à stock 0 non suivi (Tournesol 20 $ → **23,00 $**, le chiffre de contrôle du terminal Square).
+  - ❗ **Le débit Square reste non testé** — impossible sans un vrai achat (compte du client en production).
+  - ❗ **Le rendu de l'écran de caisse n'a pas été vu** (extension Chrome non connectée). Les bonnes données arrivent, prouvé côté serveur ; l'affichage React de ces données reste à confirmer d'un coup d'œil.
+
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
 - [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`
@@ -203,8 +218,11 @@
 - [x] ~~Taxes TPS/TVQ~~ — FAIT session 14 (migration 024, `src/lib/pricing.ts`)
 - [x] ~~Frais de livraison jamais facturés~~ — FAIT session 14 (mêmes réglages partout, plus rien en dur)
 - [x] ~~39 produits bloqués « Épuisé »~~ — FAIT session 14 (migration 023, `track_inventory`)
-- [ ] 🔴 **URGENT — Marianne Pertuiset-Ferland (mpertuisetferland@gmail.com, 514 707-7446)** : demande de fleurs pour un **mariage le 6 septembre 2026**, reçue le 28 juin, restée non lue 47 jours. Même traitée aujourd'hui, la réponse arrive avec ~7 semaines de retard. À rattraper par téléphone plutôt que par courriel, et à signaler directement au client sans attendre qu'il ouvre son admin.
+- [ ] 🔴 **URGENT — Marianne Pertuiset-Ferland (mpertuisetferland@gmail.com, 514 707-7446)** : demande de fleurs pour un **mariage le 6 septembre 2026**, reçue le 28 juin, restée non lue 47 jours. **Au 16 août il ne reste que 3 semaines avant le mariage.** À rattraper par téléphone plutôt que par courriel, et à signaler directement au client sans attendre qu'il ouvre son admin.
 - [ ] **Numéros de TPS et TVQ à saisir par le client** — Admin → Contenu → Taxes et livraison. La cloche le lui rappelle automatiquement, aucune relance à faire.
+- [ ] 🔴 **Pousser `1cea9af`** — le correctif du tunnel d'achat est commité mais pas poussé. **Tant que ce n'est pas fait, la production reste invendable.**
+- [ ] **Confirmer l'écran de caisse à l'œil** — ajouter un article, aller à `/checkout`, vérifier que le total s'affiche et que le bouton s'active. S'arrêter là, sans payer. C'est le seul point du correctif de session 15 qui n'a pas été vu à l'écran.
+- [x] ~~Impossible d'acheter (inventaire + prix fleuriste)~~ — FAIT session 15 (`1cea9af`)
 - [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
 - [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
@@ -339,7 +357,10 @@ FlorusPocus/
 │   └── 025_admin_notifications.sql
 ├── scripts/
 │   ├── reset-admin.mjs
-│   └── verify-orders-pipeline.mjs  ← vérificateur LECTURE SEULE de la chaîne de commande
+│   ├── verify-orders-pipeline.mjs  ← vérificateur LECTURE SEULE de la chaîne de commande
+│   ├── verify-purchase-flow.mjs    ← LECTURE SEULE : règle d'inventaire + prix affiché == prix facturé
+│   ├── verify-checkout-quote.mjs   ← LECTURE SEULE : appelle vraiment quoteCart (exige `next build` + `next start`)
+│   └── cleanup-ghost-orders.mjs    ← supprime des commandes orphelines (garde-fou anti-paiement), IDs en dur
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -508,6 +529,7 @@ Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 - `products.ts` force `stock = null` quand `track_inventory` est faux — pas de valeur fantôme qui ressurgit si on réactive le suivi.
 - La liste admin affiche `∞` (non suivi), la quantité, ou un badge rouge `0 · Épuisé` pour rendre un blocage de vente immédiatement visible.
 - Le stock n'est toujours **pas** décrémenté automatiquement à l'achat — c'est un compteur manuel.
+- ⚠️ **Leçon de la session 15** : `isSoldOut` avait été branché sur les 6 points d'affichage mais pas sur `createOrder`. La boutique montrait les produits comme disponibles et la caisse les refusait — 24 produits invendables sans message cohérent. **Une règle métier doit être appliquée à l'encaissement AVANT l'affichage**, jamais l'inverse : un affichage faux se voit, un refus à la caisse se subit.
 
 ### Diagnostic sans accès Vercel
 Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. Ce qui reste vérifiable :
@@ -515,6 +537,7 @@ Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. C
 - Supabase via `SUPABASE_SERVICE_ROLE_KEY` (lecture seule) pour l'état réel des données.
 - API Square en lecture : `GET /v2/payments` (un paiement issu du site a toujours un `reference_id` ; ceux du terminal n'en ont pas), `GET /v2/webhooks/subscriptions`, `GET /v2/locations`.
 - Déploiement confirmé en cherchant une chaîne neuve dans les bundles servis par la prod, et surtout via une page **rendue côté serveur** dont l'affichage dépend du nouveau code.
+- Une **action serveur** peut être appelée directement (protocole Server Actions) pour vérifier une logique métier sans passer par le navigateur : POST sur la page, en-tête `Next-Action: <id>`, corps `[<args>]` en JSON. L'identifiant se lit dans les bundles construits (`createServerReference)("<id>"…,"<nom>"`). ⚠️ Uniquement sur `next build` + `next start` — en développement les identifiants diffèrent et la réponse est « Server action not found ». C'est ainsi que `quoteCart` a été prouvée en session 15.
 
 ### Notifications admin — dérivées, jamais stockées
 `src/lib/notifications.ts` → `getAdminNotifications(userId)`. **Ne pas créer de table de notifications** : tout est recalculé à chaque chargement du layout admin depuis `orders`, `contact_messages`, `newsletter_subscribers` et `site_settings`. Conséquence voulue : rien à marquer comme résolu, rien à remplir a posteriori, aucune désynchronisation.
@@ -530,6 +553,22 @@ Le CLI Vercel n'est pas installé et les logs runtime ne sont pas accessibles. C
 - Réglages dans `site_settings`, groupe `taxes_livraison` : `taxes_enabled`, `gst_rate`, `qst_rate` (en **pourcentage** : « 5 », « 9.975 »), `gst_number`, `qst_number`, `delivery_fee`, `free_delivery_threshold`. Modifiables sans déploiement via Admin → Contenu.
 - `CheckoutClient` envoie `round_up` (booléen) et non plus un montant : le serveur calcule l'arrondi lui-même, après taxes.
 - Contrôle : 20 $ au ramassage → 23,00 $, soit exactement les montants du terminal Square.
+
+### ⚠️ Prix affiché == prix facturé — la règle qui a rendu le site invendable
+`effectiveUnitPrice(product, isFlorist)` dans `src/lib/pricing.ts` est la **seule** règle de prix du site. **Tout endroit qui affiche un prix ou met un produit au panier doit passer par elle.**
+- Pourquoi : `createOrder` recalcule les prix depuis la base et `CheckoutClient` **abandonne la vente** si le total serveur diffère du total affiché (protection légitime : ne jamais débiter un montant que l'acheteur n'a pas vu). Un seul cent d'écart suffit donc à rendre un produit inachetable.
+- Le piège concret (session 15) : `/boutique/[id]` affichait `product.price` alors que le serveur facturait `florist_price` à un fleuriste authentifié. Les cartes du catalogue fleuriste pointent vers cette page → 46 produits invendables, sans le moindre message d'erreur explicite.
+- Points d'ajout au panier à garder synchronisés : `boutique/[id]/AddToCartButton`, `BoutiqueShop`, `FloristCatalog`. (`Fleuristes.tsx` et `TransformedProducts.tsx` ne sont plus utilisés depuis la session 12 — s'ils sont un jour remis en service, les brancher aussi.)
+- `/boutique` et `/boutique/[id]` lisent le cookie fleuriste, donc sont **rendues dynamiquement** (`ƒ`). C'est voulu : une page statique ne peut pas afficher le bon prix.
+- Contrôle : `node scripts/verify-purchase-flow.mjs`.
+
+### ⚠️ Caisse — le total vient du serveur, jamais du panier
+`quoteCart()` (`src/lib/actions/checkout.ts`) est appelée par `CheckoutClient` à chaque changement de panier ou de mode de réception. **Ne jamais recalculer un total à partir des prix du `localStorage`.**
+- `quoteCart` et `createOrder` partagent `priceItems()` (tarification depuis la base) et `totalsFor()` (taxes + livraison). L'affichage et le montant encaissé traversent le même code : la divergence est structurellement impossible.
+- Le garde-fou d'écart dans `CheckoutClient` est conservé, mais il ne peut plus se déclencher à tort — seulement si un prix bouge en base entre le devis et la commande.
+- `quoteCart` renvoie `base` (sans arrondi) **et** `withRoundUp` : cocher l'arrondi ne redemande pas de devis.
+- Le `cartId` du panier est renvoyé tel quel, jamais reconstruit — le reconstruire perdrait le suffixe du point de chute des abonnements (deux lignes distinctes fusionneraient sur la même clé React).
+- Contrôle : `npm run build && npx next start -p 3001`, puis `node scripts/verify-checkout-quote.mjs`. ⚠️ Ne marche **pas** sur `npm run dev` : le serveur de développement régénère les identifiants d'actions serveur, et l'appel répond « Server action not found ».
 
 ### ⚠️ Prix — recalculés côté serveur, jamais lus du panier
 `createOrder` (`src/lib/actions/checkout.ts`) ignore les prix envoyés par le navigateur : il recharge `products` / `subscriptions` depuis la base. Le panier ne sert qu'à savoir **quoi** a été commandé.
@@ -620,7 +659,7 @@ Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_setti
 - `florist_price` sur products : prix de gros affiché dans FloristCatalog (null = prix public)
 - **Visibilité catalogue** : `fleuristes/page.tsx` filtre `p.florist_only || p.florist_price !== null` — un produit apparaît s'il est réservé fleuristes OU s'il a un prix de gros défini (session 10)
 - **Fiches cliquables** : `FloristCatalog.tsx` — `ProductRow` (liste) et `ProductCard` (grille) ont un overlay `<Link href="/boutique/[id]" className="absolute inset-0 z-0">` ; le bouton "Ajouter" reste en `relative z-10` (même pattern que TransformedProducts)
-- ⚠️ **Limite connue** : la fiche `/boutique/[id]` est publique et montre `product.price`, jamais `florist_price`. Pour afficher le prix de gros sur la fiche aux fleuristes connectés, il faudrait y vérifier `isFloristAuthenticated()` (non fait)
+- ✅ **Résolu session 15** (c'était la cause n°2 de l'impossibilité d'acheter) : `/boutique/[id]` lit maintenant `isFloristAuthenticated()` et affiche le prix de gros, barré du prix public. Voir « Prix affiché == prix facturé ».
 
 ### TipTap v3 — breaking change publication blog
 Dans TipTap v2, l'éditeur déclenchait des re-renders React à chaque frappe → `editor.getHTML()` évalué au rendu retournait le contenu à jour.
