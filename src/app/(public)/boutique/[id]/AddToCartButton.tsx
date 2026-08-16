@@ -5,12 +5,23 @@ import { ShoppingBag, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
 
-export default function AddToCartButton({ product }: { product: Product }) {
+export default function AddToCartButton({
+  product,
+  unitPrice,
+}: {
+  product: Product;
+  /**
+   * Prix réellement applicable à cet acheteur (prix de gros si fleuriste
+   * authentifié). Calculé côté serveur : mettre `product.price` au panier alors
+   * que la caisse facture le prix de gros faisait échouer la commande.
+   */
+  unitPrice: number;
+}) {
   const { addProduct, openCart } = useCart();
   const [added, setAdded] = useState(false);
 
   function handleAdd() {
-    addProduct({ id: product.id, name: product.name, price: product.price, image_url: product.image_url });
+    addProduct({ id: product.id, name: product.name, price: unitPrice, image_url: product.image_url });
     setAdded(true);
     setTimeout(() => { setAdded(false); openCart(); }, 1500);
   }

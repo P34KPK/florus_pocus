@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ShoppingBag, CheckCircle, Loader2, Lock, Heart, Store, Truck, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { createOrder } from "@/lib/actions/checkout";
-import { computeTotals, type PricingConfig } from "@/lib/pricing";
+import { createOrder, quoteCart, type QuoteLine } from "@/lib/actions/checkout";
+import { type OrderTotals, type PricingConfig } from "@/lib/pricing";
 
 declare global {
   interface Window {
@@ -53,7 +53,7 @@ export default function CheckoutClient({
   pickupAddress: string;
   pricing: PricingConfig;
 }) {
-  const { items, total, clearCart } = useCart();
+  const { items, clearCart } = useCart();
 
   const [success,  setSuccess]  = useState(false);
   const [orderId,  setOrderId]  = useState<string | null>(null);
@@ -63,12 +63,58 @@ export default function CheckoutClient({
   const [roundUp,  setRoundUp]  = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("delivery");
 
-  // Même module de calcul que le serveur — l'affichage ne peut pas diverger du
-  // montant réellement encaissé.
-  const totals        = computeTotals({ subtotal: total, deliveryMethod, config: pricing, roundUpRequested: roundUp });
-  const preview       = computeTotals({ subtotal: total, deliveryMethod, config: pricing, roundUpRequested: true });
-  const roundUpAmount = preview.roundUp;
-  const finalTotal    = totals.total;
+  // Le devis vient du serveur : la caisse n'additionne plus les prix du panier
+  // (qui vit dans le localStorage et peut être périmé ou ne pas refléter le prix
+  // de gros d'un fleuriste). Ce qui est affiché ici est, par construction, ce que
+  // `createOrder` facturera.
+  // `quoteKey` identifie le devis demandé (contenu du panier + mode de réception).
+  // Le résultat le porte : un devis qui ne correspond plus à la demande courante
+  // est ignoré, ce qui évite d'afficher un total périmé pendant un recalcul.
+  const quoteKey = items.map((i) => `${i.type}:${i.referenceId}:${i.quantity}`).join("|") + `#${deliveryMethod}`;
+
+  const [quote, setQuote] = useState<
+    { key: string; lines: QuoteLine[]; base: OrderTotals; withRoundUp: OrderTotals } | null
+  >(null);
+  const [quoteFailure, setQuoteFailure] = useState<{ key: string; message: string } | null>(null);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    let stale = false;
+
+    quoteCart({
+      items: items.map((i) => ({
+        cartId:      i.cartId,
+        referenceId: i.referenceId,
+        name:        i.name,
+        price:       i.price,
+        quantity:    i.quantity,
+        type:        i.type,
+        metadata:    i.metadata,
+      })),
+      deliveryMethod,
+    })
+      .then((res) => {
+        if (stale) return;
+        if ("error" in res) setQuoteFailure({ key: quoteKey, message: res.error });
+        else setQuote({ key: quoteKey, ...res });
+      })
+      .catch(() => {
+        if (!stale) {
+          setQuoteFailure({ key: quoteKey, message: "Impossible de calculer votre total. Rafraîchissez la page." });
+        }
+      });
+
+    return () => { stale = true; };
+  }, [quoteKey, deliveryMethod, items]);
+
+  const fresh         = quote?.key === quoteKey ? quote : null;
+  const quoteError    = quoteFailure?.key === quoteKey ? quoteFailure.message : null;
+  const quoting       = items.length > 0 && !fresh && !quoteError;
+  const quoteLines    = fresh?.lines ?? null;
+  const totals        = fresh ? (roundUp ? fresh.withRoundUp : fresh.base) : null;
+  const roundUpAmount = fresh?.withRoundUp.roundUp ?? 0;
+  const finalTotal    = totals?.total ?? 0;
+  const quoteReady    = totals !== null && !quoteError;
 
   const cardRef = useRef<SquareCard | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -129,6 +175,10 @@ export default function CheckoutClient({
       setError("Le formulaire de paiement n'est pas encore prêt. Rechargez la page et réessayez.");
       return;
     }
+    if (!quoteReady) {
+      setError(quoteError ?? "Votre total est en cours de calcul. Réessayez dans un instant.");
+      return;
+    }
     setError(null);
     setPending(true);
 
@@ -167,28 +217,38 @@ export default function CheckoutClient({
       return;
     }
 
-    // Le serveur recalcule les prix depuis la base. Si son total diffère de
-    // celui affiché, le panier est périmé : on arrête avant de débiter la carte
-    // plutôt que de facturer un montant que l'acheteur n'a pas vu.
+    // Filet de sécurité : le total affiché vient déjà du serveur (`quoteCart`),
+    // donc cet écart ne peut plus venir du panier. Il ne se déclenche que si un
+    // prix a bougé en base entre le devis et la commande — auquel cas on arrête
+    // avant de débiter un montant que l'acheteur n'a pas vu.
     const serverTotal = orderResult.total ?? finalTotal;
     if (Math.abs(serverTotal - finalTotal) > 0.01) {
       setError(
-        `Le total a changé (${serverTotal.toFixed(2)} $ au lieu de ${finalTotal.toFixed(2)} $). ` +
+        `Le total vient de changer (${serverTotal.toFixed(2)} $ au lieu de ${finalTotal.toFixed(2)} $). ` +
         "Rafraîchissez la page pour vérifier votre panier avant de payer.",
       );
       setPending(false);
       return;
     }
 
-    const payRes = await fetch("/api/square/payment", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ sourceId, orderId: orderResult.orderId, amountCAD: serverTotal }),
-    });
-
-    const payData = await payRes.json();
-    if (!payRes.ok || !payData.success) {
-      setError(payData.error ?? "Paiement refusé. Veuillez réessayer.");
+    // Un 500 renvoie une page HTML, pas du JSON : sans ce try, `.json()` levait
+    // une exception non rattrapée et le bouton restait bloqué sur « Traitement… »
+    // sans jamais rien dire à l'acheteur.
+    let payData: { success?: boolean; error?: string };
+    try {
+      const payRes = await fetch("/api/square/payment", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ sourceId, orderId: orderResult.orderId, amountCAD: serverTotal }),
+      });
+      payData = await payRes.json().catch(() => ({ error: "Réponse inattendue du serveur de paiement." }));
+      if (!payRes.ok || !payData.success) {
+        setError(payData.error ?? "Paiement refusé. Veuillez réessayer.");
+        setPending(false);
+        return;
+      }
+    } catch {
+      setError("Le paiement n'a pas pu être transmis. Vérifiez votre connexion et réessayez.");
       setPending(false);
       return;
     }
@@ -370,7 +430,7 @@ export default function CheckoutClient({
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <Heart size={13} style={{ color: "#D4A574" }} />
                       <span className="text-sm font-heading font-semibold" style={{ color: "#1A1A1A" }}>
-                        Arrondir à {preview.total.toFixed(2)} $ pour {causeName}
+                        Arrondir à {(fresh?.withRoundUp.total ?? 0).toFixed(2)} $ pour {causeName}
                       </span>
                     </div>
                     <p className="text-xs opacity-50">
@@ -382,15 +442,23 @@ export default function CheckoutClient({
 
               <button
                 type="submit"
-                disabled={pending || !sdkReady || items.length === 0}
+                disabled={pending || !sdkReady || items.length === 0 || !quoteReady}
                 className="w-full font-heading font-semibold py-4 rounded-xl text-sm text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ backgroundColor: "#2D5016" }}
               >
                 {pending
                   ? <><Loader2 size={16} className="animate-spin" /> Traitement…</>
-                  : <><Lock size={14} /> Payer {finalTotal.toFixed(2)} $</>
+                  : quoting
+                    ? <><Loader2 size={16} className="animate-spin" /> Calcul du total…</>
+                    : <><Lock size={14} /> Payer {finalTotal.toFixed(2)} $</>
                 }
               </button>
+
+              {quoteError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  {quoteError}
+                </p>
+              )}
             </form>
           </div>
 
@@ -399,21 +467,30 @@ export default function CheckoutClient({
             <h2 className="font-heading font-bold text-lg mb-4" style={{ color: "#1A1A1A" }}>Récapitulatif</h2>
             <div className="bg-white rounded-2xl border border-[#E0D5C8] shadow-sm overflow-hidden">
               <ul className="divide-y divide-[#E0D5C8]">
-                {items.map((item) => (
-                  <li key={item.cartId} className="flex justify-between items-start gap-3 px-5 py-4">
+                {(quoteLines ?? items.map((i) => ({
+                  cartId: i.cartId, name: i.name, quantity: i.quantity,
+                  unitPrice: i.price, lineTotal: i.price * i.quantity,
+                }))).map((line) => (
+                  <li key={line.cartId} className="flex justify-between items-start gap-3 px-5 py-4">
                     <div className="flex-1 min-w-0">
-                      <p className="font-heading font-semibold text-sm leading-tight">{item.name}</p>
-                      {item.metadata?.dropoff_point_name && (
-                        <p className="text-xs opacity-40 mt-0.5">{item.metadata.dropoff_point_name}</p>
-                      )}
-                      <p className="text-xs opacity-40 mt-0.5">Qté : {item.quantity}</p>
+                      <p className="font-heading font-semibold text-sm leading-tight">{line.name}</p>
+                      <p className="text-xs opacity-40 mt-0.5">
+                        Qté : {line.quantity} × {line.unitPrice.toFixed(2)} $
+                      </p>
                     </div>
                     <p className="font-semibold text-sm flex-shrink-0" style={{ color: "#2D5016" }}>
-                      {(item.price * item.quantity).toFixed(2)} $
+                      {line.lineTotal.toFixed(2)} $
                     </p>
                   </li>
                 ))}
               </ul>
+
+              {quoteError && (
+                <p className="px-5 py-3 text-sm text-red-600 bg-red-50 border-t border-red-200">{quoteError}</p>
+              )}
+
+              {totals && (
+              <>
               <div className="px-5 py-3 border-t border-[#E0D5C8] space-y-1.5 text-sm">
                 <div className="flex justify-between opacity-60">
                   <span>Sous-total</span>
@@ -455,11 +532,13 @@ export default function CheckoutClient({
                   Plus que {(pricing.freeDeliveryThreshold - totals.subtotal).toFixed(2)} $ pour la livraison gratuite.
                 </div>
               )}
+              </>
+              )}
               <div className="px-5 py-4 border-t border-[#E0D5C8] flex justify-between items-center"
                 style={{ backgroundColor: "#F0F5EC" }}>
                 <span className="font-heading font-bold">Total</span>
                 <span className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>
-                  {finalTotal.toFixed(2)} $
+                  {quoting ? "…" : `${finalTotal.toFixed(2)} $`}
                 </span>
               </div>
             </div>

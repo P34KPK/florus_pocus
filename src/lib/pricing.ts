@@ -64,6 +64,23 @@ export function pricingFromSettings(s: Record<string, string>): PricingConfig {
   };
 }
 
+/**
+ * Prix unitaire applicable à un produit — source unique de vérité.
+ *
+ * Le prix de gros ne s'applique qu'aux fleuristes authentifiés. TOUT endroit qui
+ * met un produit au panier ou qui affiche son prix doit passer par ici : si
+ * l'affichage et `createOrder` divergent d'un seul cent, la caisse refuse de
+ * payer (elle ne débite jamais un montant que l'acheteur n'a pas vu).
+ */
+export function effectiveUnitPrice(
+  product: { price: number | string; florist_price?: number | string | null },
+  isFlorist: boolean,
+): number {
+  return isFlorist && product.florist_price !== null && product.florist_price !== undefined
+    ? Number(product.florist_price)
+    : Number(product.price);
+}
+
 export interface OrderTotals {
   subtotal:    number;
   deliveryFee: number;

@@ -7,7 +7,7 @@ import { Grid, List, ShoppingBag, Mail, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
 import { isSoldOut, lowStockCount } from "@/lib/inventory";
-import type { PricingConfig } from "@/lib/pricing";
+import { effectiveUnitPrice, type PricingConfig } from "@/lib/pricing";
 
 const LEGACY_LABELS: Record<string, string> = {
   "fleurs-fraiches":   "Fleurs Fraîches",
@@ -33,12 +33,17 @@ function FlowerPlaceholder({ size = 56 }: { size?: number }) {
   );
 }
 
-function ProductCard({ product, view }: { product: Product; view: "grid" | "list" }) {
+function ProductCard({ product, view, isFlorist }: { product: Product; view: "grid" | "list"; isFlorist: boolean }) {
   const { addProduct, openCart } = useCart();
   const [added, setAdded] = useState(false);
 
+  // Le prix mis au panier doit être celui que la caisse facturera : un fleuriste
+  // authentifié paie le prix de gros, et un écart d'un cent suffit à faire
+  // refuser la commande.
+  const unitPrice = effectiveUnitPrice(product, isFlorist);
+
   function handleAdd() {
-    addProduct({ id: product.id, name: product.name, price: product.price, image_url: product.image_url });
+    addProduct({ id: product.id, name: product.name, price: unitPrice, image_url: product.image_url });
     setAdded(true);
     setTimeout(() => { setAdded(false); openCart(); }, 1500);
   }
@@ -70,7 +75,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
                 </>
               ) : (
                 <>
-                  <p className="font-heading font-bold text-base sm:text-lg" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
+                  <p className="font-heading font-bold text-base sm:text-lg" style={{ color: "#2D5016" }}>{unitPrice.toFixed(2)} $</p>
                   {isSoldOut(product)
                     ? <span className="text-xs opacity-40">Épuisé</span>
                     : <button onClick={handleAdd}
@@ -116,7 +121,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
             </div>
           ) : (
             <>
-              <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
+              <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{unitPrice.toFixed(2)} $</p>
               {isSoldOut(product)
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}
@@ -145,9 +150,11 @@ interface BoutiqueShopProps {
   surtitle?: string;
   subtitle?: string;
   pricing: PricingConfig;
+  /** Cookie fleuriste validé côté serveur — décide du prix affiché et mis au panier. */
+  isFlorist?: boolean;
 }
 
-export default function BoutiqueShop({ products, title, surtitle, subtitle, pricing }: BoutiqueShopProps) {
+export default function BoutiqueShop({ products, title, surtitle, subtitle, pricing, isFlorist = false }: BoutiqueShopProps) {
   const [view, setView]         = useState<"grid" | "list">("grid");
   const [category, setCategory] = useState<string>("all");
 
@@ -269,7 +276,7 @@ export default function BoutiqueShop({ products, title, surtitle, subtitle, pric
               ? "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5"
               : "space-y-3"
             }>
-              {filtered.map((p) => <ProductCard key={p.id} product={p} view={view} />)}
+              {filtered.map((p) => <ProductCard key={p.id} product={p} view={view} isFlorist={isFlorist} />)}
             </div>
           </div>
         </div>

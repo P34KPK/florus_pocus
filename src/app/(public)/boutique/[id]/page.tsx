@@ -5,6 +5,8 @@ import Image from "next/image";
 import { ArrowLeft, Mail } from "lucide-react";
 import { getProduct, getActiveProducts } from "@/lib/supabase-server";
 import { isSoldOut, lowStockCount } from "@/lib/inventory";
+import { effectiveUnitPrice } from "@/lib/pricing";
+import { isFloristAuthenticated } from "@/lib/actions/florist";
 import type { Metadata } from "next";
 import AddToCartButton from "./AddToCartButton";
 import ProductGallery from "./ProductGallery";
@@ -36,9 +38,10 @@ const LEGACY_LABELS: Record<string, string> = {
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
-  const [product, allProducts] = await Promise.all([
+  const [product, allProducts, isFlorist] = await Promise.all([
     fetchProduct(id),
     getActiveProducts(),
+    isFloristAuthenticated(),
   ]);
 
   if (!product) notFound();
@@ -46,6 +49,13 @@ export default async function ProductPage({ params }: Props) {
   const isDevis    = product.price_type === "devis";
   const isEpuise   = isSoldOut(product);
   const seasonLabel = product.season ? (LEGACY_LABELS[product.season] ?? product.season) : null;
+
+  // Cette fiche est partagée entre la boutique publique et les cartes du
+  // catalogue fleuriste. Elle doit afficher — et mettre au panier — le prix que
+  // la caisse facturera réellement, sans quoi la commande est refusée pour écart
+  // de total.
+  const unitPrice   = effectiveUnitPrice(product, isFlorist);
+  const hasDiscount = isFlorist && unitPrice < Number(product.price);
 
   const related = (allProducts as typeof product[])
     .filter((p) => p.id !== id && !p.florist_only)
@@ -145,13 +155,21 @@ export default async function ProductPage({ params }: Props) {
               </div>
             ) : (
               <div className="flex items-center gap-6">
-                <p className="font-display font-bold"
-                  style={{ fontSize: "clamp(2.2rem, 4vw, 3rem)", color: "#2D5016", lineHeight: 1 }}>
-                  {product.price.toFixed(2)} $
-                </p>
+                <div>
+                  <p className="font-display font-bold"
+                    style={{ fontSize: "clamp(2.2rem, 4vw, 3rem)", color: "#2D5016", lineHeight: 1 }}>
+                    {unitPrice.toFixed(2)} $
+                  </p>
+                  {hasDiscount && (
+                    <p className="text-sm mt-1">
+                      <span className="line-through opacity-40">{Number(product.price).toFixed(2)} $</span>
+                      <span className="ml-2 font-semibold" style={{ color: "#D4A574" }}>Prix fleuriste</span>
+                    </p>
+                  )}
+                </div>
                 {isEpuise
                   ? <span className="text-sm opacity-50">Produit épuisé</span>
-                  : <AddToCartButton product={product} />
+                  : <AddToCartButton product={product} unitPrice={unitPrice} />
                 }
               </div>
             )}
@@ -201,7 +219,7 @@ export default async function ProductPage({ params }: Props) {
                     {p.name}
                   </p>
                   <p className="text-sm mt-0.5 font-medium" style={{ color: "#2D5016" }}>
-                    {p.price_type === "devis" ? "Sur devis" : `${p.price.toFixed(2)} $`}
+                    {p.price_type === "devis" ? "Sur devis" : `${effectiveUnitPrice(p, isFlorist).toFixed(2)} $`}
                   </p>
                 </Link>
               ))}

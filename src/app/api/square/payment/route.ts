@@ -95,11 +95,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, paymentId: payment.id });
     }
 
+    // Square a répondu sans encaisser : l'issue est certaine, donc la commande
+    // est marquée « failed ». Sans cela elle restait « pending », impossible à
+    // distinguer d'une vraie commande à préparer dans l'admin.
+    console.error("[square/payment] statut non complété:", payment?.status, "orderId:", orderId);
+    await supabase.from("orders").update({ payment_status: "failed" }).eq("id", orderId);
+
     return NextResponse.json({ error: "Paiement non complété." }, { status: 402 });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Erreur Square inconnue.";
-    console.error("[square/payment]", msg);
+    console.error("[square/payment]", msg, "orderId:", orderId);
+    // Ici l'issue est INCONNUE (réseau, délai d'attente) : la carte a pu être
+    // débitée. On laisse « pending » pour que le webhook Square puisse encore
+    // confirmer l'encaissement — le marquer « failed » masquerait un vrai paiement.
     return NextResponse.json({ error: "Paiement refusé. Veuillez réessayer." }, { status: 402 });
   }
 }

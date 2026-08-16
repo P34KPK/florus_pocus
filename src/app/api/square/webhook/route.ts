@@ -58,7 +58,10 @@ export async function POST(req: NextRequest) {
           square_payment_id: paymentId,
         })
         .eq("id", orderId)
-        .eq("payment_status", "pending");
+        // `neq` et non `eq("pending")` : une commande que la route de paiement a
+        // marquée « failed » doit pouvoir être corrigée si Square confirme
+        // finalement l'encaissement. Seul un « completed » est intouchable.
+        .neq("payment_status", "completed");
 
       // Filet de secours : appelé systématiquement, même si la route de
       // paiement a déjà marqué la commande. L'idempotence est assurée par

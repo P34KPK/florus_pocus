@@ -1,5 +1,6 @@
 import { getActiveProducts, getSiteSettings } from "@/lib/supabase-server";
 import { pricingFromSettings } from "@/lib/pricing";
+import { isFloristAuthenticated } from "@/lib/actions/florist";
 import BoutiqueShop    from "@/components/sections/BoutiqueShop";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import type { Product } from "@/types";
@@ -11,9 +12,10 @@ export const metadata = {
 };
 
 export default async function BoutiquePage() {
-  const [products, settings] = await Promise.all([
+  const [products, settings, isFlorist] = await Promise.all([
     getActiveProducts(),
     getSiteSettings(),
+    isFloristAuthenticated(),
   ]);
   const public_products = (products as Product[]).filter((p) => !p.florist_only);
 
@@ -26,6 +28,7 @@ export default async function BoutiquePage() {
         surtitle={settings["produits_surtitle"]}
         subtitle={settings["boutique_subtitle"]}
         pricing={pricingFromSettings(settings)}
+        isFlorist={isFlorist}
       />
     </main>
   );
