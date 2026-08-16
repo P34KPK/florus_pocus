@@ -133,8 +133,9 @@
   **Vérifications faites (aucun paiement déclenché) :**
   - `node scripts/verify-purchase-flow.mjs` — **0 produit refusé** sur les 53 affichés comme achetables (24 avant) ; **24/24** prix affichés identiques aux prix facturés, en public comme en fleuriste, lus sur le rendu serveur réel.
   - `node scripts/verify-checkout-quote.mjs` — `quoteCart` **appelée pour de vrai** via le protocole Server Actions sur un build de production : prix public (12 → 13,80 $), prix de gros par cookie (10 → 11,50 $), livraison 9,99 $ et gratuité dès 100 $, arrondi non taxé, et acceptation d'un produit à stock 0 non suivi (Tournesol 20 $ → **23,00 $**, le chiffre de contrôle du terminal Square).
-  - ❗ **Le débit Square reste non testé** — impossible sans un vrai achat (compte du client en production).
-  - ❗ **Le rendu de l'écran de caisse n'a pas été vu** (extension Chrome non connectée). Les bonnes données arrivent, prouvé côté serveur ; l'affichage React de ces données reste à confirmer d'un coup d'œil.
+  - ✅ **Écran de caisse confirmé visuellement** (capture du 2026-08-16) : 14,00 $ + 9,99 $ de livraison → TPS 1,20 / TVQ 2,39 → **27,58 $**, montant identique sur le bouton « Payer », bouton actif, champ Square chargé, arrondi et seuil de gratuité exacts.
+  - ❗ **Le débit Square reste non testé** — impossible sans un vrai achat (compte du client en production). C'est le SEUL maillon non vérifié de toute la chaîne.
+  - ❗ `createOrder` n'a pas pu être exercée depuis un script : reproduire l'encodage des arguments d'une action serveur React (`$K` + préfixe `_<id>_`) n'a pas abouti en trois tentatives. Ce qui la couvre : elle partage `priceItems()` / `totalsFor()` avec `quoteCart` (prouvée), son code d'enregistrement est inchangé, et les 2 commandes du 16 août prouvent que ce code écrit correctement en base.
 
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
@@ -225,7 +226,7 @@
 - [x] ~~39 produits bloqués « Épuisé »~~ — FAIT session 14 (migration 023, `track_inventory`)
 - [ ] **Numéros de TPS et TVQ à saisir par le client** — Admin → Contenu → Taxes et livraison. La cloche le lui rappelle automatiquement, aucune relance à faire.
 - [x] ~~Pousser `1cea9af`~~ — FAIT : poussé et déploiement vérifié en production (24/24 prix, 0 produit refusé, routes en 200)
-- [ ] **Confirmer l'écran de caisse à l'œil** — ajouter un article, aller à `/checkout`, vérifier que le total s'affiche et que le bouton s'active. S'arrêter là, sans payer. C'est le seul point du correctif de session 15 qui n'a pas été vu à l'écran (le rendu React du devis ; les données qui l'alimentent sont prouvées).
+- [x] ~~Confirmer l'écran de caisse à l'œil~~ — FAIT : capture vérifiée le 2026-08-16. Bombe de Semences 14,00 $ + livraison 9,99 $ → TPS 1,20 / TVQ 2,39 → **total 27,58 $**, identique sur le bouton « Payer ». Bouton actif, champ Square chargé, seuil de livraison gratuite (86,00 $ restants) et arrondi (0,42 $ → 28,00 $) exacts. Le devis serveur s'affiche bien (ligne « Qté : 1 × 14.00 $ »).
 - [x] ~~Impossible d'acheter (inventaire + prix fleuriste)~~ — FAIT session 15 (`1cea9af`)
 - [ ] **Premier vrai achat à surveiller** — seul test de bout en bout impossible à simuler (Square est en production sur le compte du client). Vérifier que la notification admin arrive ; sinon `node scripts/verify-orders-pipeline.mjs` lit `orders.email_error`.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
