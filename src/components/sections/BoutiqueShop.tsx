@@ -7,7 +7,7 @@ import { Grid, List, ShoppingBag, Mail, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
 import { isSoldOut, lowStockCount } from "@/lib/inventory";
-import { effectiveUnitPrice, type PricingConfig } from "@/lib/pricing";
+import { formatPrix, effectiveUnitPrice, type PricingConfig } from "@/lib/pricing";
 
 const LEGACY_LABELS: Record<string, string> = {
   "fleurs-fraiches":   "Fleurs Fraîches",
@@ -75,7 +75,7 @@ function ProductCard({ product, view, isFlorist }: { product: Product; view: "gr
                 </>
               ) : (
                 <>
-                  <p className="font-heading font-bold text-base sm:text-lg" style={{ color: "#2D5016" }}>{unitPrice.toFixed(2)} $</p>
+                  <p className="font-heading font-bold text-base sm:text-lg" style={{ color: "#2D5016" }}>{formatPrix(unitPrice)} $</p>
                   {isSoldOut(product)
                     ? <span className="text-xs opacity-40">Épuisé</span>
                     : <button onClick={handleAdd}
@@ -121,7 +121,7 @@ function ProductCard({ product, view, isFlorist }: { product: Product; view: "gr
             </div>
           ) : (
             <>
-              <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{unitPrice.toFixed(2)} $</p>
+              <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{formatPrix(unitPrice)} $</p>
               {isSoldOut(product)
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}
@@ -184,7 +184,7 @@ export default function BoutiqueShop({ products, title, surtitle, subtitle, pric
             <div className="flex items-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-border bg-white shadow-sm self-start sm:self-auto flex-shrink-0">
               <Truck size={13} style={{ color: "#2D5016", flexShrink: 0 }} />
               <span className="opacity-70">
-                Livraison locale · <strong>{pricing.deliveryFee.toFixed(2)} $</strong> · Gratuite dès <strong>{pricing.freeDeliveryThreshold.toFixed(0)} $</strong>
+                Livraison locale · <strong>{formatPrix(pricing.deliveryFee)} $</strong> · Gratuite dès <strong>{pricing.freeDeliveryThreshold.toFixed(0)} $</strong>
               </span>
             </div>
           </div>

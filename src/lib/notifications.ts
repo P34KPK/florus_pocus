@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase-server";
+import { formatPrix } from "@/lib/pricing";
 
 /**
  * Notifications de l'administration.
@@ -187,7 +188,7 @@ export async function getAdminNotifications(userId: string | null): Promise<Noti
       id:       `event:order:${o.id}`,
       kind:     "event",
       severity: "success",
-      title:    `${o.is_florist_order ? "Commande fleuriste" : "Nouvelle commande"} — ${Number(o.total_amount).toFixed(2)} $`,
+      title:    `${o.is_florist_order ? "Commande fleuriste" : "Nouvelle commande"} — ${formatPrix(Number(o.total_amount))} $`,
       description: `#${ref(o.id)} · ${o.customer_name} · ${frDate(o.created_at)}`,
       href:     "/admin/commandes",
       createdAt: o.created_at,

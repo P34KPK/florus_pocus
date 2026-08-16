@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ArrowLeft, Mail } from "lucide-react";
 import { getProduct, getActiveProducts } from "@/lib/supabase-server";
 import { isSoldOut, lowStockCount } from "@/lib/inventory";
-import { effectiveUnitPrice } from "@/lib/pricing";
+import { formatPrix, effectiveUnitPrice } from "@/lib/pricing";
 import { isFloristAuthenticated } from "@/lib/actions/florist";
 import type { Metadata } from "next";
 import AddToCartButton from "./AddToCartButton";
@@ -158,11 +158,11 @@ export default async function ProductPage({ params }: Props) {
                 <div>
                   <p className="font-display font-bold"
                     style={{ fontSize: "clamp(2.2rem, 4vw, 3rem)", color: "#2D5016", lineHeight: 1 }}>
-                    {unitPrice.toFixed(2)} $
+                    {formatPrix(unitPrice)} $
                   </p>
                   {hasDiscount && (
                     <p className="text-sm mt-1">
-                      <span className="line-through opacity-40">{Number(product.price).toFixed(2)} $</span>
+                      <span className="line-through opacity-40">{formatPrix(Number(product.price))} $</span>
                       <span className="ml-2 font-semibold" style={{ color: "#D4A574" }}>Prix fleuriste</span>
                     </p>
                   )}
@@ -219,7 +219,7 @@ export default async function ProductPage({ params }: Props) {
                     {p.name}
                   </p>
                   <p className="text-sm mt-0.5 font-medium" style={{ color: "#2D5016" }}>
-                    {p.price_type === "devis" ? "Sur devis" : `${effectiveUnitPrice(p, isFlorist).toFixed(2)} $`}
+                    {p.price_type === "devis" ? "Sur devis" : `${formatPrix(effectiveUnitPrice(p, isFlorist))} $`}
                   </p>
                 </Link>
               ))}

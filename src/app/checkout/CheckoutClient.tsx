@@ -5,7 +5,7 @@ import { ArrowLeft, ShoppingBag, CheckCircle, Loader2, Lock, Heart, Store, Truck
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { createOrder, quoteCart, type QuoteLine } from "@/lib/actions/checkout";
-import { type OrderTotals, type PricingConfig } from "@/lib/pricing";
+import { formatPrix, type OrderTotals, type PricingConfig } from "@/lib/pricing";
 
 declare global {
   interface Window {
@@ -64,9 +64,10 @@ export default function CheckoutClient({
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("delivery");
 
   // Le devis vient du serveur : la caisse n'additionne plus les prix du panier
-  // (qui vit dans le localStorage et peut être périmé ou ne pas refléter le prix
-  // de gros d'un fleuriste). Ce qui est affiché ici est, par construction, ce que
-  // `createOrder` facturera.
+  // (qui vit dans le localStorage, peut être périmé, et ne reflète pas forcément
+  // le prix de gros d'un fleuriste). Ce qui est affiché ici est, par construction,
+  // ce que `createOrder` facturera.
+  //
   // `quoteKey` identifie le devis demandé (contenu du panier + mode de réception).
   // Le résultat le porte : un devis qui ne correspond plus à la demande courante
   // est ignoré, ce qui évite d'afficher un total périmé pendant un recalcul.
@@ -224,7 +225,7 @@ export default function CheckoutClient({
     const serverTotal = orderResult.total ?? finalTotal;
     if (Math.abs(serverTotal - finalTotal) > 0.01) {
       setError(
-        `Le total vient de changer (${serverTotal.toFixed(2)} $ au lieu de ${finalTotal.toFixed(2)} $). ` +
+        `Le total vient de changer (${formatPrix(serverTotal)} $ au lieu de ${formatPrix(finalTotal)} $). ` +
         "Rafraîchissez la page pour vérifier votre panier avant de payer.",
       );
       setPending(false);
@@ -430,11 +431,11 @@ export default function CheckoutClient({
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <Heart size={13} style={{ color: "#D4A574" }} />
                       <span className="text-sm font-heading font-semibold" style={{ color: "#1A1A1A" }}>
-                        Arrondir à {(fresh?.withRoundUp.total ?? 0).toFixed(2)} $ pour {causeName}
+                        Arrondir à {formatPrix((fresh?.withRoundUp.total ?? 0))} $ pour {causeName}
                       </span>
                     </div>
                     <p className="text-xs opacity-50">
-                      Ajouter {roundUpAmount.toFixed(2)} $ à votre total pour contribuer à la cause.
+                      Ajouter {formatPrix(roundUpAmount)} $ à votre total pour contribuer à la cause.
                     </p>
                   </div>
                 </label>
@@ -450,7 +451,7 @@ export default function CheckoutClient({
                   ? <><Loader2 size={16} className="animate-spin" /> Traitement…</>
                   : quoting
                     ? <><Loader2 size={16} className="animate-spin" /> Calcul du total…</>
-                    : <><Lock size={14} /> Payer {finalTotal.toFixed(2)} $</>
+                    : <><Lock size={14} /> Payer {formatPrix(finalTotal)} $</>
                 }
               </button>
 
@@ -475,11 +476,11 @@ export default function CheckoutClient({
                     <div className="flex-1 min-w-0">
                       <p className="font-heading font-semibold text-sm leading-tight">{line.name}</p>
                       <p className="text-xs opacity-40 mt-0.5">
-                        Qté : {line.quantity} × {line.unitPrice.toFixed(2)} $
+                        Qté : {line.quantity} × {formatPrix(line.unitPrice)} $
                       </p>
                     </div>
                     <p className="font-semibold text-sm flex-shrink-0" style={{ color: "#2D5016" }}>
-                      {line.lineTotal.toFixed(2)} $
+                      {formatPrix(line.lineTotal)} $
                     </p>
                   </li>
                 ))}
@@ -494,13 +495,13 @@ export default function CheckoutClient({
               <div className="px-5 py-3 border-t border-[#E0D5C8] space-y-1.5 text-sm">
                 <div className="flex justify-between opacity-60">
                   <span>Sous-total</span>
-                  <span>{totals.subtotal.toFixed(2)} $</span>
+                  <span>{formatPrix(totals.subtotal)} $</span>
                 </div>
                 <div className="flex justify-between opacity-60">
                   <span>{deliveryMethod === "pickup" ? "Ramassage" : "Livraison locale"}</span>
                   <span>
                     {totals.deliveryFee > 0
-                      ? `${totals.deliveryFee.toFixed(2)} $`
+                      ? `${formatPrix(totals.deliveryFee)} $`
                       : <span style={{ color: "#2D5016" }}>Gratuite</span>}
                   </span>
                 </div>
@@ -508,11 +509,11 @@ export default function CheckoutClient({
                   <>
                     <div className="flex justify-between opacity-60">
                       <span>TPS ({(pricing.gstRate * 100).toFixed(3).replace(/\.?0+$/, "")} %)</span>
-                      <span>{totals.gst.toFixed(2)} $</span>
+                      <span>{formatPrix(totals.gst)} $</span>
                     </div>
                     <div className="flex justify-between opacity-60">
                       <span>TVQ ({(pricing.qstRate * 100).toFixed(3).replace(/\.?0+$/, "")} %)</span>
-                      <span>{totals.qst.toFixed(2)} $</span>
+                      <span>{formatPrix(totals.qst)} $</span>
                     </div>
                   </>
                 )}
@@ -522,14 +523,14 @@ export default function CheckoutClient({
                       <Heart size={12} style={{ color: "#D4A574" }} />
                       Arrondi pour {causeName}
                     </span>
-                    <span className="opacity-60">+{totals.roundUp.toFixed(2)} $</span>
+                    <span className="opacity-60">+{formatPrix(totals.roundUp)} $</span>
                   </div>
                 )}
               </div>
 
               {deliveryMethod === "delivery" && totals.deliveryFee > 0 && (
                 <div className="px-5 pb-3 text-xs" style={{ color: "#D4A574" }}>
-                  Plus que {(pricing.freeDeliveryThreshold - totals.subtotal).toFixed(2)} $ pour la livraison gratuite.
+                  Plus que {formatPrix((pricing.freeDeliveryThreshold - totals.subtotal))} $ pour la livraison gratuite.
                 </div>
               )}
               </>
@@ -538,7 +539,7 @@ export default function CheckoutClient({
                 style={{ backgroundColor: "#F0F5EC" }}>
                 <span className="font-heading font-bold">Total</span>
                 <span className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>
-                  {quoting ? "…" : `${finalTotal.toFixed(2)} $`}
+                  {quoting ? "…" : `${formatPrix(finalTotal)} $`}
                 </span>
               </div>
             </div>

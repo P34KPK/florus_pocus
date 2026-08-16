@@ -5,6 +5,7 @@ import Image from "next/image";
 import { X, Trash2, Plus, Minus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { PricingConfig } from "@/lib/pricing";
+import { formatPrix } from "@/lib/pricing";
 
 export default function CartDrawer({ pricing }: { pricing: PricingConfig }) {
   const { items, isOpen, closeCart, removeItem, updateQuantity, total } = useCart();
@@ -90,7 +91,7 @@ export default function CartDrawer({ pricing }: { pricing: PricingConfig }) {
                     </p>
                   )}
                   <p className="text-sm font-semibold mt-1" style={{ color: "#2D5016" }}>
-                    {(item.price * item.quantity).toFixed(2)} $
+                    {formatPrix((item.price * item.quantity))} $
                   </p>
                 </div>
 
@@ -128,7 +129,7 @@ export default function CartDrawer({ pricing }: { pricing: PricingConfig }) {
             <div className="flex justify-between items-center">
               <span className="font-heading font-semibold">Sous-total</span>
               <span className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>
-                {total.toFixed(2)} $
+                {formatPrix(total)} $
               </span>
             </div>
             <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: "#F4D4B0", color: "#2D5016" }}>
@@ -139,7 +140,7 @@ export default function CartDrawer({ pricing }: { pricing: PricingConfig }) {
               <span className="font-semibold">
                 {total >= pricing.freeDeliveryThreshold
                   ? "Gratuite ✓"
-                  : `${pricing.deliveryFee.toFixed(2)} $`}
+                  : `${formatPrix(pricing.deliveryFee)} $`}
               </span>
             </div>
             <p className="text-center text-xs opacity-40">

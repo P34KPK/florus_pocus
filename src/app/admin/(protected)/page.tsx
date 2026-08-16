@@ -3,6 +3,7 @@ import Link from "next/link";
 import DashboardCard from "@/components/admin/DashboardCard";
 import { createAdminClient } from "@/lib/supabase-server";
 import type { Metadata } from "next";
+import { formatPrix } from "@/lib/pricing";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -58,7 +59,7 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         <DashboardCard
           title="Revenus ce mois"
-          value={`${revenueMonth.toFixed(2)} $`}
+          value={`${formatPrix(revenueMonth)} $`}
           subtitle={`${ordersCount} commande${ordersCount !== 1 ? "s" : ""} (hors dons)`}
           icon={DollarSign}
           color="green"
@@ -115,7 +116,7 @@ export default async function AdminDashboard() {
                     <td className="py-3 opacity-40 text-xs">
                       {new Date(o.created_at).toLocaleDateString("fr-CA")}
                     </td>
-                    <td className="py-3 font-semibold">{Number(o.total_amount).toFixed(2)} $</td>
+                    <td className="py-3 font-semibold">{formatPrix(Number(o.total_amount))} $</td>
                     <td className="py-3">
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLES[o.status] ?? ""}`}>
                         {STATUS_LABELS[o.status] ?? o.status}

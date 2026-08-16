@@ -7,6 +7,7 @@ import { ShoppingBag, Mail } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
 import { isSoldOut, lowStockCount } from "@/lib/inventory";
+import { formatPrix } from "@/lib/pricing";
 
 const LEGACY_LABELS: Record<string, string> = {
   "fleurs-fraiches":   "Fleurs Fraîches",
@@ -79,7 +80,7 @@ function TransformedCard({ product }: { product: Product }) {
             </div>
           ) : (
             <>
-              <p className="font-heading font-bold text-2xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
+              <p className="font-heading font-bold text-2xl" style={{ color: "#2D5016" }}>{formatPrix(product.price)} $</p>
               {isSoldOut(product)
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}

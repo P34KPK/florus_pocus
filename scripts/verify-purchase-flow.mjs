@@ -15,7 +15,8 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
-const BASE = process.env.VERIFY_BASE_URL ?? "http://localhost:3000";
+// URL à sonder : 1er argument, sinon VERIFY_BASE_URL, sinon le serveur de dev.
+const BASE = process.argv[2] ?? process.env.VERIFY_BASE_URL ?? "http://localhost:3000";
 
 const env = Object.fromEntries(
   readFileSync(".env.local", "utf8")
@@ -66,9 +67,15 @@ if (refusesParLaCaisse.length > 0) {
 }
 
 /* ── 2. Prix affiché == prix facturé ─────────────────────────────────────── */
-// Le grand prix de la fiche produit. React scinde « 12.00 » et « $ » en deux
-// nœuds de texte : on n'ancre donc que sur le nombre.
-const PRIX = /class="font-display font-bold" style="[^"]*line-height:1">([\d]+\.[\d]{2})/;
+// Le grand prix de la fiche produit. React scinde « 12,00 » et « $ » en deux
+// nœuds de texte : on n'ancre donc que sur le nombre. Format français depuis la
+// session 15 : virgule décimale, espace insécable pour les milliers.
+const PRIX = /class="font-display font-bold" style="[^"]*line-height:1">([\d  ]+,[\d]{2})/;
+
+/** « 5 999,00 » → 5999 */
+function versNombre(texte) {
+  return Number(texte.replace(/[  ]/g, "").replace(",", "."));
+}
 
 async function prixAffiche(id, cookie) {
   const res = await fetch(`${BASE}/boutique/${id}`, {
@@ -78,7 +85,7 @@ async function prixAffiche(id, cookie) {
   if (!res.ok) return { err: `HTTP ${res.status}` };
   const html = await res.text();
   const m = html.match(PRIX);
-  return m ? { prix: Number(m[1]) } : { err: "prix introuvable dans la page" };
+  return m ? { prix: versNombre(m[1]) } : { err: "prix introuvable dans la page" };
 }
 
 // Priorité aux produits dont le prix de gros diffère du prix public : ce sont

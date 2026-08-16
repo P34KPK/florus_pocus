@@ -7,6 +7,7 @@ import { Grid, List, ShoppingBag, Mail } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
 import { isSoldOut } from "@/lib/inventory";
+import { formatPrix } from "@/lib/pricing";
 
 interface FleuristesProps {
   products?: Product[];
@@ -94,7 +95,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
             </>
           ) : (
             <>
-              <p className="font-heading font-bold text-lg" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
+              <p className="font-heading font-bold text-lg" style={{ color: "#2D5016" }}>{formatPrix(product.price)} $</p>
               {isSoldOut(product)
                 ? <span className="text-xs opacity-40">Épuisé</span>
                 : <button onClick={handleAdd} className="font-heading font-semibold px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90"
@@ -142,7 +143,7 @@ function ProductCard({ product, view }: { product: Product; view: "grid" | "list
             </div>
           ) : (
             <>
-              <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{product.price.toFixed(2)} $</p>
+              <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{formatPrix(product.price)} $</p>
               {isSoldOut(product)
                 ? <span className="text-xs opacity-40 bg-gray-100 px-3 py-1 rounded-full">Épuisé</span>
                 : <button onClick={handleAdd}

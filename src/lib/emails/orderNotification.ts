@@ -1,5 +1,6 @@
 import { SITE_URL } from "@/lib/site";
 import type { OrderBreakdown } from "@/lib/emails/orderConfirmation";
+import { formatPrix } from "@/lib/pricing";
 
 interface NotificationItem {
   name: string;
@@ -25,13 +26,13 @@ export interface OrderNotificationProps {
 /** Lignes de ventilation à afficher au-dessus du total encaissé. */
 function summaryRows(p: OrderNotificationProps): Array<[string, string]> {
   const b = p.breakdown;
-  if (!b) return p.roundUp > 0 ? [["Arrondi pour la cause", `${p.roundUp.toFixed(2)} $`]] : [];
+  if (!b) return p.roundUp > 0 ? [["Arrondi pour la cause", `${formatPrix(p.roundUp)} $`]] : [];
 
-  const rows: Array<[string, string]> = [["Sous-total", `${b.subtotal.toFixed(2)} $`]];
-  rows.push(["Livraison", b.deliveryFee > 0 ? `${b.deliveryFee.toFixed(2)} $` : "Gratuite"]);
-  if (b.gst > 0) rows.push(["TPS", `${b.gst.toFixed(2)} $`]);
-  if (b.qst > 0) rows.push(["TVQ", `${b.qst.toFixed(2)} $`]);
-  if (b.roundUp > 0) rows.push(["Arrondi pour la cause", `${b.roundUp.toFixed(2)} $`]);
+  const rows: Array<[string, string]> = [["Sous-total", `${formatPrix(b.subtotal)} $`]];
+  rows.push(["Livraison", b.deliveryFee > 0 ? `${formatPrix(b.deliveryFee)} $` : "Gratuite"]);
+  if (b.gst > 0) rows.push(["TPS", `${formatPrix(b.gst)} $`]);
+  if (b.qst > 0) rows.push(["TVQ", `${formatPrix(b.qst)} $`]);
+  if (b.roundUp > 0) rows.push(["Arrondi pour la cause", `${formatPrix(b.roundUp)} $`]);
   return rows;
 }
 
@@ -54,7 +55,7 @@ export function orderNotificationHtml(p: OrderNotificationProps): string {
   const rows = p.items.map((i) => `
     <tr>
       <td style="padding:8px 0;border-bottom:1px solid #E0D5C8;">${escapeHtml(i.name)} ${i.quantity > 1 ? `<span style="color:#888;">×${i.quantity}</span>` : ""}</td>
-      <td style="padding:8px 0;border-bottom:1px solid #E0D5C8;text-align:right;font-weight:bold;color:#2D5016;">${(i.price * i.quantity).toFixed(2)} $</td>
+      <td style="padding:8px 0;border-bottom:1px solid #E0D5C8;text-align:right;font-weight:bold;color:#2D5016;">${formatPrix((i.price * i.quantity))} $</td>
     </tr>
   `).join("");
 
@@ -101,7 +102,7 @@ export function orderNotificationHtml(p: OrderNotificationProps): string {
               </tr>`).join("")}
               <tr>
                 <td style="padding:14px 0 0;font-size:16px;font-weight:bold;">Total encaissé</td>
-                <td style="padding:14px 0 0;text-align:right;font-size:20px;font-weight:bold;color:#2D5016;">${p.total.toFixed(2)} $</td>
+                <td style="padding:14px 0 0;text-align:right;font-size:20px;font-weight:bold;color:#2D5016;">${formatPrix(p.total)} $</td>
               </tr>
             </table>
 
@@ -122,7 +123,7 @@ export function orderNotificationHtml(p: OrderNotificationProps): string {
 export function orderNotificationText(p: OrderNotificationProps): string {
   const ref = p.orderId.slice(0, 8).toUpperCase();
   const lines = p.items
-    .map((i) => `  - ${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""} : ${(i.price * i.quantity).toFixed(2)} $`)
+    .map((i) => `  - ${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""} : ${formatPrix((i.price * i.quantity))} $`)
     .join("\n");
 
   return `
@@ -140,7 +141,7 @@ ${lines}
 
 ${summaryRows(p).map(([l, v]) => `  ${l} : ${v}`).join("\n")}
 
-Total encaissé : ${p.total.toFixed(2)} $
+Total encaissé : ${formatPrix(p.total)} $
 
 Voir la commande : ${SITE_URL}/admin/commandes
   `.trim();

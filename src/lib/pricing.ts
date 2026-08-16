@@ -65,6 +65,27 @@ export function pricingFromSettings(s: Record<string, string>): PricingConfig {
 }
 
 /**
+ * Montant formaté à la française : virgule décimale et espace insécable pour les
+ * milliers (« 5 999,00 »). Le symbole « $ » n'est PAS inclus — les gabarits
+ * l'ajoutent déjà, précédé d'une espace.
+ *
+ * Écrit à la main plutôt qu'avec `Intl.NumberFormat` : le séparateur de milliers
+ * d'ICU varie selon les versions (espace fine vs insécable), ce qui produirait un
+ * texte différent côté serveur et côté navigateur — donc une erreur d'hydratation
+ * React. Ici le résultat est identique partout.
+ *
+ * ⚠️ Réservé à l'AFFICHAGE. L'export CSV garde `toFixed(2)` : c'est de la donnée
+ * destinée à un tableur, qui doit rester en point décimal.
+ */
+export function formatPrix(amount: number): string {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return "0,00";
+  const [entiers, decimales] = Math.abs(n).toFixed(2).split(".");
+  const groupes = entiers.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${n < 0 ? "−" : ""}${groupes},${decimales}`;
+}
+
+/**
  * Prix unitaire applicable à un produit — source unique de vérité.
  *
  * Le prix de gros ne s'applique qu'aux fleuristes authentifiés. TOUT endroit qui

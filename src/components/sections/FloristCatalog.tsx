@@ -7,6 +7,7 @@ import { Grid, List, ShoppingBag, Tag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Product } from "@/types";
 import { isSoldOut } from "@/lib/inventory";
+import { formatPrix } from "@/lib/pricing";
 
 const LEGACY_LABELS: Record<string, string> = {
   "fleurs-fraiches":   "Fleurs Fraîches",
@@ -67,11 +68,11 @@ function ProductRow({ product }: { product: Product }) {
       <div className="relative z-10 flex items-center gap-4 flex-shrink-0">
         <div className="text-right">
           <p className="font-heading font-bold text-lg" style={{ color: "#2D5016" }}>
-            {displayPrice.toFixed(2)} $
+            {formatPrix(displayPrice)} $
           </p>
           {hasDiscount && (
             <p className="text-xs line-through" style={{ color: "#bbb" }}>
-              {product.price.toFixed(2)} $
+              {formatPrix(product.price)} $
             </p>
           )}
         </div>
@@ -123,9 +124,9 @@ function ProductCard({ product }: { product: Product }) {
         <p className="text-sm mb-4 line-clamp-2" style={{ color: "#666" }}>{product.description}</p>
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{displayPrice.toFixed(2)} $</p>
+            <p className="font-heading font-bold text-xl" style={{ color: "#2D5016" }}>{formatPrix(displayPrice)} $</p>
             {hasDiscount && (
-              <p className="text-xs line-through" style={{ color: "#bbb" }}>{product.price.toFixed(2)} $</p>
+              <p className="text-xs line-through" style={{ color: "#bbb" }}>{formatPrix(product.price)} $</p>
             )}
           </div>
           {isSoldOut(product)

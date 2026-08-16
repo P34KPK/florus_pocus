@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase-server";
 import { getResend, FROM_EMAIL } from "@/lib/resend";
 import { orderConfirmationHtml, orderConfirmationText, type OrderBreakdown } from "@/lib/emails/orderConfirmation";
 import { orderNotificationHtml, orderNotificationText, type OrderNotificationProps } from "@/lib/emails/orderNotification";
+import { formatPrix } from "@/lib/pricing";
 
 /**
  * Envoie les deux courriels d'une commande payée : confirmation au client et
@@ -100,7 +101,7 @@ export async function sendOrderEmails(orderId: string): Promise<void> {
       from:    FROM_EMAIL,
       to:      adminEmail,
       replyTo: order.customer_email || undefined,
-      subject: `${payload.isFloristOrder ? "[FLEURISTE] " : ""}Nouvelle commande #${orderId.slice(0, 8).toUpperCase()} — ${total.toFixed(2)} $`,
+      subject: `${payload.isFloristOrder ? "[FLEURISTE] " : ""}Nouvelle commande #${orderId.slice(0, 8).toUpperCase()} — ${formatPrix(total)} $`,
       html:    orderNotificationHtml(payload),
       text:    orderNotificationText(payload),
     });

@@ -5,6 +5,7 @@ import { Eye, Download, Mail, Phone, MapPin, Package, Store, Truck } from "lucid
 import type { Order, OrderStatus } from "@/types";
 import { updateOrderStatus } from "@/lib/actions/orders";
 import Modal from "@/components/admin/Modal";
+import { formatPrix } from "@/lib/pricing";
 
 const STATUS_STYLES: Record<string, string> = {
   pending:   "bg-yellow-100 text-yellow-700",
@@ -139,7 +140,7 @@ export default function CommandesClient({ orders }: { orders: Order[] }) {
                       <p className="text-xs opacity-40">{o.customer_email}</p>
                     </td>
                     <td className="px-6 py-4 opacity-50 text-xs">{new Date(o.created_at).toLocaleDateString("fr-CA")}</td>
-                    <td className="px-6 py-4 font-semibold">{Number(o.total_amount).toFixed(2)} $</td>
+                    <td className="px-6 py-4 font-semibold">{formatPrix(Number(o.total_amount))} $</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${o.payment_status === "completed" ? "bg-green-100 text-green-700" : o.payment_status === "failed" ? "bg-red-100 text-red-600" : "bg-yellow-100 text-yellow-700"}`}>
                         {PAYMENT_LABELS[o.payment_status] ?? o.payment_status}
@@ -195,45 +196,45 @@ export default function CommandesClient({ orders }: { orders: Order[] }) {
                       {it.quantity > 1 && <span className="opacity-50"> ×{it.quantity}</span>}
                       {it.metadata?.dropoff_point_name && <span className="block text-xs opacity-50">Point de chute : {it.metadata.dropoff_point_name}</span>}
                     </span>
-                    <span className="font-semibold" style={{ color: "#2D5016" }}>{(it.price_per_unit * it.quantity).toFixed(2)} $</span>
+                    <span className="font-semibold" style={{ color: "#2D5016" }}>{formatPrix((it.price_per_unit * it.quantity))} $</span>
                   </div>
                 ))}
                 {/* Ventilation — indispensable pour la comptabilité et les remises de taxes */}
                 <div className="pt-2 space-y-1 text-sm border-t border-[#E0D5C8]">
                   <div className="flex items-center justify-between opacity-60">
                     <span>Sous-total</span>
-                    <span>{Number(selected.subtotal ?? 0).toFixed(2)} $</span>
+                    <span>{formatPrix(Number(selected.subtotal ?? 0))} $</span>
                   </div>
                   <div className="flex items-center justify-between opacity-60">
                     <span>Livraison</span>
                     <span>
                       {Number(selected.delivery_fee ?? 0) > 0
-                        ? `${Number(selected.delivery_fee).toFixed(2)} $`
+                        ? `${formatPrix(Number(selected.delivery_fee))} $`
                         : "Gratuite"}
                     </span>
                   </div>
                   {Number(selected.gst_amount ?? 0) > 0 && (
                     <div className="flex items-center justify-between opacity-60">
                       <span>TPS</span>
-                      <span>{Number(selected.gst_amount).toFixed(2)} $</span>
+                      <span>{formatPrix(Number(selected.gst_amount))} $</span>
                     </div>
                   )}
                   {Number(selected.qst_amount ?? 0) > 0 && (
                     <div className="flex items-center justify-between opacity-60">
                       <span>TVQ</span>
-                      <span>{Number(selected.qst_amount).toFixed(2)} $</span>
+                      <span>{formatPrix(Number(selected.qst_amount))} $</span>
                     </div>
                   )}
                   {Number(selected.round_up_amount ?? 0) > 0 && (
                     <div className="flex items-center justify-between opacity-60">
                       <span>Arrondi pour la cause</span>
-                      <span>{Number(selected.round_up_amount).toFixed(2)} $</span>
+                      <span>{formatPrix(Number(selected.round_up_amount))} $</span>
                     </div>
                   )}
                 </div>
                 <div className="flex items-center justify-between pt-2 font-bold border-t border-[#E0D5C8]">
                   <span>Total encaissé</span>
-                  <span style={{ color: "#2D5016" }}>{Number(selected.total_amount).toFixed(2)} $</span>
+                  <span style={{ color: "#2D5016" }}>{formatPrix(Number(selected.total_amount))} $</span>
                 </div>
               </div>
             </div>

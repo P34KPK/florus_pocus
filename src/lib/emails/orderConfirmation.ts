@@ -1,3 +1,5 @@
+import { formatPrix } from "@/lib/pricing";
+
 interface OrderItem {
   name: string;
   quantity: number;
@@ -25,11 +27,11 @@ interface OrderConfirmationProps {
 
 /** Lignes de ventilation communes au HTML et au texte. */
 function breakdownLines(b: OrderBreakdown): Array<[string, string]> {
-  const lines: Array<[string, string]> = [["Sous-total", `${b.subtotal.toFixed(2)} $`]];
-  lines.push(["Livraison", b.deliveryFee > 0 ? `${b.deliveryFee.toFixed(2)} $` : "Gratuite"]);
-  if (b.gst > 0) lines.push([b.gstNumber ? `TPS (${b.gstNumber})` : "TPS", `${b.gst.toFixed(2)} $`]);
-  if (b.qst > 0) lines.push([b.qstNumber ? `TVQ (${b.qstNumber})` : "TVQ", `${b.qst.toFixed(2)} $`]);
-  if (b.roundUp > 0) lines.push(["Arrondi pour la cause", `${b.roundUp.toFixed(2)} $`]);
+  const lines: Array<[string, string]> = [["Sous-total", `${formatPrix(b.subtotal)} $`]];
+  lines.push(["Livraison", b.deliveryFee > 0 ? `${formatPrix(b.deliveryFee)} $` : "Gratuite"]);
+  if (b.gst > 0) lines.push([b.gstNumber ? `TPS (${b.gstNumber})` : "TPS", `${formatPrix(b.gst)} $`]);
+  if (b.qst > 0) lines.push([b.qstNumber ? `TVQ (${b.qstNumber})` : "TVQ", `${formatPrix(b.qst)} $`]);
+  if (b.roundUp > 0) lines.push(["Arrondi pour la cause", `${formatPrix(b.roundUp)} $`]);
   return lines;
 }
 
@@ -51,7 +53,7 @@ export function orderConfirmationHtml({ orderId, customerName, items, total, bre
         ${item.name}${item.quantity > 1 ? ` <span style="color: #888;">×${item.quantity}</span>` : ""}
       </td>
       <td style="padding: 10px 0; border-bottom: 1px solid #E0D5C8; text-align: right; font-family: Georgia, serif; color: #2D5016; font-weight: bold;">
-        ${(item.price * item.quantity).toFixed(2)} $
+        ${formatPrix((item.price * item.quantity))} $
       </td>
     </tr>
   `).join("");
@@ -102,7 +104,7 @@ export function orderConfirmationHtml({ orderId, customerName, items, total, bre
                 ${breakdownRows ? `<tr><td colspan="2" style="padding: 10px 0 0 0;"></td></tr>${breakdownRows}` : ""}
                 <tr>
                   <td style="padding: 16px 0 0 0; font-size: 16px; font-weight: bold; color: #1A1A1A; border-top: 1px solid #E0D5C8;">Total</td>
-                  <td style="padding: 16px 0 0 0; text-align: right; font-size: 20px; font-weight: bold; color: #2D5016; border-top: 1px solid #E0D5C8;">${total.toFixed(2)} $</td>
+                  <td style="padding: 16px 0 0 0; text-align: right; font-size: 20px; font-weight: bold; color: #2D5016; border-top: 1px solid #E0D5C8;">${formatPrix(total)} $</td>
                 </tr>
               </table>
             </td>
@@ -132,7 +134,7 @@ export function orderConfirmationHtml({ orderId, customerName, items, total, bre
 
 export function orderConfirmationText({ orderId, customerName, items, total, breakdown }: OrderConfirmationProps): string {
   const orderRef = orderId.slice(0, 8).toUpperCase();
-  const itemsList = items.map((i) => `  - ${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""} : ${(i.price * i.quantity).toFixed(2)} $`).join("\n");
+  const itemsList = items.map((i) => `  - ${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""} : ${formatPrix((i.price * i.quantity))} $`).join("\n");
   const detail = breakdown
     ? "\n" + breakdownLines(breakdown).map(([l, v]) => `  ${l} : ${v}`).join("\n") + "\n"
     : "";
@@ -146,7 +148,7 @@ Numéro de commande : #${orderRef}
 
 ${itemsList}
 ${detail}
-Total : ${total.toFixed(2)} $
+Total : ${formatPrix(total)} $
 
 Nous vous contacterons sous peu pour coordonner la livraison ou la cueillette.
 

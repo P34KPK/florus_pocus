@@ -8,6 +8,7 @@ import { isSoldOut } from "@/lib/inventory";
 import Modal from "@/components/admin/Modal";
 import ProductForm from "./ProductForm";
 import { createProduct, updateProduct, deleteProduct, toggleProductActive } from "@/lib/actions/products";
+import { formatPrix } from "@/lib/pricing";
 
 interface Props { products: Product[] }
 
@@ -94,7 +95,7 @@ export default function ProductsClient({ products }: Props) {
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold" style={catColors(p.category)}>{catLabel(p.category)}</span>
                     </td>
-                    <td className="px-6 py-4 font-semibold">{p.price.toFixed(2)} $</td>
+                    <td className="px-6 py-4 font-semibold">{formatPrix(p.price)} $</td>
                     <td className="px-6 py-4">
                       {!p.track_inventory ? (
                         <span className="text-xs opacity-40" title="Inventaire non suivi — toujours disponible">∞</span>
