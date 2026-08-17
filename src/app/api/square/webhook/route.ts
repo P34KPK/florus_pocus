@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 import { createAdminClient } from "@/lib/supabase-server";
 import { sendOrderEmails } from "@/lib/orderEmails";
+import { applyOrderStock } from "@/lib/stock";
 
 function verifySignature(body: string, signature: string, url: string): boolean {
   const secret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
@@ -62,6 +63,11 @@ export async function POST(req: NextRequest) {
         // marquée « failed » doit pouvoir être corrigée si Square confirme
         // finalement l'encaissement. Seul un « completed » est intouchable.
         .neq("payment_status", "completed");
+
+      // Filet de secours pour le stock aussi : `apply_order_stock` est
+      // idempotente (verrou `orders.stock_applied_at`), donc l'appeler ici ne
+      // peut pas décompter deux fois.
+      await applyOrderStock(orderId);
 
       // Filet de secours : appelé systématiquement, même si la route de
       // paiement a déjà marqué la commande. L'idempotence est assurée par

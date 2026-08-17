@@ -107,6 +107,12 @@ async function priceItems(
       // signifie « illimité ». Tester le stock brut ici rendait invendables des
       // produits que la boutique affichait pourtant comme disponibles.
       if (isSoldOut(p))             return { error: `« ${p.name} » est épuisé. Retirez-le de votre panier.` };
+      // Quantité réellement disponible. Sans ce contrôle on pouvait commander 5
+      // unités d'un produit qui n'en a que 2 : le stock tombait à 0 et la vente
+      // à découvert passait inaperçue.
+      if (p.track_inventory && p.stock !== null && item.quantity > p.stock) {
+        return { error: `« ${p.name} » : il n'en reste que ${p.stock} en stock. Réduisez la quantité.` };
+      }
 
       const unitPrice = effectiveUnitPrice(p, isFlorist);
       if (!(unitPrice > 0))         return { error: `Le prix de « ${p.name} » est indisponible. Contactez-nous pour finaliser cette commande.` };

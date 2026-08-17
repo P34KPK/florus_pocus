@@ -3,6 +3,7 @@ import { z } from "zod";
 import { squareClient, SQUARE_LOCATION_ID } from "@/lib/square";
 import { createAdminClient } from "@/lib/supabase-server";
 import { sendOrderEmails } from "@/lib/orderEmails";
+import { applyOrderStock } from "@/lib/stock";
 
 /**
  * Détaille une erreur Square pour la rendre exploitable.
@@ -141,6 +142,11 @@ export async function POST(req: NextRequest) {
         // On log en priorité — la commande est récupérable via square_payment_id.
         console.error("[square/payment] order update failed:", updateErr.message, "orderId:", orderId, "paymentId:", payment.id);
       }
+
+      // Le stock ne bouge qu'ici, une fois l'argent encaissé — jamais à la
+      // création de la commande, sinon les tentatives échouées consommeraient
+      // du stock qui n'a jamais été vendu.
+      await applyOrderStock(orderId);
 
       // Confirmation au client + notification à l'admin. JAMAIS bloquant : un
       // échec d'envoi ne doit pas masquer un paiement réussi (carte déjà
