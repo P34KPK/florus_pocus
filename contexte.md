@@ -12,7 +12,7 @@
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — tunnel d'achat réparé ; **première vente en ligne réussie de l'histoire du site**)
 **Migrations appliquées en prod :** jusqu'à `026` incluse (`026_orders_payment_error.sql` appliquée le 2026-08-16)
-**Dernier commit :** `a9c6aa6` — **tout est poussé sur `main`, l'arbre est propre**
+**Dernier commit :** `e9c9fb1` — **tout est poussé sur `main`, l'arbre est propre**
 **Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
 **Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
 
@@ -235,7 +235,7 @@
 - [x] ~~`SQUARE_SECRET_API_KEY` invalide sur Vercel~~ — RÉGLÉ le 2026-08-16 : clé recollée + redéploiement. Paiement confirmé dans la foulée.
 - [x] ~~Premier vrai achat à surveiller~~ — **FAIT le 2026-08-16 : réussi.** Commande `#F5DA1126`, 23,00 $, `paid`/`completed`, paiement Square `Ln9knwh87FcuEH0GocgohAbRy2BZY` COMPLETED/CAPTURED (VISA ••••4018), `reference_id` concordant, montants identiques des deux côtés, **et les deux courriels partis 3 secondes après le paiement sans erreur**. Toute la chaîne est désormais vérifiée de bout en bout.
 - [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
-- [ ] `/checkout` n'est pas suivi par les analytics (hors du groupe `(public)`) — aucune visibilité sur les abandons de caisse
+- [x] ~~`/checkout` non suivi par les analytics~~ — FAIT (`e9c9fb1`) : `<Analytics />` remonté au layout racine, donc toute route est couverte. A révélé au passage que `/api/track` renvoyait une erreur 500 à **chaque** visite depuis la mise en place des analytics (204 avec corps).
 - [x] ~~Prix affichés avec un point au lieu d'une virgule~~ — FAIT (`db55746`) : `formatPrix()` dans `pricing.ts`, 62 points d'affichage convertis. L'export CSV garde le point (donnée pour tableur).
 
 ---
@@ -686,6 +686,12 @@ Tags : `blog_posts`, `products`, `subscriptions`, `pages`, `events`, `site_setti
 - `/api/track` : Zod validation (path starts `/`, max 500), rate limit 120/min par IP, ignore `/admin/*`, insert via service_role
 - Stats page (`/admin/stats`) : 3 COUNT queries (today/7j/30j), graphique 14j CSS (barre verte = aujourd'hui), top 10 pages 30j
 - Rapports téléchargeables conservés mais `disabled` (Phase 3)
+
+### Analytics — `<Analytics />` au layout RACINE, pas dans `(public)`
+`src/app/layout.tsx` porte le composant. **Ne pas le redescendre dans `(public)/layout.tsx`** : `/checkout` et `/admin` vivent hors de ce groupe, et la caisse cessait alors d'être mesurée — c'est ainsi qu'on a pu avoir des visiteurs arrivant au paiement sans jamais commander, pendant des semaines, sans le voir.
+- Le filtrage se fait côté serveur : `/api/track` ignore `/admin/*`. Aucune raison de restreindre le composant par layout.
+- ⚠️ **Une réponse vide doit être `new NextResponse(null, { status })`**, jamais `NextResponse.json(null, { status: 204 })` : un 204 ne peut pas porter de corps et le constructeur `Response` lève « Invalid response status code 204 ». Ce bug a fait échouer en 500 **chaque** appel de `/api/track` depuis la migration 020 — sans que ça se voie, parce que l'insertion a lieu avant la réponse et que `sendBeacon` ignore le code retour.
+- Conséquence pratique : un endpoint dont personne ne lit la réponse peut être en erreur permanente sans que rien ne le signale. Vérifier les codes de retour, pas seulement les données écrites.
 
 ### Fleuristes — accès privé
 - Cookie `fp_florist=1`, HttpOnly, Secure(prod), SameSite=lax, 30 jours
