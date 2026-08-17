@@ -12,7 +12,7 @@
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — tunnel d'achat réparé ; **première vente en ligne réussie de l'histoire du site**)
 **Migrations appliquées en prod :** jusqu'à `026` incluse (`026_orders_payment_error.sql` appliquée le 2026-08-16)
-**Dernier commit :** `db55746` — **tout est poussé sur `main`, l'arbre est propre**
+**Dernier commit :** `a9c6aa6` — **tout est poussé sur `main`, l'arbre est propre**
 **Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
 **Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
 
@@ -129,7 +129,7 @@
   - **Cause 2 — prix fleuriste.** `/boutique/[id]` et `BoutiqueShop` mettaient toujours le **prix public** au panier, alors que `createOrder` applique le **prix de gros** dès que le cookie `fp_florist` est valide. `CheckoutClient` détectait l'écart de total et **abandonnait avant de débiter** (garde-fou correct, sur un écart fabriqué par le site lui-même). C'est exactement la « limite connue » notée en session 10, devenue bloquante depuis que la session 14 recalcule les prix côté serveur. **46 des 53 produits, pour quiconque a le cookie fleuriste** (30 jours — le testeur l'avait).
   - **Bilan avant correctif** : 29 produits sur 79 achetables par un client ordinaire, **7 sur 79** avec le cookie fleuriste.
   - **Correctifs** : `effectiveUnitPrice()` dans `pricing.ts` (règle de prix unique) ; `isSoldOut()` enfin utilisé par `createOrder` ; `quoteCart()` — la caisse demande son total au serveur au lieu de l'additionner depuis le `localStorage` ; un paiement refusé marque `payment_status = 'failed'` ; le `.json()` de la réponse de paiement est protégé (un 500 renvoie du HTML et figeait le bouton sur « Traitement… » sans message).
-  - **Commandes fantômes** : les 2 commandes orphelines du 16 août supprimées via `scripts/cleanup-ghost-orders.mjs` (garde-fou : refuse toute commande portant une trace de paiement ou de courriel). Il reste la commande de test du 31 mai.
+  - **Commandes de test nettoyées** : 10 commandes orphelines supprimées au total via `scripts/cleanup-ghost-orders.mjs` (2 en cours de session, puis 8 à la fin). **Il reste exactement 1 commande en base** : la vraie vente `#F5DA1126`. Le script sélectionne lui-même les commandes sans trace de paiement ni de courriel — plus d'identifiants en dur — et tourne en mode liste tant qu'on ne passe pas `--appliquer`.
 
   **Vérifications faites (aucun paiement déclenché) :**
   - `node scripts/verify-purchase-flow.mjs` — **0 produit refusé** sur les 53 affichés comme achetables (24 avant) ; **24/24** prix affichés identiques aux prix facturés, en public comme en fleuriste, lus sur le rendu serveur réel.
@@ -214,7 +214,7 @@
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
-**État au 2026-08-16 :** la boutique vend. Les deux blocages de la session 15 sont corrigés et vérifiés en production, le client a saisi ses numéros de taxes et lu ses messages. **Il ne reste aucun point bloquant** — seulement le premier vrai achat à observer, et des améliorations.
+**État au 2026-08-16 (fin de session 15) :** la boutique vend, prouvé par une vraie vente encaissée (`#F5DA1126`, 23,00 $, courriels partis). Les **trois** blocages sont levés — inventaire, prix fleuriste, et la clé Square sur Vercel. Le client a saisi ses numéros de taxes et lu ses messages. Base de commandes nettoyée : une seule ligne, la vente réelle. **Il ne reste aucun point bloquant**, uniquement des améliorations.
 
 > **Périmètre.** Cette liste ne contient que du travail technique. Les demandes de
 > clientèle (devis, mariages, réponses aux messages de contact) ne relèvent pas du
@@ -370,7 +370,7 @@ FlorusPocus/
 │   ├── verify-orders-pipeline.mjs  ← vérificateur LECTURE SEULE de la chaîne de commande
 │   ├── verify-purchase-flow.mjs    ← LECTURE SEULE : règle d'inventaire + prix affiché == prix facturé
 │   ├── verify-checkout-quote.mjs   ← LECTURE SEULE : appelle vraiment quoteCart (exige `next build` + `next start`)
-│   └── cleanup-ghost-orders.mjs    ← supprime des commandes orphelines (garde-fou anti-paiement), IDs en dur
+│   └── cleanup-ghost-orders.mjs    ← supprime les commandes sans paiement (garde-fou double) — `--appliquer` pour agir
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
     ├── proxy.ts                 ← middleware Supabase (rafraîchit tokens via extractJwt)
@@ -514,6 +514,15 @@ Toute section affichant une image éditable doit lire featured_image_url, jamais
 revalidateTag("events", "max");   // ✅
 revalidateTag("events");          // ❌ TypeScript error
 ```
+
+### ⚠️ Annuler une commande dans l'admin ne rembourse RIEN
+Passer une commande à `cancelled` ne change que la ligne en base. Le paiement Square reste `COMPLETED` / `CAPTURED` et l'argent reste encaissé.
+- Constaté le 2026-08-16 sur `#F5DA1126` : commande annulée dans l'admin, 23,00 $ toujours prélevés sur la carte.
+- Le remboursement se fait **dans Square Dashboard**, jamais depuis le site — aucune route de remboursement n'existe dans le code.
+- Conséquence à garder en tête si on ajoute un jour un bouton « Annuler » plus visible : il faut soit déclencher un vrai `RefundPayment`, soit dire clairement à l'administrateur que le remboursement reste à faire de son côté.
+
+### ⚠️ Ne jamais supprimer une commande portant une trace de paiement
+`scripts/cleanup-ghost-orders.mjs` refuse toute commande ayant `square_payment_id`, `payment_status = 'completed'` ou `emails_sent_at`. Ces lignes correspondent à un mouvement d'argent réel : elles restent en base même si elles ont été annulées ou qu'il s'agissait d'un test.
 
 ### ⚠️ Statuts de commande — enums Postgres STRICTS (ne pas dévier)
 Les colonnes `orders.status` et `orders.payment_status` sont des ENUMS Postgres. **Écrire une valeur hors liste fait échouer l'UPDATE.**
