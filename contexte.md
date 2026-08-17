@@ -11,8 +11,8 @@
 **Déploiement :** Vercel (compte FlorusPocus Hobby — `info@floruspocus.com`)
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — tunnel d'achat réparé ; **première vente en ligne réussie de l'histoire du site**)
-**Migrations appliquées en prod :** jusqu'à `026` incluse (`026_orders_payment_error.sql` appliquée le 2026-08-16)
-**Dernier commit :** `e9c9fb1` — **tout est poussé sur `main`, l'arbre est propre**
+**Migrations appliquées en prod :** jusqu'à `027` incluse (`026_orders_payment_error.sql` et `027_order_stock_decrement.sql` appliquées le 2026-08-16)
+**Dernier commit :** `6e6a61b` — **tout est poussé sur `main`, l'arbre est propre**
 **Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
 **Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
 
@@ -234,7 +234,8 @@
 - [x] ~~Impossible d'acheter (inventaire + prix fleuriste)~~ — FAIT session 15 (`1cea9af`)
 - [x] ~~`SQUARE_SECRET_API_KEY` invalide sur Vercel~~ — RÉGLÉ le 2026-08-16 : clé recollée + redéploiement. Paiement confirmé dans la foulée.
 - [x] ~~Premier vrai achat à surveiller~~ — **FAIT le 2026-08-16 : réussi.** Commande `#F5DA1126`, 23,00 $, `paid`/`completed`, paiement Square `Ln9knwh87FcuEH0GocgohAbRy2BZY` COMPLETED/CAPTURED (VISA ••••4018), `reference_id` concordant, montants identiques des deux côtés, **et les deux courriels partis 3 secondes après le paiement sans erreur**. Toute la chaîne est désormais vérifiée de bout en bout.
-- [ ] **Gestion stock automatique** — le stock n'est jamais décrémenté à l'achat, c'est un compteur manuel (`track_inventory` rend au moins le blocage visible)
+- [x] ~~Gestion stock automatique~~ — FAIT (`6e6a61b`, migration 027) : décrémenté au paiement encaissé, idempotent, sans course. Voir « Stock — décrémenté au paiement ».
+- [ ] **Le stock n'est pas restitué** si une commande payée est annulée ou remboursée — remontée manuelle dans l'admin. Le faire proprement demanderait de distinguer une annulation avant/après préparation ; laissé de côté volontairement.
 - [x] ~~`/checkout` non suivi par les analytics~~ — FAIT (`e9c9fb1`) : `<Analytics />` remonté au layout racine, donc toute route est couverte. A révélé au passage que `/api/track` renvoyait une erreur 500 à **chaque** visite depuis la mise en place des analytics (204 avec corps).
 - [x] ~~Prix affichés avec un point au lieu d'une virgule~~ — FAIT (`db55746`) : `formatPrix()` dans `pricing.ts`, 62 points d'affichage convertis. L'export CSV garde le point (donnée pour tableur).
 
@@ -364,12 +365,15 @@ FlorusPocus/
 │   ├── 022_orders_email_tracking.sql
 │   ├── 023_product_track_inventory.sql
 │   ├── 024_orders_taxes_delivery.sql
-│   └── 025_admin_notifications.sql
+│   ├── 025_admin_notifications.sql
+│   ├── 026_orders_payment_error.sql
+│   └── 027_order_stock_decrement.sql
 ├── scripts/
 │   ├── reset-admin.mjs
 │   ├── verify-orders-pipeline.mjs  ← vérificateur LECTURE SEULE de la chaîne de commande
 │   ├── verify-purchase-flow.mjs    ← LECTURE SEULE : règle d'inventaire + prix affiché == prix facturé
 │   ├── verify-checkout-quote.mjs   ← LECTURE SEULE : appelle vraiment quoteCart (exige `next build` + `next start`)
+│   ├── verify-stock-decrement.mjs  ← teste apply_order_stock sur une commande factice, puis restaure tout
 │   └── cleanup-ghost-orders.mjs    ← supprime les commandes sans paiement (garde-fou double) — `--appliquer` pour agir
 └── src/
     ├── middleware.ts            ← point d'entrée Next.js (re-exporte proxy)
@@ -426,6 +430,7 @@ FlorusPocus/
     ├── lib/
     │   ├── pricing.ts           ← computeTotals (taxes + livraison + arrondi) + effectiveUnitPrice (prix public vs gros)
     │   ├── inventory.ts         ← isSoldOut / lowStockCount (track_inventory)
+    │   ├── stock.ts             ← applyOrderStock : décrémentation au paiement (RPC apply_order_stock)
     │   ├── orderEmails.ts       ← sendOrderEmails : envoi idempotent des 2 courriels de commande
     │   ├── notifications.ts     ← getAdminNotifications : notifications dérivées, sans table
     │   ├── site.ts              ← SITE_URL canonique
@@ -541,13 +546,26 @@ Toujours vérifier l'erreur de `.update()` sur orders dans la route de paiement.
 - Resend ne lève **jamais** d'exception : toujours lire le `{ error }` retourné. Les échecs atterrissent dans `orders.email_error`, visible via `node scripts/verify-orders-pipeline.mjs`.
 - L'adresse admin vient de `site_settings.contact_email` (repli `info@floruspocus.com`).
 
+### Stock — décrémenté au paiement, jamais avant (migration 027)
+`src/lib/stock.ts` → `applyOrderStock(orderId)` appelle la fonction Postgres `apply_order_stock`. Appelée par la route de paiement **et** par le webhook Square.
+- **Au paiement encaissé, jamais à `createOrder`.** Une commande créée puis abandonnée ou refusée ne doit pas consommer de stock — il y a eu 8 tentatives échouées le 2026-08-16, elles auraient vidé l'inventaire.
+- **Idempotence** : `orders.stock_applied_at`, réservation atomique (`UPDATE … WHERE stock_applied_at IS NULL`). Même principe que `emails_sent_at`. C'est ce qui permet au webhook d'être un filet de secours sans décompter deux fois.
+- **Pas de course** : le calcul `stock - quantité` est fait dans **une seule instruction SQL**, donc Postgres verrouille la ligne. ⚠️ **Ne jamais réimplémenter ça en lisant le stock puis en le réécrivant depuis Node** — deux ventes simultanées liraient la même valeur de départ.
+- N'affecte que `track_inventory = true` et `stock IS NOT NULL`. Les produits « toujours disponibles » restent intacts.
+- `GREATEST(stock - quantité, 0)` : le stock ne peut jamais devenir négatif.
+- La fonction n'est exécutable que par `service_role` (REVOKE sur anon/authenticated).
+- `applyOrderStock` **ne lève jamais** : un souci de stock ne doit pas faire échouer la réponse d'un paiement déjà encaissé. Si la migration manque, l'erreur est journalisée et le paiement reste valide.
+- `createOrder` / `quoteCart` refusent désormais une quantité supérieure au stock disponible (avant : on pouvait commander 5 unités d'un produit qui n'en avait que 2).
+- ⚠️ **Le stock n'est PAS restitué** si une commande payée est annulée ou remboursée — remontée manuelle dans l'admin.
+- Contrôle : `node scripts/verify-stock-decrement.mjs` (commande factice, puis restauration complète — aucun paiement déclenché).
+
 ### ⚠️ Inventaire — `track_inventory`, jamais `stock === 0` en dur
 `src/lib/inventory.ts` est la source unique : `isSoldOut(p)` = `track_inventory && stock === 0`, et `lowStockCount(p)` pour l'avertissement « Plus que N en stock ». **Ne jamais retester `stock === 0` directement** — utiliser ces helpers (7 emplacements : `FloristCatalog`, `BoutiqueShop`, `Fleuristes`, `TransformedProducts`, `boutique/[id]`, `ProductsClient`, et **`priceItems()` dans `checkout.ts`** — c'est celui qui manquait et qui rendait 24 produits invendables).
 - Pourquoi : `stock` encodait 3 états dans un champ nullable, dont deux quasi identiques à la saisie mais aux effets opposés (vide = illimité, `0` = **invendable**). Diagnostic de session 14 : 39 fiches de fleurs coupées saisies à 0 le 2026-06-08, jamais rouvertes ensuite → tout le catalogue de fleurs était invendable, sans aucun signal.
 - Admin : interrupteur « Suivre les quantités / Toujours disponible » dans `ProductForm`. Désactivé (défaut), le champ Quantité disparaît et le produit reste vendable ; activé, `0` signifie vraiment « Épuisé ».
 - `products.ts` force `stock = null` quand `track_inventory` est faux — pas de valeur fantôme qui ressurgit si on réactive le suivi.
 - La liste admin affiche `∞` (non suivi), la quantité, ou un badge rouge `0 · Épuisé` pour rendre un blocage de vente immédiatement visible.
-- Le stock n'est toujours **pas** décrémenté automatiquement à l'achat — c'est un compteur manuel.
+- ✅ Le stock **est** désormais décrémenté automatiquement au paiement (migration 027) — voir « Stock — décrémenté au paiement ».
 - ⚠️ **Leçon de la session 15** : `isSoldOut` avait été branché sur les 6 points d'affichage mais pas sur `createOrder`. La boutique montrait les produits comme disponibles et la caisse les refusait — 24 produits invendables sans message cohérent. **Une règle métier doit être appliquée à l'encaissement AVANT l'affichage**, jamais l'inverse : un affichage faux se voit, un refus à la caisse se subit.
 
 ### ✅ Paiements — `SQUARE_SECRET_API_KEY` invalide en production (résolu le 2026-08-16)
