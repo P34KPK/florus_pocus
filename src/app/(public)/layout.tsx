@@ -3,7 +3,6 @@ import Footer            from "@/components/Footer";
 import BotanicalLayers   from "@/components/BotanicalLayers";
 import ClientCartDrawer  from "@/components/ClientCartDrawer";
 import CookieConsent     from "@/components/CookieConsent";
-import Analytics         from "@/components/Analytics";
 import { getSiteSettings } from "@/lib/supabase-server";
 import { pricingFromSettings } from "@/lib/pricing";
 
@@ -20,7 +19,6 @@ export default async function PublicLayout({ children }: { children: React.React
       <Footer />
       <ClientCartDrawer pricing={pricing} />
       <CookieConsent />
-      <Analytics />
     </>
   );
 }

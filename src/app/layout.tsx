@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Inter, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import Analytics from "@/components/Analytics";
 import { SITE_URL } from "@/lib/site";
 
 const dmSans = DM_Sans({
@@ -91,6 +92,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           {children}
         </CartProvider>
+        {/*
+          Ici et non dans `(public)/layout.tsx` : la caisse vit hors du groupe
+          `(public)`, elle n'était donc pas mesurée — impossible de voir qu'on
+          arrivait au paiement sans jamais commander. Au niveau racine, toute
+          route est couverte, y compris celles qu'on ajoutera plus tard.
+          `/api/track` ignore `/admin/*` de son côté.
+        */}
+        <Analytics />
       </body>
     </html>
   );
