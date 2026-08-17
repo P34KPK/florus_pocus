@@ -12,8 +12,9 @@
 **Domaine production :** https://www.floruspocus.com
 **Dernière session :** 2026-08-16 (session 15 — tunnel d'achat réparé ; **première vente en ligne réussie de l'histoire du site**)
 **Migrations appliquées en prod :** jusqu'à `027` incluse (`026_orders_payment_error.sql` et `027_order_stock_decrement.sql` appliquées le 2026-08-16)
-**Dernier commit :** `6e6a61b` — **tout est poussé sur `main`, l'arbre est propre**
-**Commits de la session 15 :** `1cea9af` (le correctif du tunnel d'achat — seul commit de code) · `b9cf6f7` · `afe6b6a` · `8e3bb91` · `ffa5daa` (documentation)
+**Dernier commit :** `600ee78` — **tout est poussé sur `main`, l'arbre est propre**
+**Commits de code de la session 15 :**
+`1cea9af` tunnel d'achat réparé (inventaire + prix fleuriste) · `db55746` prix en virgule française · `e370c48` diagnostic des paiements refusés (migration 026) · `e9c9fb1` analytics sur `/checkout` + correction du 500 de `/api/track` · `6e6a61b` décrémentation du stock (migration 027) · `a9c6aa6` script de nettoyage des commandes
 **Déploiement de `1cea9af` confirmé** par la fiche produit Calendula rendue côté serveur : 12,00 $ en public, **10,00 $ avec le cookie `fp_florist`**. L'ancien code affichait toujours le prix public — c'est une preuve que le nouveau code est servi, pas seulement que le build a changé.
 
 ---
@@ -139,6 +140,10 @@
   - Le blocage final n'était pas dans le code mais dans la configuration : `SQUARE_SECRET_API_KEY` sur Vercel renvoyait `401 AUTHENTICATION_ERROR` (voir section 7).
   - ❗ `createOrder` n'a pas pu être exercée depuis un script : reproduire l'encodage des arguments d'une action serveur React (`$K` + préfixe `_<id>_`) n'a pas abouti en trois tentatives. Ce qui la couvre : elle partage `priceItems()` / `totalsFor()` avec `quoteCart` (prouvée), son code d'enregistrement est inchangé, et les 2 commandes du 16 août prouvent que ce code écrit correctement en base.
 
+  - **Prix en typographie française** (`db55746`) : `formatPrix()` dans `pricing.ts`, 62 points d'affichage. L'export CSV garde le point décimal (donnée pour tableur).
+  - **Analytics sur `/checkout`** (`e9c9fb1`) : `<Analytics />` remonté au layout racine — la caisse vivait hors du groupe `(public)` et n'était pas mesurée, donc personne ne pouvait voir des visiteurs arriver au paiement sans jamais commander. A révélé au passage que `/api/track` renvoyait **500 à chaque visite** depuis la migration 020 (un 204 ne peut pas porter de corps), sans que ça se voie : `sendBeacon` ignore la réponse.
+  - **Décrémentation du stock** (`6e6a61b`, migration 027) : au paiement encaissé, idempotente, sans course, et refus d'une quantité supérieure au stock disponible.
+
 ### Square paiement (production)
 - [x] SDK Square installé (`square`)
 - [x] `src/lib/square.ts` — `SquareClient` + `SquareEnvironment`
@@ -214,7 +219,7 @@
 
 ## 3. CE QUI RESTE À FAIRE 🔲
 
-**État au 2026-08-16 (fin de session 15) :** la boutique vend, prouvé par une vraie vente encaissée (`#F5DA1126`, 23,00 $, courriels partis). Les **trois** blocages sont levés — inventaire, prix fleuriste, et la clé Square sur Vercel. Le client a saisi ses numéros de taxes et lu ses messages. Base de commandes nettoyée : une seule ligne, la vente réelle. **Il ne reste aucun point bloquant**, uniquement des améliorations.
+**État au 2026-08-16 (fin de session 15) :** **le site vend, encaisse, envoie ses courriels, tient son inventaire et mesure sa caisse.** Prouvé par une vraie vente encaissée (`#F5DA1126`, 23,00 $). Les trois blocages sont levés — inventaire, prix fleuriste, et la clé Square sur Vercel. Base de commandes nettoyée : une seule ligne, la vente réelle. **Plus rien de bloquant ni de technique en attente.**
 
 > **Périmètre.** Cette liste ne contient que du travail technique. Les demandes de
 > clientèle (devis, mariages, réponses aux messages de contact) ne relèvent pas du
